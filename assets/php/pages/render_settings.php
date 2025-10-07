@@ -11,6 +11,10 @@ require_once __DIR__ . '/../global/seed_defaults.php';
 require_once __DIR__ . '/../global/dataset_is_exposable.php';
 require_once __DIR__ . '/../global/dataset_format.php';
 require_once __DIR__ . '/../global/dataset_path.php';
+require_once __DIR__ . '/../global/load_asset_configurations.php';
+require_once __DIR__ . '/../global/load_asset_overrides.php';
+require_once __DIR__ . '/../global/get_asset_parameter_value.php';
+require_once __DIR__ . '/../global/asset_label.php';
 
 function fg_render_settings_page(array $user, array $context = []): void
 {
@@ -112,6 +116,101 @@ function fg_render_settings_page(array $user, array $context = []): void
             $body .= '<button type="submit">Replace dataset</button>';
             $body .= '</form>';
         }
+        $body .= '</section>';
+    }
+
+    $configurationsData = fg_load_asset_configurations();
+    $overridesData = fg_load_asset_overrides();
+    $role = $user['role'] ?? 'member';
+    $userId = (string) ($user['id'] ?? '');
+    $availableAssets = [];
+
+    foreach ($configurationsData['records'] as $assetKey => $configuration) {
+        if (empty($configuration['allow_user_override'])) {
+            continue;
+        }
+
+        $allowedRoles = $configuration['allowed_roles'] ?? [];
+        if ($role !== 'admin' && !in_array($role, $allowedRoles, true)) {
+            continue;
+        }
+
+        $availableAssets[$assetKey] = $configuration;
+    }
+
+    if (!empty($availableAssets)) {
+        $body .= '<section class="panel">';
+        $body .= '<h2>Asset personalisation</h2>';
+        $body .= '<p>Adjust how individual assets behave for your account. Your overrides sit on top of global and role-specific settings.</p>';
+
+        $globalOverrides = $overridesData['records']['global'] ?? [];
+        $roleOverrides = ($overridesData['records']['roles'][$role] ?? []);
+        $userOverrides = $userId !== '' ? ($overridesData['records']['users'][$userId] ?? []) : [];
+
+        foreach ($availableAssets as $assetKey => $configuration) {
+            $parameters = $configuration['parameters'] ?? [];
+            $assetLabel = fg_asset_label($assetKey);
+            $body .= '<article class="asset-preference">';
+            $body .= '<h3>' . htmlspecialchars($assetLabel) . '</h3>';
+            $body .= '<p class="asset-meta">' . htmlspecialchars($assetKey) . ' · Scope: ' . htmlspecialchars($configuration['scope'] ?? 'local') . '</p>';
+            $body .= '<form method="post" action="/settings.php" class="asset-form">';
+            $body .= '<input type="hidden" name="action" value="update-asset-preferences">';
+            $body .= '<input type="hidden" name="asset" value="' . htmlspecialchars($assetKey) . '">';
+            $body .= '<div class="field-grid">';
+
+            foreach ($parameters as $parameterKey => $definition) {
+                $type = $definition['type'] ?? 'text';
+                $defaultValue = $definition['default'] ?? '';
+                $globalValue = $globalOverrides[$assetKey][$parameterKey] ?? null;
+                $roleValue = $roleOverrides[$assetKey][$parameterKey] ?? null;
+                $userValue = $userOverrides[$assetKey][$parameterKey] ?? null;
+                $effective = fg_get_asset_parameter_value($assetKey, $parameterKey, [
+                    'role' => $role,
+                    'user_id' => $user['id'] ?? null,
+                ]);
+
+                $currentInputValue = $userValue;
+                if ($currentInputValue === null) {
+                    $currentInputValue = $effective;
+                }
+
+                $body .= '<label class="field">';
+                $body .= '<span class="field-label">' . htmlspecialchars($definition['label'] ?? $parameterKey) . '</span>';
+
+                if ($type === 'boolean') {
+                    $checked = $currentInputValue ? ' checked' : '';
+                    $body .= '<span class="field-control"><input type="checkbox" name="preferences[' . htmlspecialchars($parameterKey) . ']" value="1"' . $checked . '></span>';
+                } elseif ($type === 'select') {
+                    $body .= '<span class="field-control"><select name="preferences[' . htmlspecialchars($parameterKey) . ']">';
+                    $options = $definition['options'] ?? [];
+                    foreach ($options as $option) {
+                        $selected = ((string) $currentInputValue === (string) $option) ? ' selected' : '';
+                        $body .= '<option value="' . htmlspecialchars((string) $option) . '"' . $selected . '>' . htmlspecialchars(ucfirst((string) $option)) . '</option>';
+                    }
+                    $body .= '</select></span>';
+                } else {
+                    $body .= '<span class="field-control"><input type="text" name="preferences[' . htmlspecialchars($parameterKey) . ']" value="' . htmlspecialchars((string) $currentInputValue) . '"></span>';
+                }
+
+                $defaultDisplay = $type === 'boolean' ? ($defaultValue ? 'Enabled' : 'Disabled') : (string) $defaultValue;
+                $globalDisplay = $globalValue === null ? '—' : ($type === 'boolean' ? ($globalValue ? 'Enabled' : 'Disabled') : (string) $globalValue);
+                $roleDisplay = $roleValue === null ? '—' : ($type === 'boolean' ? ($roleValue ? 'Enabled' : 'Disabled') : (string) $roleValue);
+                $effectiveDisplay = $type === 'boolean' ? ($effective ? 'Enabled' : 'Disabled') : (string) $effective;
+                $body .= '<span class="field-description">Default: ' . htmlspecialchars($defaultDisplay) . ' · Global: ' . htmlspecialchars($globalDisplay) . ' · Role: ' . htmlspecialchars($roleDisplay) . ' · Active: ' . htmlspecialchars($effectiveDisplay) . '</span>';
+                $body .= '</label>';
+            }
+
+            $body .= '</div>';
+            $body .= '<div class="action-row">';
+            $body .= '<button type="submit" class="button primary">Save preferences</button>';
+            if (!empty($userOverrides[$assetKey])) {
+                $body .= '<button type="submit" name="action_override" value="clear-asset-preferences" class="button danger">Revert to delegated values</button>';
+            }
+            $body .= '</div>';
+            $body .= '</form>';
+            $body .= '</article>';
+        }
+
         $body .= '</section>';
     }
 

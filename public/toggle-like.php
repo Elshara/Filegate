@@ -6,9 +6,14 @@ require_once __DIR__ . '/../assets/php/global/toggle_like.php';
 require_once __DIR__ . '/../assets/php/global/is_ajax_request.php';
 require_once __DIR__ . '/../assets/php/global/render_json_response.php';
 require_once __DIR__ . '/../assets/php/global/find_post_by_id.php';
+require_once __DIR__ . '/../assets/php/global/guard_asset.php';
 
 fg_bootstrap();
 $user = fg_require_login();
+fg_guard_asset('public/toggle-like.php', [
+    'role' => $user['role'] ?? null,
+    'user_id' => $user['id'] ?? null,
+]);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post_id = (int) ($_POST['post_id'] ?? 0);

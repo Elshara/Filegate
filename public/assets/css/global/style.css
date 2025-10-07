@@ -481,3 +481,90 @@ input[type="submit"]:hover {
   width: auto;
   margin: 0;
 }
+
+.asset-setup-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  margin-top: 1.5rem;
+}
+
+.asset-card,
+.asset-preference {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(28, 37, 48, 0.1);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.asset-card header h2,
+.asset-preference h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.asset-meta {
+  font-size: 0.85rem;
+  color: rgba(28, 37, 48, 0.55);
+}
+
+.asset-section + .asset-section,
+.asset-preference + .asset-preference {
+  margin-top: 1.5rem;
+}
+
+.asset-form .field-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.asset-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.asset-form .field-label {
+  font-weight: 600;
+  color: rgba(28, 37, 48, 0.9);
+}
+
+.asset-form .field-description {
+  font-size: 0.8rem;
+  color: rgba(28, 37, 48, 0.6);
+}
+
+.asset-form .action-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.asset-form .button.danger {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.asset-form.inline {
+  margin-top: 0.75rem;
+}
+
+.notice.success,
+.notice.error {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  margin-top: 1rem;
+  font-weight: 600;
+}
+
+.notice.success {
+  background: rgba(46, 204, 113, 0.15);
+  color: #1d7a46;
+}
+
+.notice.error {
+  background: rgba(231, 76, 60, 0.12);
+  color: #9e3428;
+}

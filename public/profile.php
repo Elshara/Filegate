@@ -8,9 +8,14 @@ require_once __DIR__ . '/../assets/php/global/sanitize_html.php';
 require_once __DIR__ . '/../assets/php/pages/render_profile.php';
 require_once __DIR__ . '/../assets/php/global/render_layout.php';
 require_once __DIR__ . '/../assets/php/global/load_notification_channels.php';
+require_once __DIR__ . '/../assets/php/global/guard_asset.php';
 
 fg_bootstrap();
 $current = fg_require_login();
+fg_guard_asset('public/profile.php', [
+    'role' => $current['role'] ?? null,
+    'user_id' => $current['id'] ?? null,
+]);
 $target_username = $_GET['user'] ?? $current['username'];
 $target = fg_find_user_by_username($target_username);
 

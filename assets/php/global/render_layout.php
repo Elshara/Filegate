@@ -2,6 +2,8 @@
 
 require_once __DIR__ . '/get_setting.php';
 require_once __DIR__ . '/current_user.php';
+require_once __DIR__ . '/get_asset_parameter_value.php';
+require_once __DIR__ . '/is_admin.php';
 
 function fg_render_layout(string $title, string $body, array $options = []): void
 {
@@ -11,6 +13,25 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
     $current = fg_current_user();
     $nav = $options['nav'] ?? true;
     $extra_head = $options['head'] ?? '';
+    $context = [
+        'role' => $current['role'] ?? null,
+        'user_id' => $current['id'] ?? null,
+    ];
+    $layoutEnabled = fg_get_asset_parameter_value('assets/php/global/render_layout.php', 'enabled', $context);
+    $layoutMode = fg_get_asset_parameter_value('assets/php/global/render_layout.php', 'mode', $context);
+    $layoutVariant = fg_get_asset_parameter_value('assets/php/global/render_layout.php', 'variant', $context);
+
+    $classFragments = ['layout-shell'];
+    if (!$layoutEnabled) {
+        $classFragments[] = 'layout-disabled';
+    }
+    if (is_string($layoutMode) && $layoutMode !== '') {
+        $classFragments[] = 'layout-mode-' . preg_replace('/[^a-z0-9-]/', '-', strtolower($layoutMode));
+    }
+    if (is_string($layoutVariant) && $layoutVariant !== '') {
+        $classFragments[] = 'layout-variant-' . preg_replace('/[^a-z0-9-]/', '-', strtolower($layoutVariant));
+    }
+    $bodyClass = htmlspecialchars(implode(' ', $classFragments));
 
     echo '<!DOCTYPE html>';
     echo '<html lang="en">';
@@ -32,7 +53,7 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
     echo '<script src="/assets/js/global/init_client.js" defer></script>';
     echo $extra_head;
     echo '</head>';
-    echo '<body data-embed-policy="' . htmlspecialchars($embed_policy) . '" data-statistics-visibility="' . htmlspecialchars($statistics_policy) . '">';
+    echo '<body class="' . $bodyClass . '" data-embed-policy="' . htmlspecialchars($embed_policy) . '" data-statistics-visibility="' . htmlspecialchars($statistics_policy) . '" data-layout-mode="' . htmlspecialchars((string) $layoutMode) . '" data-layout-variant="' . htmlspecialchars((string) $layoutVariant) . '" data-layout-enabled="' . ($layoutEnabled ? 'true' : 'false') . '">';
     echo '<header class="app-header">';
     echo '<div class="app-title">' . htmlspecialchars($app_name) . '</div>';
     if ($nav) {
@@ -41,6 +62,9 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
             echo '<a href="/index.php">Feed</a>';
             echo '<a href="/profile.php?user=' . urlencode($current['username']) . '">My Profile</a>';
             echo '<a href="/settings.php">Settings</a>';
+            if (fg_is_admin($current)) {
+                echo '<a href="/setup.php">Setup</a>';
+            }
             echo '<form method="post" action="/logout.php" class="logout-form"><button type="submit">Sign out</button></form>';
         } else {
             echo '<a href="/login.php">Sign in</a>';

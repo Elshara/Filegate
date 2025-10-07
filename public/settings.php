@@ -9,15 +9,23 @@ require_once __DIR__ . '/../assets/php/global/save_json.php';
 require_once __DIR__ . '/../assets/php/global/render_layout.php';
 require_once __DIR__ . '/../assets/php/global/parse_allowed_list.php';
 require_once __DIR__ . '/../assets/php/global/normalize_setting_value.php';
+require_once __DIR__ . '/../assets/php/global/load_asset_configurations.php';
+require_once __DIR__ . '/../assets/php/global/update_asset_override.php';
+require_once __DIR__ . '/../assets/php/global/clear_asset_override.php';
+require_once __DIR__ . '/../assets/php/global/guard_asset.php';
 require_once __DIR__ . '/../assets/php/pages/render_settings.php';
 
 fg_bootstrap();
 $user = fg_require_login();
+fg_guard_asset('public/settings.php', [
+    'role' => $user['role'] ?? null,
+    'user_id' => $user['id'] ?? null,
+]);
 $message = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
+    $action = $_POST['action_override'] ?? ($_POST['action'] ?? '');
 
     if ($action === 'update-setting') {
         $setting = $_POST['setting'] ?? '';
@@ -58,6 +66,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $error = $exception->getMessage();
                     }
                 }
+            }
+        }
+    } elseif ($action === 'update-asset-preferences') {
+        $asset = $_POST['asset'] ?? '';
+        $configurations = fg_load_asset_configurations();
+        $configuration = $configurations['records'][$asset] ?? null;
+        if ($configuration === null || empty($configuration['allow_user_override'])) {
+            $error = 'Asset does not support personalisation.';
+        } else {
+            $role = $user['role'] ?? 'member';
+            $allowedRoles = $configuration['allowed_roles'] ?? [];
+            if ($role !== 'admin' && !in_array($role, $allowedRoles, true)) {
+                $error = 'You are not permitted to override this asset.';
+            } else {
+                $preferences = $_POST['preferences'] ?? [];
+                $parameters = $configuration['parameters'] ?? [];
+                $normalized = [];
+                foreach ($parameters as $key => $definition) {
+                    $type = $definition['type'] ?? 'text';
+                    if ($type === 'boolean') {
+                        $normalized[$key] = isset($preferences[$key]);
+                    } elseif ($type === 'select') {
+                        $options = array_map('strval', $definition['options'] ?? []);
+                        $value = $preferences[$key] ?? ($definition['default'] ?? '');
+                        if (!in_array((string) $value, $options, true)) {
+                            $value = $definition['default'] ?? '';
+                        }
+                        $normalized[$key] = $value;
+                    } else {
+                        $normalized[$key] = trim((string) ($preferences[$key] ?? ''));
+                    }
+                }
+                $userId = (string) ($user['id'] ?? '');
+                if ($userId === '') {
+                    $error = 'User profile missing identifier.';
+                } else {
+                    fg_update_asset_override($asset, 'users', $userId, $normalized);
+                    $message = 'Preferences saved.';
+                }
+            }
+        }
+    } elseif ($action === 'clear-asset-preferences') {
+        $asset = $_POST['asset'] ?? '';
+        $configurations = fg_load_asset_configurations();
+        $configuration = $configurations['records'][$asset] ?? null;
+        if ($configuration === null) {
+            $error = 'Unknown asset provided for clearing preferences.';
+        } else {
+            $userId = (string) ($user['id'] ?? '');
+            if ($userId === '') {
+                $error = 'User profile missing identifier.';
+            } else {
+                fg_clear_asset_override($asset, 'users', $userId);
+                $message = 'Asset preferences reverted.';
             }
         }
     }

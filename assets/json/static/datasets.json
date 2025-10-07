@@ -29,6 +29,18 @@
         "nature": "dynamic",
         "expose_via_api": false
     },
+    "asset_configurations": {
+        "label": "Asset Configuration Defaults",
+        "description": "Metadata describing configurable parameters for each asset in the application.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "asset_overrides": {
+        "label": "Asset Overrides",
+        "description": "Global, role-based, and user-specific overrides for asset configuration parameters.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
     "notification_channels": {
         "label": "Notification Channels",
         "description": "Static definitions of email, browser, cookie, and cache delivery mechanisms.",

@@ -61,6 +61,19 @@ Settings are described in `assets/json/dynamic/settings.json` with the following
 
 Admins can change both the value and the delegation policy for each entry. Non-admins may update a setting only when delegation grants them access.
 
+## Asset configuration & setup
+
+Every PHP, CSS, JSON, JS, XML, and public entry point is catalogued automatically through the asset configuration dataset. Administrators can open `/setup.php` to:
+
+- review the generated defaults (enable/disable flags, mode selectors, and template variants) for each asset;
+- assign which roles can personalise an asset and whether members may apply overrides from their own settings page;
+- capture global or role-level overrides that cascade to every user; and
+- create or clear user-specific values without editing flat files.
+
+The setup dashboard mirrors the `assets/php/global` convention by saving each change straight into the flat-file datasets (`asset_configurations.json` and `asset_overrides.json`). As new files are introduced, the manifest is refreshed automatically during bootstrap so the dashboard always reflects the real filesystem.
+
+Members with permission to personalise assets will see an **Asset personalisation** section inside `/settings.php`. The UI surfaces the default, global, and role-derived values alongside the active value for each parameter so users can confidently tune their experience without breaking dependent assets.
+
 ## Posting model
 
 Posts are stored with HTML5-friendly bodies plus additional metadata:

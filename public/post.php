@@ -13,9 +13,14 @@ require_once __DIR__ . '/../assets/php/global/load_template_options.php';
 require_once __DIR__ . '/../assets/php/global/load_editor_options.php';
 require_once __DIR__ . '/../assets/php/global/load_notification_channels.php';
 require_once __DIR__ . '/../assets/php/global/update_upload_meta.php';
+require_once __DIR__ . '/../assets/php/global/guard_asset.php';
 
 fg_bootstrap();
 $user = fg_require_login();
+fg_guard_asset('public/post.php', [
+    'role' => $user['role'] ?? null,
+    'user_id' => $user['id'] ?? null,
+]);
 $post_id = isset($_GET['post']) ? (int) $_GET['post'] : 0;
 $post = $post_id ? fg_find_post_by_id($post_id) : null;
 $max_uploads = (int) fg_get_setting('upload_limits', 5);

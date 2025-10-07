@@ -4,9 +4,14 @@ require_once __DIR__ . '/../assets/php/global/bootstrap.php';
 require_once __DIR__ . '/../assets/php/global/require_login.php';
 require_once __DIR__ . '/../assets/php/global/load_uploads.php';
 require_once __DIR__ . '/../assets/php/global/find_post_by_id.php';
+require_once __DIR__ . '/../assets/php/global/guard_asset.php';
 
 fg_bootstrap();
 $user = fg_require_login();
+fg_guard_asset('public/media.php', [
+    'role' => $user['role'] ?? null,
+    'user_id' => $user['id'] ?? null,
+]);
 $uploads = fg_load_uploads();
 $records = $uploads['records'] ?? [];
 $upload_id = isset($_GET['upload']) ? (int) $_GET['upload'] : 0;

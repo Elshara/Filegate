@@ -8,8 +8,19 @@ require_once __DIR__ . '/../assets/php/global/log_in_user.php';
 require_once __DIR__ . '/../assets/php/global/current_user.php';
 require_once __DIR__ . '/../assets/php/global/load_users.php';
 require_once __DIR__ . '/../assets/php/pages/render_register.php';
+require_once __DIR__ . '/../assets/php/global/guard_asset.php';
 
 fg_bootstrap();
+$current = fg_current_user();
+fg_guard_asset('public/register.php', [
+    'role' => $current['role'] ?? null,
+    'user_id' => $current['id'] ?? null,
+]);
+
+if ($current) {
+    header('Location: /index.php');
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
@@ -40,11 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
 
     fg_log_in_user((int) $user['id']);
-    header('Location: /index.php');
-    exit;
-}
-
-if (fg_current_user()) {
     header('Location: /index.php');
     exit;
 }
