@@ -1,65 +1,89 @@
 # Filegate
 
-Filegate is a lightweight social networking application built with PHP and SQLite. It ships with everything you need for instant deployment so your community can start sharing updates right away.
+Filegate is a profile-centred social application designed for shared hosting. Every asset is organised beneath the `/assets` tree so you can drop the project straight into `public_html` (or any web root) and start collaborating.
 
-## Features
+## Key principles
 
-- **User accounts** – Visitors can register, sign in, and manage secure sessions.
-- **Personal profiles** – Every member gets a customizable profile with bio, location, and website fields.
-- **Community feed** – Browse the latest posts from everyone in the network.
-- **Posting** – Share updates (up to 500 characters) with rich formatting and automatic sanitization.
-- **Appreciation actions** – Like and unlike posts to show support.
-- **Settings dashboard** – Update profile information with immediate feedback.
+- **Flat-file persistence** – Users, posts, and settings are stored as JSON documents under `assets/json`, keeping deployment portable and backup-friendly.
+- **Function-per-file PHP** – Each reusable routine lives in its own PHP file under `assets/php/{global|pages}` so pages load only the logic they need.
+- **Localized presentation** – Shared styles live in `assets/css`, while each page controller builds its markup on demand to keep the runtime light.
+- **Delegated configuration** – Administrators can rename the network, expose or lock individual settings, and even swap out entire datasets without touching the filesystem.
+- **HTML5-native content** – Profiles and posts accept a wide range of HTML5 elements, allowing creators to publish rich articles, galleries, conversations, or custom post types.
 
-## Project structure
+## Directory layout
 
 ```
-public/           Web root containing the PHP front-end controllers
-  assets/         Stylesheets
-src/              Core helpers (database bootstrap, layout renderer)
-data/             SQLite database file (created on first run)
+assets/
+  css/global/          Shared styles (mirrored to public/assets for direct serving)
+  json/                Flat-file datasets (users, posts, settings)
+  php/global/          Global helper functions (one function per file)
+  php/pages/           Localised renderers for feed, settings, and profile views
+public/
+  assets/css/global/   Web-exposed copy of shared styles
+  index.php            Authenticated feed controller
+  login.php            Sign-in form
+  logout.php           Session terminator
+  post.php             Composer/editor for posts
+  profile.php          Profile viewer & editor
+  register.php         Registration form (first account becomes admin)
+  settings.php         Delegated settings workspace
 ```
 
-## Requirements
+> **Note:** The PHP files always reference the canonical copies under `assets/`. The stylesheet is duplicated into `public/assets` so shared hosts can serve it directly without extra rewrite rules. If you customise the CSS, re-copy it (or automate the copy) before deploying.
 
-- PHP 8.1 or newer with the SQLite3 extension enabled.
-- Composer is **not** required—there are no external dependencies.
+## First run
 
-## Getting started
+1. Upload the repository to your web root so `/assets` and the PHP entrypoints share the same directory.
+2. Ensure the web server can create and write to `assets/json` (the app will create it automatically on first request).
+3. Visit `/register.php` to create the first profile—this user is promoted to **admin** so they can delegate settings.
+4. Head to `/settings.php` to review configurable options and dataset previews.
 
-1. **Install dependencies** – Ensure PHP has the `pdo_sqlite` extension available.
-2. **Start a development server:**
+## Settings model
 
-   ```bash
-   php -S 0.0.0.0:8000 -t public
-   ```
+Settings are described in `assets/json/settings.json` with the following structure:
 
-3. **Visit the app** – Navigate to [http://localhost:8000](http://localhost:8000) and create your first account.
+- `value` – Current value (string or JSON serialised string via the UI).
+- `managed_by` – `admins`, `everyone`, `custom`, or `none`.
+- `allowed_roles` – For `custom`, a list of roles (e.g. `moderator`) or specific people (`user:3`).
+- `category` – The thematic group (branding, privacy, content, collaboration).
 
-The first request automatically provisions the SQLite database inside `data/social.db`. The file is ignored by Git so each environment keeps its own data.
+Admins can change both the value and the delegation policy for each entry. Non-admins may update a setting only when delegation grants them access.
 
-## Deployment
+## Posting model
 
-You can deploy Filegate on any PHP-compatible host:
+Posts are stored with HTML5-friendly bodies plus additional metadata:
 
-- Upload the repository and point the document root to the `public/` directory.
-- Ensure the web server process can read and write to the `data/` directory so the SQLite database can be created.
-- Optionally secure the application behind HTTPS using your host’s control panel or reverse proxy.
+- `custom_type` – Optional label (e.g. `article`, `event`, `stream`).
+- `privacy` – `public`, `connections`, or `private` per entry.
+- `collaborators` – Usernames allowed to co-edit an entry.
+- `conversation_style` – `standard`, `threaded`, or `broadcast`.
+- `likes` – Array of user IDs who liked the post.
 
-## Testing the experience
+The home feed honours privacy and collaborator rules, and collaborators can open posts in edit mode via `/post.php?post=<id>`.
 
-Because Filegate uses standard PHP forms, you can simulate a typical journey:
+## Managing datasets
 
-1. Register a new account at `/register.php`.
-2. Post an update from the home feed.
-3. Like your post to see the action counter update.
-4. Visit `/profile.php` to review your personal timeline.
-5. Adjust bio, location, and website details via `/settings.php`.
+Administrators can replace the entire contents of `users`, `posts`, or `settings` by pasting JSON into the dataset form on `/settings.php`. This mechanism lets you migrate or seed data without SSH access while keeping a clear audit of each dataset’s purpose.
 
-## Contributing
+## Development
 
-Pull requests are welcome! Please open an issue describing your idea before contributing major changes.
+Start a local PHP server from the project root:
+
+```bash
+php -S 0.0.0.0:8000 -t public
+```
+
+Then visit [http://localhost:8000](http://localhost:8000). Flat-file datasets are created automatically under `assets/json` once the app receives traffic.
+
+## Testing
+
+Run a syntax check over every PHP file:
+
+```bash
+find assets public -name '*.php' -print0 | xargs -0 -n1 php -l
+```
 
 ## License
 
 MIT
+

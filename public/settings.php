@@ -1,47 +1,65 @@
 <?php
-declare(strict_types=1);
 
-require_once __DIR__ . '/../src/layout.php';
+require_once __DIR__ . '/../assets/php/global/bootstrap.php';
+require_once __DIR__ . '/../assets/php/global/require_login.php';
+require_once __DIR__ . '/../assets/php/global/update_setting.php';
+require_once __DIR__ . '/../assets/php/global/delegate_setting.php';
+require_once __DIR__ . '/../assets/php/global/list_datasets.php';
+require_once __DIR__ . '/../assets/php/global/save_json.php';
+require_once __DIR__ . '/../assets/php/global/render_layout.php';
+require_once __DIR__ . '/../assets/php/global/parse_allowed_list.php';
+require_once __DIR__ . '/../assets/php/pages/render_settings.php';
 
-require_login();
-
-$user = current_user();
-$message = null;
+fg_bootstrap();
+$user = fg_require_login();
+$message = '';
+$error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $result = update_profile((int) $user['id'], $_POST);
-    $message = ['type' => $result['success'] ? 'alert-success' : 'alert-error', 'text' => $result['message']];
-    if ($result['success']) {
-        $user = current_user();
+    $action = $_POST['action'] ?? '';
+
+    if ($action === 'update-setting') {
+        $setting = $_POST['setting'] ?? '';
+        $value = $_POST['value'] ?? '';
+        if (fg_update_setting($setting, $value, $user)) {
+            $message = 'Setting updated.';
+        } else {
+            $error = 'You are not allowed to update that setting.';
+        }
+    } elseif ($action === 'delegate-setting') {
+        $setting = $_POST['setting'] ?? '';
+        $managed = $_POST['managed_by'] ?? 'admins';
+        $allowed = fg_parse_allowed_list($_POST['allowed'] ?? '');
+        if (fg_delegate_setting($setting, $managed, $allowed, $user)) {
+            $message = 'Delegation updated.';
+        } else {
+            $error = 'Unable to update delegation.';
+        }
+    } elseif ($action === 'replace-dataset') {
+        if (($user['role'] ?? 'member') !== 'admin') {
+            $error = 'Only admins may replace datasets.';
+        } else {
+            $dataset = $_POST['dataset'] ?? '';
+            $payload = $_POST['payload'] ?? '';
+            $definitions = fg_list_datasets();
+            if (!isset($definitions[$dataset])) {
+                $error = 'Unknown dataset selected.';
+            } else {
+                $decoded = json_decode($payload, true);
+                if ($decoded === null && json_last_error() !== JSON_ERROR_NONE) {
+                    $error = 'Invalid JSON payload: ' . json_last_error_msg();
+                } else {
+                    try {
+                        fg_save_json($dataset, is_array($decoded) ? $decoded : ['value' => $decoded]);
+                        $message = 'Dataset replaced.';
+                    } catch (RuntimeException $exception) {
+                        $error = $exception->getMessage();
+                    }
+                }
+            }
+        }
     }
 }
 
-render_header('Account settings — Filegate');
-?>
-<section class="card">
-    <h2>Profile settings</h2>
-    <p>Update how you appear to others across Filegate.</p>
-    <?php if ($message): ?>
-        <div class="alert <?= e($message['type']) ?>"><?= e($message['text']) ?></div>
-    <?php endif; ?>
-    <form method="post">
-        <label for="display_name">Display name</label>
-        <input type="text" name="display_name" id="display_name" required value="<?= e($user['display_name'] ?? '') ?>">
+fg_render_settings_page($user, ['message' => $message, 'error' => $error]);
 
-        <label for="bio">Bio</label>
-        <textarea name="bio" id="bio" maxlength="280" placeholder="Tell people a little about yourself."><?= e($user['bio'] ?? '') ?></textarea>
-
-        <label for="location">Location</label>
-        <input type="text" name="location" id="location" value="<?= e($user['location'] ?? '') ?>" placeholder="City, Country">
-
-        <label for="website">Website</label>
-        <input type="url" name="website" id="website" value="<?= e($user['website'] ?? '') ?>" placeholder="https://example.com">
-
-        <div style="display:flex; gap: 0.75rem;">
-            <button type="submit">Save changes</button>
-            <a class="button secondary" href="/profile.php">View profile</a>
-        </div>
-    </form>
-</section>
-<?php
-render_footer();

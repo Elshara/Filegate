@@ -1,14 +1,10 @@
 <?php
-declare(strict_types=1);
 
-require_once __DIR__ . '/../src/bootstrap.php';
+require_once __DIR__ . '/../assets/php/global/bootstrap.php';
+require_once __DIR__ . '/../assets/php/global/log_out_user.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $_SESSION = [];
-    session_destroy();
-    session_start();
-    session_regenerate_id(true);
-    $_SESSION['flash'] = ['type' => 'alert-success', 'text' => 'You have been logged out.'];
-}
+fg_bootstrap();
+fg_log_out_user();
+header('Location: /login.php');
+exit;
 
-redirect('/');

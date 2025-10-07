@@ -19,3 +19,4 @@ Gemfile.lock
 
 # Application data
 data/social.db
+assets/json/*.json

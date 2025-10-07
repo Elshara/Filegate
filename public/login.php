@@ -1,41 +1,33 @@
 <?php
-declare(strict_types=1);
 
-require_once __DIR__ . '/../src/layout.php';
+require_once __DIR__ . '/../assets/php/global/bootstrap.php';
+require_once __DIR__ . '/../assets/php/global/find_user_by_username.php';
+require_once __DIR__ . '/../assets/php/global/verify_password.php';
+require_once __DIR__ . '/../assets/php/global/log_in_user.php';
+require_once __DIR__ . '/../assets/php/global/current_user.php';
+require_once __DIR__ . '/../assets/php/pages/render_login.php';
 
-if (current_user()) {
-    redirect('/');
-}
-
-$message = null;
+fg_bootstrap();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $result = authenticate($_POST['username'] ?? '', $_POST['password'] ?? '');
-    if ($result['success']) {
-        $_SESSION['flash'] = ['type' => 'alert-success', 'text' => $result['message']];
-        redirect('/');
-    } else {
-        $message = ['type' => 'alert-error', 'text' => $result['message']];
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $user = fg_find_user_by_username($username);
+
+    if (!$user || !fg_verify_password($password, $user['password'] ?? '')) {
+        fg_render_login_page(['error' => 'Invalid credentials.']);
+        return;
     }
+
+    fg_log_in_user((int) $user['id']);
+    header('Location: /index.php');
+    exit;
 }
 
-render_header('Log in to Filegate');
-?>
-<section class="card">
-    <h2>Welcome back</h2>
-    <?php if ($message): ?>
-        <div class="alert <?= e($message['type']) ?>"><?= e($message['text']) ?></div>
-    <?php endif; ?>
-    <form method="post">
-        <label for="username">Username</label>
-        <input type="text" name="username" id="username" required value="<?= e($_POST['username'] ?? '') ?>">
+if (fg_current_user()) {
+    header('Location: /index.php');
+    exit;
+}
 
-        <label for="password">Password</label>
-        <input type="password" name="password" id="password" required>
+fg_render_login_page();
 
-        <button type="submit">Log in</button>
-    </form>
-    <p>Need an account? <a href="/register.php">Create one now</a>.</p>
-</section>
-<?php
-render_footer();

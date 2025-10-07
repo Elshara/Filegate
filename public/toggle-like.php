@@ -1,18 +1,17 @@
 <?php
-declare(strict_types=1);
 
-require_once __DIR__ . '/../src/bootstrap.php';
+require_once __DIR__ . '/../assets/php/global/bootstrap.php';
+require_once __DIR__ . '/../assets/php/global/require_login.php';
+require_once __DIR__ . '/../assets/php/global/toggle_like.php';
 
-require_login();
+fg_bootstrap();
+$user = fg_require_login();
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    redirect('/');
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $post_id = (int) ($_POST['post_id'] ?? 0);
+    fg_toggle_like($post_id, (int) $user['id']);
 }
 
-$postId = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/index.php'));
+exit;
 
-if ($postId > 0) {
-    toggle_like((int) $_SESSION['user_id'], $postId);
-}
-
-redirect($_SERVER['HTTP_REFERER'] ?? '/');

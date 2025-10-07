@@ -1,82 +1,37 @@
 <?php
-declare(strict_types=1);
 
-require_once __DIR__ . '/../src/layout.php';
+require_once __DIR__ . '/../assets/php/global/bootstrap.php';
+require_once __DIR__ . '/../assets/php/global/require_login.php';
+require_once __DIR__ . '/../assets/php/global/find_user_by_username.php';
+require_once __DIR__ . '/../assets/php/global/upsert_user.php';
+require_once __DIR__ . '/../assets/php/global/sanitize_html.php';
+require_once __DIR__ . '/../assets/php/pages/render_profile.php';
+require_once __DIR__ . '/../assets/php/global/render_layout.php';
 
-$user = current_user();
-$requestedId = isset($_GET['id']) ? (int) $_GET['id'] : ($user['id'] ?? 0);
+fg_bootstrap();
+$current = fg_require_login();
+$target_username = $_GET['user'] ?? $current['username'];
+$target = fg_find_user_by_username($target_username);
 
-if ($requestedId <= 0) {
-    redirect('/');
+if (!$target) {
+    fg_render_layout('Profile not found', '<section class="panel"><h1>Profile not found</h1><p>The requested profile does not exist.</p></section>');
+    return;
 }
 
-$profile = fetch_user_profile($requestedId);
-
-if (!$profile) {
-    render_header('Profile not found');
-    ?>
-    <section class="card">
-        <h2>We couldn’t find that profile</h2>
-        <p>The person you are looking for may have left Filegate. <a href="/">Return home</a>.</p>
-    </section>
-    <?php
-    render_footer();
-    exit;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (int) $target['id'] === (int) $current['id']) {
+    $payload = [
+        'id' => $current['id'],
+        'display_name' => trim($_POST['display_name'] ?? $current['display_name'] ?? ''),
+        'bio' => fg_sanitize_html($_POST['bio'] ?? ''),
+        'website' => trim($_POST['website'] ?? ''),
+        'pronouns' => trim($_POST['pronouns'] ?? ''),
+        'location' => trim($_POST['location'] ?? ''),
+        'privacy' => $_POST['privacy'] ?? ($current['privacy'] ?? 'public'),
+    ];
+    $target = fg_upsert_user(array_merge($current, $payload));
+    $current = $target;
 }
 
-$title = $profile['display_name'] . ' (@' . $profile['username'] . ') — Filegate';
-render_header($title);
-?>
-<section class="card">
-    <div class="profile-header">
-        <div>
-            <h2><?= e($profile['display_name']) ?></h2>
-            <p class="muted">@<?= e($profile['username']) ?></p>
-        </div>
-        <div class="profile-meta">
-            <span>Joined <?= date('F j, Y', strtotime($profile['created_at'])) ?></span>
-            <?php if (!empty($profile['location'])): ?>
-                <span>📍 <?= e($profile['location']) ?></span>
-            <?php endif; ?>
-            <?php if (!empty($profile['website'])): ?>
-                <span>🔗 <a href="<?= e($profile['website']) ?>" target="_blank" rel="noopener noreferrer"><?= e($profile['website']) ?></a></span>
-            <?php endif; ?>
-        </div>
-        <?php if (!empty($profile['bio'])): ?>
-            <p><?= nl2br(e($profile['bio'])) ?></p>
-        <?php endif; ?>
-        <?php if ($user && $user['id'] === $profile['id']): ?>
-            <div>
-                <a href="/settings.php" class="button secondary">Edit profile</a>
-            </div>
-        <?php endif; ?>
-    </div>
-</section>
+$body = fg_render_profile_page($current, $target);
+fg_render_layout($target['display_name'] ?? $target['username'], $body);
 
-<section>
-    <h2><?= $user && $user['id'] === $profile['id'] ? 'Your posts' : 'Recent posts' ?></h2>
-    <div class="feed">
-        <?php if (!$profile['posts']): ?>
-            <p class="muted">No posts yet.</p>
-        <?php endif; ?>
-        <?php foreach ($profile['posts'] as $post): ?>
-            <article class="post">
-                <div class="post-header">
-                    <span class="username">Posted <?= date('M j, Y g:i A', strtotime($post['created_at'])) ?></span>
-                </div>
-                <div class="post-content"><?= nl2br(e($post['content'])) ?></div>
-                <div class="post-actions">
-                    <span class="like-count">❤️ <?= (int) $post['like_count'] ?></span>
-                    <?php if ($user): ?>
-                        <form action="/toggle-like.php" method="post">
-                            <input type="hidden" name="post_id" value="<?= (int) $post['id'] ?>">
-                            <button type="submit" class="secondary"><?= !empty($post['liked']) ? 'Unlike' : 'Like' ?></button>
-                        </form>
-                    <?php endif; ?>
-                </div>
-            </article>
-        <?php endforeach; ?>
-    </div>
-</section>
-<?php
-render_footer();
