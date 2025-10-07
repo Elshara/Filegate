@@ -1,0 +1,47 @@
+{
+    "textual": [
+        "article",
+        "section",
+        "aside",
+        "header",
+        "footer",
+        "main",
+        "nav",
+        "figure",
+        "figcaption",
+        "time",
+        "mark",
+        "summary",
+        "details"
+    ],
+    "media": [
+        "audio",
+        "video",
+        "picture",
+        "source",
+        "track",
+        "canvas",
+        "svg"
+    ],
+    "forms": [
+        "form",
+        "label",
+        "input",
+        "textarea",
+        "select",
+        "option",
+        "progress",
+        "meter",
+        "button",
+        "output"
+    ],
+    "interactive": [
+        "dialog",
+        "menu",
+        "menuitem",
+        "slot",
+        "template",
+        "data",
+        "datalist"
+    ]
+}

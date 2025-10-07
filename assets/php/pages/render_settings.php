@@ -8,6 +8,7 @@ require_once __DIR__ . '/../global/is_admin.php';
 require_once __DIR__ . '/../global/render_layout.php';
 require_once __DIR__ . '/../global/load_json.php';
 require_once __DIR__ . '/../global/seed_defaults.php';
+require_once __DIR__ . '/../global/dataset_is_exposable.php';
 
 function fg_render_settings_page(array $user, array $context = []): void
 {
@@ -68,16 +69,19 @@ function fg_render_settings_page(array $user, array $context = []): void
             $body .= '<p class="error">No datasets are registered in the manifest.</p>';
         } else {
             $body .= '<table class="dataset-table">';
-            $body .= '<thead><tr><th>Dataset</th><th>Description</th><th>Nature</th><th>Preview</th></tr></thead><tbody>';
+            $body .= '<thead><tr><th>Dataset</th><th>Description</th><th>Nature</th><th>API access</th><th>Preview</th></tr></thead><tbody>';
             foreach ($datasets as $key => $definition) {
                 $preview_json = json_encode(fg_load_json($key), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
                 $preview = htmlspecialchars(substr($preview_json ?: '[]', 0, 280)) . '…';
                 $nature = isset($definition['nature']) ? ucfirst((string) $definition['nature']) : 'Dynamic';
+                $exposed = fg_dataset_is_exposable($key);
+                $output_id = 'dataset-live-' . preg_replace('/[^a-z0-9_-]/', '-', strtolower($key));
                 $body .= '<tr>';
                 $body .= '<td>' . htmlspecialchars($definition['label'] ?? $key) . '</td>';
                 $body .= '<td>' . htmlspecialchars($definition['description'] ?? '') . '</td>';
                 $body .= '<td>' . htmlspecialchars($nature) . '</td>';
-                $body .= '<td><pre>' . $preview . '</pre></td>';
+                $body .= '<td>' . ($exposed ? 'Allowed' : 'Restricted') . '</td>';
+                $body .= '<td><div class="dataset-actions"><button type="button" class="dataset-viewer" data-dataset="' . htmlspecialchars($key) . '" data-expose="' . ($exposed ? 'true' : 'false') . '" data-output="#' . htmlspecialchars($output_id) . '">Load live data</button><pre id="' . htmlspecialchars($output_id) . '" class="dataset-live-preview" data-dataset-output>' . $preview . '</pre></div></td>';
                 $body .= '</tr>';
             }
             $body .= '</tbody></table>';

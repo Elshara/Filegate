@@ -49,6 +49,22 @@ function fg_seed_defaults(): void
                     'allowed_roles' => [],
                     'category' => 'content',
                 ],
+                'rich_embed_policy' => [
+                    'label' => 'Rich Embed Policy',
+                    'description' => 'Determines whether detected URLs render as local embeds.',
+                    'value' => 'enabled',
+                    'managed_by' => 'admins',
+                    'allowed_roles' => ['admin'],
+                    'category' => 'content',
+                ],
+                'statistics_visibility' => [
+                    'label' => 'Post Statistics Visibility',
+                    'description' => 'Controls who can see calculated statistics such as word counts.',
+                    'value' => 'public',
+                    'managed_by' => 'custom',
+                    'allowed_roles' => ['admin', 'moderator'],
+                    'category' => 'content',
+                ],
                 'collaboration_mode' => [
                     'label' => 'Collaboration Controls',
                     'description' => 'Specifies if collaborators may edit shared posts.',

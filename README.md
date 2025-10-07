@@ -16,6 +16,7 @@ Filegate is a profile-centred social application designed for shared hosting. Ev
 ```
 assets/
   css/global/          Shared styles (mirrored to public/assets for direct serving)
+  js/global/           Client runtime helpers (mirrored to public/assets)
   json/static/         Manifested metadata (dataset registry, other static assets)
   json/dynamic/        Flat-file datasets (users, posts, settings)
   php/global/          Global helper functions (one function per file)
@@ -29,9 +30,11 @@ public/
   profile.php          Profile viewer & editor
   register.php         Registration form (first account becomes admin)
   settings.php         Delegated settings workspace
-```
+  ```
 
 > **Note:** The PHP files always reference the canonical copies under `assets/`. The stylesheet is duplicated into `public/assets` so shared hosts can serve it directly without extra rewrite rules. If you customise the CSS, re-copy it (or automate the copy) before deploying.
+
+The JavaScript helpers under `assets/js/global` follow the same mirroring pattern. Each file exposes a single function (for example `fg_registerPostPreview`) so that pages can load only the behaviours they need. The mirrored copies in `public/assets/js/global` are served to the browser.
 
 ## First run
 
@@ -60,12 +63,22 @@ Posts are stored with HTML5-friendly bodies plus additional metadata:
 - `collaborators` – Usernames allowed to co-edit an entry.
 - `conversation_style` – `standard`, `threaded`, or `broadcast`.
 - `likes` – Array of user IDs who liked the post.
+- `embeds` – Detected media metadata rendered inline when the rich embed policy allows it.
+- `statistics` – Calculated metrics including word, character, heading, and embed counts.
 
 The home feed honours privacy and collaborator rules, and collaborators can open posts in edit mode via `/post.php?post=<id>`.
+
+Rich embeds are generated entirely locally using the templates in `assets/json/static/embed_providers.json`. Administrators can disable inline rendering globally through the **Rich Embed Policy** setting; the metadata is still stored with each post so embeds can reappear instantly when the policy is re-enabled.
+
+Statistics follow the **Post Statistics Visibility** setting. When hidden, the values remain in the dataset for analysis without surfacing in the UI.
 
 ## Managing datasets
 
 Administrators can replace the entire contents of `users`, `posts`, or `settings` by pasting JSON into the dataset form on `/settings.php`. The manifest ensures each dataset is routed to the right `static` or `dynamic` store, enabling migrations without SSH access while keeping a clear audit of every dataset’s purpose.
+
+Buttons in the dataset table trigger local AJAX calls to `/dataset.php`, which respects the manifest’s `expose_via_api` flag. Sensitive stores such as `users` remain blocked, while public data (like `html5_elements`) and operational metadata (like `settings`) are available for quick inspection.
+
+The feed and composer use the same client runtime to fetch the HTML5 element reference on demand, provide live previews, and post likes asynchronously without full page reloads. All network calls terminate within the application—no remote APIs are required.
 
 ## Development
 

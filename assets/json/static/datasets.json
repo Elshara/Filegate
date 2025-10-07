@@ -2,16 +2,31 @@
     "users": {
         "label": "User Profiles",
         "description": "Profile-centric records including roles, privacy preferences, and biography variables.",
-        "nature": "dynamic"
+        "nature": "dynamic",
+        "expose_via_api": false
     },
     "posts": {
         "label": "Posts",
         "description": "HTML5-ready post entries with collaborators, privacy, and statistics metadata.",
-        "nature": "dynamic"
+        "nature": "dynamic",
+        "expose_via_api": false
     },
     "settings": {
         "label": "Settings",
         "description": "Delegated configuration entries defining application branding and behavior.",
-        "nature": "dynamic"
+        "nature": "dynamic",
+        "expose_via_api": true
+    },
+    "embed_providers": {
+        "label": "Embed Providers",
+        "description": "Local templates that describe how recognised services and file types should render.",
+        "nature": "static",
+        "expose_via_api": true
+    },
+    "html5_elements": {
+        "label": "HTML5 Elements",
+        "description": "Reference list of supported HTML5 elements grouped by usage.",
+        "nature": "static",
+        "expose_via_api": true
     }
 }

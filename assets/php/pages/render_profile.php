@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../global/load_posts.php';
 require_once __DIR__ . '/../global/sanitize_html.php';
+require_once __DIR__ . '/../global/render_post_body.php';
 
 function fg_render_profile_page(array $viewer, array $profile_user): string
 {
@@ -74,7 +75,7 @@ function fg_render_profile_page(array $viewer, array $profile_user): string
         $body .= '<span>Privacy: ' . htmlspecialchars($post['privacy'] ?? 'public') . '</span>';
         $body .= '<span>Conversation: ' . htmlspecialchars($post['conversation_style'] ?? 'standard') . '</span>';
         $body .= '</header>';
-        $body .= '<div class="post-content">' . ($post['content'] ?? '') . '</div>';
+        $body .= fg_render_post_body($post);
         $body .= '</article>';
     }
     $body .= '</section>';

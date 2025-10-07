@@ -1,0 +1,30 @@
+{
+    "youtube": {
+        "label": "YouTube",
+        "pattern": "(?:(?:https?:)?\/\/)?(?:www\\.)?(?:youtube\\.com\/watch\\?v=|youtu\\.be\/)([A-Za-z0-9_-]{11})",
+        "type": "video",
+        "template": "<iframe src=\"https://www.youtube.com/embed/{{id}}\" title=\"YouTube video\" loading=\"lazy\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen></iframe>",
+        "class": "embed-youtube"
+    },
+    "vimeo": {
+        "label": "Vimeo",
+        "pattern": "(?:(?:https?:)?\/\/)?(?:www\\.)?vimeo\\.com\/(?:video\/)?([0-9]{6,})",
+        "type": "video",
+        "template": "<iframe src=\"https://player.vimeo.com/video/{{id}}\" title=\"Vimeo video\" loading=\"lazy\" allow=\"autoplay; fullscreen; picture-in-picture\" allowfullscreen></iframe>",
+        "class": "embed-vimeo"
+    },
+    "soundcloud": {
+        "label": "SoundCloud",
+        "pattern": "(?:(?:https?:)?\/\/)?(?:www\\.)?soundcloud\\.com\/([A-Za-z0-9_\-\/]+)",
+        "type": "audio",
+        "template": "<iframe src=\"https://w.soundcloud.com/player/?url=https://soundcloud.com/{{id}}\" title=\"SoundCloud track\" loading=\"lazy\"></iframe>",
+        "class": "embed-soundcloud"
+    },
+    "codepen": {
+        "label": "CodePen",
+        "pattern": "(?:(?:https?:)?\/\/)?(?:codepen\\.io\/)([A-Za-z0-9_-]+\/(?:pen|embed|project|full)\/[^\s\/]+)",
+        "type": "interactive",
+        "template": "<iframe src=\"https://codepen.io/{{id}}\" title=\"CodePen embed\" loading=\"lazy\"></iframe>",
+        "class": "embed-codepen"
+    }
+}
