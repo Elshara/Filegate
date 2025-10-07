@@ -12,6 +12,7 @@ Filegate is a profile-centred social application designed for shared hosting. Ev
 - **HTML5-native content** – Profiles and posts accept a wide range of HTML5 elements, allowing creators to publish rich articles, galleries, conversations, or custom post types.
 - **Attachment-friendly composer** – Members can upload files directly into `/assets/uploads/<extension>` with local previews and secure delivery via `media.php`.
 - **Rich notifications** – Post activity queues email, browser, cookie, and file-cache notifications driven by JSON and XML templates with admin-controlled channels.
+- **Themeable interface** – Palette presets live in flat files so administrators and members can rebrand Filegate from the browser without touching CSS.
 
 ## Directory layout
 
@@ -62,6 +63,8 @@ Settings are described in `assets/json/dynamic/settings.json` with the following
 
 Admins can change both the value and the delegation policy for each entry. Non-admins may update a setting only when delegation grants them access.
 
+The default dataset includes branding-oriented controls such as **Default Theme** (the preset applied to new visitors) and **Theme Personalisation Policy** (whether members can override palette tokens from their settings page).
+
 ## Asset configuration & setup
 
 Every PHP, CSS, JSON, JS, XML, and HTTP controller is catalogued automatically through the asset configuration dataset. Administrators can open `/setup.php` to:
@@ -110,6 +113,17 @@ Administrators can expand the **Dataset Management** section on `/setup.php` to 
 The dataset manager works alongside the dataset viewer endpoint (`/dataset.php`), which still honours the manifest’s `expose_via_api` flag. Sensitive stores such as `users` remain blocked, while reference data (for example `html5_elements`) and operational metadata (`settings`) are available for quick inspection directly from the browser.
 
 The feed and composer use the same client runtime to fetch the HTML5 element reference on demand, provide live previews, and post likes asynchronously without full page reloads. All network calls terminate within the application—no remote APIs are required.
+
+## Themes and palette personalisation
+
+Colour palettes live entirely in flat files so hosts without shell access can still rebrand Filegate.
+
+- `assets/json/dynamic/themes.json` stores named presets, each of which defines values for the published theme tokens.
+- `assets/json/static/theme_tokens.json` documents every token, its description, default colour, and the CSS variable the runtime will update.
+- Administrators manage presets from `/setup.php`. Each theme card includes live previews, reset helpers, and buttons for setting or removing the default palette.
+- Creating a new theme happens directly in the browser—enter a key, adjust the token colours, and Filegate writes the dataset for you.
+- Members can opt into personal palettes from `/settings.php` when the **Theme Personalisation Policy** setting is enabled. Changes apply instantly thanks to the `fg_registerThemePreview` helper.
+- Reset buttons on both the admin and member views restore stored values or the static defaults so experiments are always reversible.
 
 ## Notifications and delivery
 

@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/dataset_format.php';
 require_once __DIR__ . '/default_settings_dataset.php';
+require_once __DIR__ . '/default_themes_dataset.php';
 
 function fg_dataset_default_payload(string $name): ?string
 {
@@ -21,6 +22,9 @@ function fg_dataset_default_payload(string $name): ?string
                 break;
             case 'settings':
                 $defaults = fg_default_settings_dataset();
+                break;
+            case 'themes':
+                $defaults = fg_default_themes_dataset();
                 break;
             default:
                 $defaults = null;

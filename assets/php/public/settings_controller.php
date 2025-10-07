@@ -9,10 +9,13 @@ require_once __DIR__ . '/../global/save_json.php';
 require_once __DIR__ . '/../global/render_layout.php';
 require_once __DIR__ . '/../global/parse_allowed_list.php';
 require_once __DIR__ . '/../global/normalize_setting_value.php';
+require_once __DIR__ . '/../global/get_setting.php';
 require_once __DIR__ . '/../global/load_asset_configurations.php';
 require_once __DIR__ . '/../global/update_asset_override.php';
 require_once __DIR__ . '/../global/clear_asset_override.php';
 require_once __DIR__ . '/../global/guard_asset.php';
+require_once __DIR__ . '/../global/update_user_theme.php';
+require_once __DIR__ . '/../global/clear_user_theme.php';
 require_once __DIR__ . '/../pages/render_settings.php';
 
 function fg_public_settings_controller(): void
@@ -125,6 +128,26 @@ function fg_public_settings_controller(): void
                     $message = 'Asset preferences reverted.';
                 }
             }
+        } elseif ($action === 'update-theme-preferences') {
+            $policy = fg_get_setting('theme_personalisation_policy', 'enabled');
+            if ($policy === 'disabled') {
+                $error = 'Theme personalisation is currently disabled.';
+            } else {
+                $themeKey = (string) ($_POST['theme_key'] ?? '');
+                $tokens = $_POST['tokens'] ?? [];
+                if (!is_array($tokens)) {
+                    $tokens = [];
+                }
+                try {
+                    $user = fg_update_user_theme($user, $themeKey, $tokens);
+                    $message = 'Theme preferences saved.';
+                } catch (RuntimeException $exception) {
+                    $error = $exception->getMessage();
+                }
+            }
+        } elseif ($action === 'clear-theme-preferences') {
+            $user = fg_clear_user_theme($user);
+            $message = 'Theme preferences reverted to delegated defaults.';
         }
     }
 

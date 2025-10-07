@@ -14,4 +14,7 @@ window.fg_initClient = function () {
   if (typeof window.fg_registerDatasetViewer === 'function') {
     window.fg_registerDatasetViewer('.dataset-viewer', null);
   }
+  if (typeof window.fg_registerThemePreview === 'function') {
+    window.fg_registerThemePreview('form[data-theme-preview]');
+  }
 };

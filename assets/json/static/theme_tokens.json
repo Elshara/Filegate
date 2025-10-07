@@ -1,0 +1,74 @@
+{
+    "tokens": {
+        "surface": {
+            "label": "Surface background",
+            "description": "Primary page background colour used for panels and cards.",
+            "css_variable": "--fg-surface",
+            "type": "color",
+            "default": "#0f172a"
+        },
+        "surface_alt": {
+            "label": "Header surface",
+            "description": "Background for the fixed header and navigation controls.",
+            "css_variable": "--fg-surface-alt",
+            "type": "color",
+            "default": "#15233b"
+        },
+        "text_primary": {
+            "label": "Primary text",
+            "description": "Default text colour for high-contrast content.",
+            "css_variable": "--fg-text-primary",
+            "type": "color",
+            "default": "#f8fafc"
+        },
+        "text_secondary": {
+            "label": "Secondary text",
+            "description": "Muted text colour for metadata, descriptions, and helper copy.",
+            "css_variable": "--fg-text-secondary",
+            "type": "color",
+            "default": "#cbd5f5"
+        },
+        "accent": {
+            "label": "Accent colour",
+            "description": "Interactive highlight colour applied to buttons and active controls.",
+            "css_variable": "--fg-accent",
+            "type": "color",
+            "default": "#38bdf8"
+        },
+        "accent_on": {
+            "label": "Accent contrast",
+            "description": "Foreground colour used on top of accent backgrounds.",
+            "css_variable": "--fg-accent-on",
+            "type": "color",
+            "default": "#041833"
+        },
+        "border": {
+            "label": "Border",
+            "description": "Outline and divider colour for cards and inputs.",
+            "css_variable": "--fg-border",
+            "type": "color",
+            "default": "#273550"
+        },
+        "positive": {
+            "label": "Positive highlight",
+            "description": "Colour for success states, confirmations, and positive statistics.",
+            "css_variable": "--fg-positive",
+            "type": "color",
+            "default": "#22c55e"
+        },
+        "warning": {
+            "label": "Warning highlight",
+            "description": "Colour for caution states and pending review notices.",
+            "css_variable": "--fg-warning",
+            "type": "color",
+            "default": "#f97316"
+        },
+        "negative": {
+            "label": "Critical highlight",
+            "description": "Colour for destructive actions and error banners.",
+            "css_variable": "--fg-negative",
+            "type": "color",
+            "default": "#ef4444"
+        }
+    }
+}

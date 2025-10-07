@@ -4,6 +4,8 @@ require_once __DIR__ . '/get_setting.php';
 require_once __DIR__ . '/current_user.php';
 require_once __DIR__ . '/get_asset_parameter_value.php';
 require_once __DIR__ . '/is_admin.php';
+require_once __DIR__ . '/resolve_theme_tokens.php';
+require_once __DIR__ . '/theme_inline_style.php';
 
 function fg_render_layout(string $title, string $body, array $options = []): void
 {
@@ -20,6 +22,9 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
     $layoutEnabled = fg_get_asset_parameter_value('assets/php/global/render_layout.php', 'enabled', $context);
     $layoutMode = fg_get_asset_parameter_value('assets/php/global/render_layout.php', 'mode', $context);
     $layoutVariant = fg_get_asset_parameter_value('assets/php/global/render_layout.php', 'variant', $context);
+    $theme = fg_resolve_theme_tokens($current);
+    $themeStyle = fg_theme_inline_style($theme);
+    $themeKey = $theme['theme_key'] ?? '';
 
     $classFragments = ['layout-shell'];
     if (!$layoutEnabled) {
@@ -50,10 +55,22 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
     echo '<script src="/assets/js/global/register_upload_inputs.js" defer></script>';
     echo '<script src="/assets/js/global/register_embed_observer.js" defer></script>';
     echo '<script src="/assets/js/global/register_dataset_viewer.js" defer></script>';
+    echo '<script src="/assets/js/global/register_theme_preview.js" defer></script>';
     echo '<script src="/assets/js/global/init_client.js" defer></script>';
+    echo $themeStyle;
     echo $extra_head;
     echo '</head>';
-    echo '<body class="' . $bodyClass . '" data-embed-policy="' . htmlspecialchars($embed_policy) . '" data-statistics-visibility="' . htmlspecialchars($statistics_policy) . '" data-layout-mode="' . htmlspecialchars((string) $layoutMode) . '" data-layout-variant="' . htmlspecialchars((string) $layoutVariant) . '" data-layout-enabled="' . ($layoutEnabled ? 'true' : 'false') . '">';
+    $bodyAttributes = sprintf(
+        'class="%s" data-embed-policy="%s" data-statistics-visibility="%s" data-layout-mode="%s" data-layout-variant="%s" data-layout-enabled="%s" data-theme-key="%s"',
+        $bodyClass,
+        htmlspecialchars($embed_policy),
+        htmlspecialchars($statistics_policy),
+        htmlspecialchars((string) $layoutMode),
+        htmlspecialchars((string) $layoutVariant),
+        $layoutEnabled ? 'true' : 'false',
+        htmlspecialchars((string) $themeKey)
+    );
+    echo '<body ' . $bodyAttributes . '>';
     echo '<header class="app-header">';
     echo '<div class="app-title">' . htmlspecialchars($app_name) . '</div>';
     if ($nav) {

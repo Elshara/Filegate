@@ -29,6 +29,12 @@
         "nature": "dynamic",
         "expose_via_api": false
     },
+    "themes": {
+        "label": "Theme Definitions",
+        "description": "Configurable palettes applied to the interface and preview tooling.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
     "asset_configurations": {
         "label": "Asset Configuration Defaults",
         "description": "Metadata describing configurable parameters for each asset in the application.",
@@ -68,6 +74,12 @@
     "html5_elements": {
         "label": "HTML5 Elements",
         "description": "Reference list of supported HTML5 elements grouped by usage.",
+        "nature": "static",
+        "expose_via_api": true
+    },
+    "theme_tokens": {
+        "label": "Theme Tokens",
+        "description": "Static descriptions of palette tokens and their CSS variable bindings.",
         "nature": "static",
         "expose_via_api": true
     },

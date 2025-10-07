@@ -9,6 +9,10 @@ function fg_render_setup_page(array $data = []): void
     $roles = $data['roles'] ?? [];
     $users = $data['users'] ?? [];
     $datasets = $data['datasets'] ?? [];
+    $themes = $data['themes']['records'] ?? [];
+    $themeTokens = $data['theme_tokens']['tokens'] ?? [];
+    $defaultTheme = $data['default_theme'] ?? '';
+    $themePolicy = $data['theme_policy'] ?? 'enabled';
     $message = $data['message'] ?? '';
     $errors = $data['errors'] ?? [];
 
@@ -400,6 +404,138 @@ function fg_render_setup_page(array $data = []): void
             $body .= '</div>';
             $body .= '</details>';
         }
+
+        $body .= '</section>';
+    }
+
+    if (!empty($themes)) {
+        $body .= '<section class="theme-manager">';
+        $body .= '<h2>Theme management</h2>';
+        $body .= '<p>Author palette presets, tune CSS variables, and decide which theme greets new members.</p>';
+        if ($themePolicy === 'disabled') {
+            $body .= '<p class="notice warning">Member personalisation is currently disabled via the Theme Personalisation Policy setting.</p>';
+        }
+        $body .= '<div class="theme-grid">';
+        foreach ($themes as $themeKey => $themeDefinition) {
+            $label = $themeDefinition['label'] ?? $themeKey;
+            $description = $themeDefinition['description'] ?? '';
+            $tokensForTheme = $themeDefinition['tokens'] ?? [];
+            $encodedTokens = htmlspecialchars(json_encode($tokensForTheme, JSON_UNESCAPED_SLASHES), ENT_QUOTES);
+            $body .= '<article class="theme-card" data-theme-key="' . htmlspecialchars($themeKey) . '">';
+            $body .= '<header><h3>' . htmlspecialchars($label) . '</h3>';
+            if ($themeKey === $defaultTheme) {
+                $body .= '<span class="theme-badge">Default</span>';
+            }
+            $body .= '</header>';
+            if ($description !== '') {
+                $body .= '<p class="theme-description">' . htmlspecialchars($description) . '</p>';
+            }
+            $body .= '<form method="post" action="/setup.php" class="theme-form" data-theme-preview data-theme-values="' . $encodedTokens . '">';
+            $body .= '<input type="hidden" name="action" value="update_theme">';
+            $body .= '<input type="hidden" name="theme_key" value="' . htmlspecialchars($themeKey) . '">';
+            $body .= '<label class="field"><span class="field-label">Display label</span><span class="field-control"><input type="text" name="label" value="' . htmlspecialchars($label) . '"></span><span class="field-description">Shown to administrators and members when choosing a preset.</span></label>';
+            $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="2">' . htmlspecialchars($description) . '</textarea></span></label>';
+            $body .= '<div class="theme-token-grid">';
+            foreach ($themeTokens as $tokenKey => $definition) {
+                $tokenLabel = $definition['label'] ?? ucfirst($tokenKey);
+                $tokenDescription = $definition['description'] ?? '';
+                $cssVariable = $definition['css_variable'] ?? ('--fg-' . str_replace('_', '-', $tokenKey));
+                $type = $definition['type'] ?? 'text';
+                $value = $tokensForTheme[$tokenKey] ?? ($definition['default'] ?? '');
+                $body .= '<label class="field" data-theme-token="' . htmlspecialchars($tokenKey) . '">';
+                $body .= '<span class="field-label">' . htmlspecialchars($tokenLabel) . '</span>';
+                if ($type === 'color') {
+                    $body .= '<span class="field-control"><input type="color" name="tokens[' . htmlspecialchars($tokenKey) . ']" value="' . htmlspecialchars($value) . '" data-theme-token-input data-css-variable="' . htmlspecialchars($cssVariable) . '"></span>';
+                } else {
+                    $body .= '<span class="field-control"><input type="text" name="tokens[' . htmlspecialchars($tokenKey) . ']" value="' . htmlspecialchars($value) . '" data-theme-token-input data-css-variable="' . htmlspecialchars($cssVariable) . '"></span>';
+                }
+                $body .= '<span class="field-description">' . htmlspecialchars($tokenDescription) . ' · ' . htmlspecialchars($cssVariable) . '</span>';
+                $body .= '</label>';
+            }
+            $body .= '</div>';
+            $body .= '<div class="theme-preview" data-theme-preview-target>';
+            $body .= '<div class="theme-preview-header">Preview</div>';
+            $body .= '<p class="theme-preview-body">Interface text previews with the current palette.</p>';
+            $body .= '<div class="accent">Accent example</div>';
+            $body .= '<div class="swatch-row">';
+            $body .= '<span class="swatch positive">Positive</span>';
+            $body .= '<span class="swatch warning">Warning</span>';
+            $body .= '<span class="swatch negative">Critical</span>';
+            $body .= '</div>';
+            $body .= '</div>';
+            $body .= '<div class="action-row">';
+            $body .= '<button type="submit" class="button primary">Save theme</button>';
+            $body .= '<button type="button" class="button" data-theme-reset>Reapply stored values</button>';
+            $body .= '</div>';
+            $body .= '</form>';
+            $body .= '<div class="theme-card-actions">';
+            if ($themeKey !== $defaultTheme) {
+                $body .= '<form method="post" action="/setup.php" class="inline-form">';
+                $body .= '<input type="hidden" name="action" value="set_default_theme">';
+                $body .= '<input type="hidden" name="theme_key" value="' . htmlspecialchars($themeKey) . '">';
+                $body .= '<button type="submit" class="button">Set as default</button>';
+                $body .= '</form>';
+            } else {
+                $body .= '<p class="theme-current">This theme is the default experience.</p>';
+            }
+            if (count($themes) > 1 && $themeKey !== $defaultTheme) {
+                $body .= '<form method="post" action="/setup.php" class="inline-form">';
+                $body .= '<input type="hidden" name="action" value="delete_theme">';
+                $body .= '<input type="hidden" name="theme_key" value="' . htmlspecialchars($themeKey) . '">';
+                $body .= '<button type="submit" class="button danger">Delete theme</button>';
+                $body .= '</form>';
+            }
+            $body .= '</div>';
+            $body .= '</article>';
+        }
+        $body .= '</div>';
+
+        $defaultTokenValues = [];
+        foreach ($themeTokens as $tokenKey => $definition) {
+            $defaultTokenValues[$tokenKey] = $definition['default'] ?? '';
+        }
+        $encodedDefaults = htmlspecialchars(json_encode($defaultTokenValues, JSON_UNESCAPED_SLASHES), ENT_QUOTES);
+
+        $body .= '<details class="theme-create" open>';
+        $body .= '<summary>Create new theme</summary>';
+        $body .= '<form method="post" action="/setup.php" class="theme-form" data-theme-preview data-theme-values="' . $encodedDefaults . '">';
+        $body .= '<input type="hidden" name="action" value="create_theme">';
+        $body .= '<label class="field"><span class="field-label">Theme key</span><span class="field-control"><input type="text" name="theme_key" pattern="[a-z0-9_-]+" required></span><span class="field-description">Use lowercase letters, numbers, hyphens, or underscores.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Display label</span><span class="field-control"><input type="text" name="label" placeholder="Aurora"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="2" placeholder="Describe when to use this palette."></textarea></span></label>';
+        $body .= '<div class="theme-token-grid">';
+        foreach ($themeTokens as $tokenKey => $definition) {
+            $tokenLabel = $definition['label'] ?? ucfirst($tokenKey);
+            $cssVariable = $definition['css_variable'] ?? ('--fg-' . str_replace('_', '-', $tokenKey));
+            $type = $definition['type'] ?? 'text';
+            $value = $definition['default'] ?? '';
+            $body .= '<label class="field" data-theme-token="' . htmlspecialchars($tokenKey) . '">';
+            $body .= '<span class="field-label">' . htmlspecialchars($tokenLabel) . '</span>';
+            if ($type === 'color') {
+                $body .= '<span class="field-control"><input type="color" name="tokens[' . htmlspecialchars($tokenKey) . ']" value="' . htmlspecialchars($value) . '" data-theme-token-input data-css-variable="' . htmlspecialchars($cssVariable) . '"></span>';
+            } else {
+                $body .= '<span class="field-control"><input type="text" name="tokens[' . htmlspecialchars($tokenKey) . ']" value="' . htmlspecialchars($value) . '" data-theme-token-input data-css-variable="' . htmlspecialchars($cssVariable) . '"></span>';
+            }
+            $body .= '<span class="field-description">CSS variable ' . htmlspecialchars($cssVariable) . '</span>';
+            $body .= '</label>';
+        }
+        $body .= '</div>';
+        $body .= '<div class="theme-preview" data-theme-preview-target>';
+        $body .= '<div class="theme-preview-header">Preview</div>';
+        $body .= '<p class="theme-preview-body">Adjust the tokens to craft a new experience.</p>';
+        $body .= '<div class="accent">Accent example</div>';
+        $body .= '<div class="swatch-row">';
+        $body .= '<span class="swatch positive">Positive</span>';
+        $body .= '<span class="swatch warning">Warning</span>';
+        $body .= '<span class="swatch negative">Critical</span>';
+        $body .= '</div>';
+        $body .= '</div>';
+        $body .= '<div class="action-row">';
+        $body .= '<button type="submit" class="button primary">Create theme</button>';
+        $body .= '<button type="button" class="button" data-theme-reset>Reset to defaults</button>';
+        $body .= '</div>';
+        $body .= '</form>';
+        $body .= '</details>';
 
         $body .= '</section>';
     }

@@ -10,8 +10,11 @@ require_once __DIR__ . '/load_uploads.php';
 require_once __DIR__ . '/save_uploads.php';
 require_once __DIR__ . '/load_notifications.php';
 require_once __DIR__ . '/save_notifications.php';
+require_once __DIR__ . '/load_themes.php';
+require_once __DIR__ . '/save_themes.php';
 require_once __DIR__ . '/dataset_path.php';
 require_once __DIR__ . '/default_settings_dataset.php';
+require_once __DIR__ . '/default_themes_dataset.php';
 
 function fg_seed_defaults(): void
 {
@@ -47,6 +50,12 @@ function fg_seed_defaults(): void
     if (!isset($settings['settings']) || !is_array($settings['settings'])) {
         $settings = fg_default_settings_dataset();
         fg_save_settings($settings);
+    }
+
+    $themes = fg_load_themes();
+    if (!isset($themes['records']) || !is_array($themes['records'])) {
+        $themes = fg_default_themes_dataset();
+        fg_save_themes($themes);
     }
 }
 

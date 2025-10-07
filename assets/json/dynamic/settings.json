@@ -10,6 +10,27 @@
             ],
             "category": "branding"
         },
+        "default_theme": {
+            "label": "Default Theme",
+            "description": "Palette applied to visitors who have not personalised their account.",
+            "value": "filegate_midnight",
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "branding"
+        },
+        "theme_personalisation_policy": {
+            "label": "Theme Personalisation Policy",
+            "description": "Determines whether members can override palette tokens from the settings page.",
+            "value": "enabled",
+            "managed_by": "custom",
+            "allowed_roles": [
+                "admin",
+                "moderator"
+            ],
+            "category": "branding"
+        },
         "profile_privacy": {
             "label": "Default Profile Privacy",
             "description": "Determines whether new profiles are public or private.",

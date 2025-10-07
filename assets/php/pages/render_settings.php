@@ -15,6 +15,7 @@ require_once __DIR__ . '/../global/load_asset_configurations.php';
 require_once __DIR__ . '/../global/load_asset_overrides.php';
 require_once __DIR__ . '/../global/get_asset_parameter_value.php';
 require_once __DIR__ . '/../global/asset_label.php';
+require_once __DIR__ . '/../global/resolve_theme_tokens.php';
 
 function fg_render_settings_page(array $user, array $context = []): void
 {
@@ -209,6 +210,85 @@ function fg_render_settings_page(array $user, array $context = []): void
             $body .= '</div>';
             $body .= '</form>';
             $body .= '</article>';
+        }
+
+        $body .= '</section>';
+    }
+
+    $themeResolution = fg_resolve_theme_tokens($user);
+    $availableThemes = $themeResolution['available_themes'] ?? [];
+    if (!empty($availableThemes)) {
+        $body .= '<section class="panel theme-panel">';
+        $body .= '<h2>Theme &amp; appearance</h2>';
+        $body .= '<p>Preview and tune the palette used across Filegate. Changes apply instantly for your account after saving.</p>';
+
+        $policy = fg_get_setting('theme_personalisation_policy', 'enabled');
+        $activeThemeKey = $themeResolution['theme_key'] ?? '';
+        $activeThemeLabel = $themeResolution['theme_label'] ?? $activeThemeKey;
+        $overrides = $user['theme_preferences']['tokens'] ?? [];
+        $selectedTheme = $user['theme_preferences']['theme'] ?? $activeThemeKey;
+
+        $body .= '<p class="theme-active">Active theme: <strong>' . htmlspecialchars($activeThemeLabel) . '</strong></p>';
+
+        if ($policy === 'disabled') {
+            $body .= '<p class="notice warning">Administrators have disabled personal palette overrides. Your interface follows the delegated defaults.</p>';
+        } else {
+            $body .= '<form method="post" action="/settings.php" class="theme-form" data-theme-preview data-theme-preview-global data-theme-sync-select>';
+            $body .= '<input type="hidden" name="action" value="update-theme-preferences">';
+            $body .= '<label class="field">';
+            $body .= '<span class="field-label">Theme preset</span>';
+            $body .= '<span class="field-control"><select name="theme_key" data-theme-selector>';
+            foreach ($availableThemes as $key => $themeDefinition) {
+                $selected = ($selectedTheme === $key) ? ' selected' : '';
+                $tokensPayload = htmlspecialchars(json_encode($themeDefinition['tokens'] ?? [], JSON_UNESCAPED_SLASHES), ENT_QUOTES);
+                $body .= '<option value="' . htmlspecialchars($key) . '" data-theme-values="' . $tokensPayload . '"' . $selected . '>' . htmlspecialchars($themeDefinition['label'] ?? $key) . '</option>';
+            }
+            $body .= '</select></span>';
+            $body .= '<span class="field-description">Switch between administrator curated palettes or customise the tokens below.</span>';
+            $body .= '</label>';
+
+            $body .= '<div class="theme-token-grid">';
+            foreach ($themeResolution['tokens'] as $tokenKey => $tokenDefinition) {
+                $type = $tokenDefinition['type'] ?? 'text';
+                $value = $tokenDefinition['value'] ?? '';
+                $label = $tokenDefinition['label'] ?? ucfirst($tokenKey);
+                $description = $tokenDefinition['description'] ?? '';
+                $cssVariable = $tokenDefinition['css_variable'] ?? ('--fg-' . str_replace('_', '-', $tokenKey));
+                $body .= '<label class="field" data-theme-token="' . htmlspecialchars($tokenKey) . '">';
+                $body .= '<span class="field-label">' . htmlspecialchars($label) . '</span>';
+                if ($type === 'color') {
+                    $body .= '<span class="field-control"><input type="color" name="tokens[' . htmlspecialchars($tokenKey) . ']" value="' . htmlspecialchars($value) . '" data-theme-token-input data-css-variable="' . htmlspecialchars($cssVariable) . '"></span>';
+                } else {
+                    $body .= '<span class="field-control"><input type="text" name="tokens[' . htmlspecialchars($tokenKey) . ']" value="' . htmlspecialchars($value) . '" data-theme-token-input data-css-variable="' . htmlspecialchars($cssVariable) . '"></span>';
+                }
+                $body .= '<span class="field-description">' . htmlspecialchars($description) . ' · CSS variable ' . htmlspecialchars($cssVariable) . '</span>';
+                $body .= '</label>';
+            }
+            $body .= '</div>';
+
+            $body .= '<div class="theme-preview" data-theme-preview-target>';
+            $body .= '<div class="theme-preview-header">Preview</div>';
+            $body .= '<p class="theme-preview-body">Text using the primary tone. Secondary copy adapts automatically.</p>';
+            $body .= '<div class="accent">Accent example</div>';
+            $body .= '<div class="swatch-row">';
+            $body .= '<span class="swatch positive">Positive</span>';
+            $body .= '<span class="swatch warning">Warning</span>';
+            $body .= '<span class="swatch negative">Critical</span>';
+            $body .= '</div>';
+            $body .= '</div>';
+
+            $body .= '<div class="action-row">';
+            $body .= '<button type="submit" class="button primary">Save theme</button>';
+            $body .= '<button type="button" class="button" data-theme-reset>Use theme defaults</button>';
+            $body .= '</div>';
+            $body .= '</form>';
+
+            if (!empty($overrides) || (($user['theme_preferences']['theme'] ?? '') !== '')) {
+                $body .= '<form method="post" action="/settings.php" class="theme-form inline">';
+                $body .= '<input type="hidden" name="action" value="clear-theme-preferences">';
+                $body .= '<button type="submit" class="button danger">Revert to delegated theme</button>';
+                $body .= '</form>';
+            }
         }
 
         $body .= '</section>';

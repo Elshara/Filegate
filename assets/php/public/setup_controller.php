@@ -20,6 +20,11 @@ require_once __DIR__ . '/../global/load_dataset_contents.php';
 require_once __DIR__ . '/../global/save_dataset_contents.php';
 require_once __DIR__ . '/../global/dataset_default_payload.php';
 require_once __DIR__ . '/../global/format_file_size.php';
+require_once __DIR__ . '/../global/load_theme_tokens.php';
+require_once __DIR__ . '/../global/load_themes.php';
+require_once __DIR__ . '/../global/save_themes.php';
+require_once __DIR__ . '/../global/default_themes_dataset.php';
+require_once __DIR__ . '/../global/save_settings.php';
 require_once __DIR__ . '/../pages/render_setup.php';
 require_once __DIR__ . '/../global/guard_asset.php';
 
@@ -94,6 +99,133 @@ function fg_public_setup_controller(): void
                             $errors[] = $exception->getMessage();
                         }
                     }
+                }
+            }
+        } elseif (in_array($action, ['create_theme', 'update_theme', 'delete_theme', 'set_default_theme'], true)) {
+            $themes = fg_load_themes();
+            if (!isset($themes['records']) || !is_array($themes['records'])) {
+                $themes = fg_default_themes_dataset();
+                fg_save_themes($themes);
+            }
+            $tokenDefinitions = fg_load_theme_tokens()['tokens'] ?? [];
+            $records = $themes['records'] ?? [];
+
+            if ($action === 'create_theme') {
+                $themeKeyRaw = (string) ($_POST['theme_key'] ?? '');
+                $themeKey = strtolower(preg_replace('/[^a-z0-9_-]/', '', $themeKeyRaw));
+                if ($themeKey === '') {
+                    $errors[] = 'Theme key is required.';
+                } elseif (isset($records[$themeKey])) {
+                    $errors[] = 'A theme with that key already exists.';
+                } else {
+                    $label = trim((string) ($_POST['label'] ?? ''));
+                    if ($label === '') {
+                        $label = ucwords(str_replace(['_', '-'], ' ', $themeKey));
+                    }
+                    $description = trim((string) ($_POST['description'] ?? ''));
+                    $tokensInput = $_POST['tokens'] ?? [];
+                    if (!is_array($tokensInput)) {
+                        $tokensInput = [];
+                    }
+                    $values = [];
+                    foreach ($tokenDefinitions as $tokenKey => $definition) {
+                        $type = $definition['type'] ?? 'text';
+                        $default = $definition['default'] ?? '';
+                        $value = $tokensInput[$tokenKey] ?? $default;
+                        if ($type === 'color') {
+                            $valueString = (string) $value;
+                            if (!preg_match('/^#[0-9a-fA-F]{3,8}$/', $valueString)) {
+                                $valueString = $default;
+                            }
+                            $value = $valueString;
+                        } else {
+                            $value = trim((string) $value);
+                        }
+                        $values[$tokenKey] = $value;
+                    }
+                    $records[$themeKey] = [
+                        'label' => $label,
+                        'description' => $description,
+                        'tokens' => $values,
+                    ];
+                    $themes['records'] = $records;
+                    if (!isset($themes['metadata']['default']) || !isset($records[$themes['metadata']['default']])) {
+                        $themes['metadata']['default'] = $themeKey;
+                    }
+                    fg_save_themes($themes);
+                    $message = 'Theme created successfully.';
+                }
+            } elseif ($action === 'update_theme') {
+                $themeKey = (string) ($_POST['theme_key'] ?? '');
+                if (!isset($records[$themeKey])) {
+                    $errors[] = 'Unknown theme specified.';
+                } else {
+                    $label = trim((string) ($_POST['label'] ?? ''));
+                    if ($label === '') {
+                        $label = $records[$themeKey]['label'] ?? ucwords(str_replace(['_', '-'], ' ', $themeKey));
+                    }
+                    $description = trim((string) ($_POST['description'] ?? ''));
+                    $tokensInput = $_POST['tokens'] ?? [];
+                    if (!is_array($tokensInput)) {
+                        $tokensInput = [];
+                    }
+                    $values = [];
+                    foreach ($tokenDefinitions as $tokenKey => $definition) {
+                        $type = $definition['type'] ?? 'text';
+                        $default = $definition['default'] ?? '';
+                        $value = $tokensInput[$tokenKey] ?? ($records[$themeKey]['tokens'][$tokenKey] ?? $default);
+                        if ($type === 'color') {
+                            $valueString = (string) $value;
+                            if (!preg_match('/^#[0-9a-fA-F]{3,8}$/', $valueString)) {
+                                $valueString = $default;
+                            }
+                            $value = $valueString;
+                        } else {
+                            $value = trim((string) $value);
+                        }
+                        $values[$tokenKey] = $value;
+                    }
+                    $records[$themeKey]['label'] = $label;
+                    $records[$themeKey]['description'] = $description;
+                    $records[$themeKey]['tokens'] = $values;
+                    $themes['records'] = $records;
+                    fg_save_themes($themes);
+                    $message = 'Theme updated successfully.';
+                }
+            } elseif ($action === 'delete_theme') {
+                $themeKey = (string) ($_POST['theme_key'] ?? '');
+                if (!isset($records[$themeKey])) {
+                    $errors[] = 'Unknown theme specified for deletion.';
+                } elseif (count($records) <= 1) {
+                    $errors[] = 'At least one theme must remain available.';
+                } else {
+                    $settingsData = fg_load_settings();
+                    $currentDefault = $settingsData['settings']['default_theme']['value'] ?? ($themes['metadata']['default'] ?? '');
+                    if ($currentDefault === $themeKey) {
+                        $errors[] = 'Cannot delete the active default theme.';
+                    } else {
+                        unset($records[$themeKey]);
+                        if (($themes['metadata']['default'] ?? '') === $themeKey) {
+                            $themes['metadata']['default'] = array_key_first($records);
+                        }
+                        $themes['records'] = $records;
+                        fg_save_themes($themes);
+                        $message = 'Theme deleted successfully.';
+                    }
+                }
+            } elseif ($action === 'set_default_theme') {
+                $themeKey = (string) ($_POST['theme_key'] ?? '');
+                if (!isset($records[$themeKey])) {
+                    $errors[] = 'Theme not recognised when setting default.';
+                } else {
+                    $themes['metadata']['default'] = $themeKey;
+                    fg_save_themes($themes);
+                    $settingsData = fg_load_settings();
+                    if (isset($settingsData['settings']['default_theme'])) {
+                        $settingsData['settings']['default_theme']['value'] = $themeKey;
+                        fg_save_settings($settingsData);
+                    }
+                    $message = 'Default theme updated.';
                 }
             }
         } else {
@@ -196,6 +328,10 @@ function fg_public_setup_controller(): void
     $settings = fg_load_settings();
     $roles = $settings['role_definitions'] ?? [];
     $users = fg_load_users()['records'] ?? [];
+    $themesData = fg_load_themes();
+    $themeTokens = fg_load_theme_tokens();
+    $defaultThemeSetting = $settings['settings']['default_theme']['value'] ?? ($themesData['metadata']['default'] ?? '');
+    $themePolicy = $settings['settings']['theme_personalisation_policy']['value'] ?? 'enabled';
 
     $datasets = [];
     foreach ($manifest as $name => $definition) {
@@ -257,5 +393,9 @@ function fg_public_setup_controller(): void
         'roles' => $roles,
         'users' => $users,
         'datasets' => $datasets,
+        'themes' => $themesData,
+        'theme_tokens' => $themeTokens,
+        'default_theme' => $defaultThemeSetting,
+        'theme_policy' => $themePolicy,
     ]);
 }
