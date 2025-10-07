@@ -5,6 +5,14 @@ session_start();
 
 define('DB_PATH', __DIR__ . '/../data/social.db');
 
+function ensure_storage_directory(): void
+{
+    $directory = dirname(DB_PATH);
+    if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
+        throw new RuntimeException('Unable to create data directory at ' . $directory);
+    }
+}
+
 function get_db(): PDO
 {
     static $db = null;
@@ -13,6 +21,7 @@ function get_db(): PDO
         return $db;
     }
 
+    ensure_storage_directory();
     $needInit = !file_exists(DB_PATH);
 
     $db = new PDO('sqlite:' . DB_PATH);
@@ -119,6 +128,7 @@ function register_user(string $username, string $displayName, string $password):
         ':password_hash' => $hash,
     ]);
 
+    session_regenerate_id(true);
     $_SESSION['user_id'] = (int) $db->lastInsertId();
 
     return ['success' => true, 'message' => 'Account created! Welcome to Filegate.'];
@@ -136,9 +146,10 @@ function authenticate(string $username, string $password): array
         return ['success' => false, 'message' => 'Invalid username or password.'];
     }
 
+    session_regenerate_id(true);
     $_SESSION['user_id'] = (int) $user['id'];
 
-    return ['success' => true, 'message' => 'Welcome back, ' . htmlspecialchars($user['display_name']) . '!'];
+    return ['success' => true, 'message' => 'Welcome back, ' . $user['display_name'] . '!'];
 }
 
 function create_post(int $userId, string $content): array
@@ -280,9 +291,32 @@ function toggle_like(int $userId, int $postId): void
     }
 }
 
+function sanitize_redirect_target(string $path): string
+{
+    if ($path === '') {
+        return '/';
+    }
+
+    $parts = parse_url($path);
+
+    if ($parts === false || isset($parts['scheme']) || isset($parts['host'])) {
+        return '/';
+    }
+
+    $normalizedPath = '/' . ltrim($parts['path'] ?? '/', '/');
+
+    if ($normalizedPath === '//') {
+        $normalizedPath = '/';
+    }
+
+    $query = isset($parts['query']) ? ('?' . $parts['query']) : '';
+
+    return $normalizedPath . $query;
+}
+
 function redirect(string $path): void
 {
-    header('Location: ' . $path);
+    header('Location: ' . sanitize_redirect_target($path));
     exit;
 }
 
