@@ -5085,6 +5085,206 @@
                     "baseline_allow_user_override": true
                 }
             }
+        },
+        "assets/php/global/load_dataset_contents.php": {
+            "label": "Php Global Load Dataset Contents",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/save_dataset_contents.php": {
+            "label": "Php Global Save Dataset Contents",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/format_file_size.php": {
+            "label": "Php Global Format File Size",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/dataset_default_payload.php": {
+            "label": "Php Global Dataset Default Payload",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/default_settings_dataset.php": {
+            "label": "Php Global Default Settings Dataset",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
         }
     }
 }

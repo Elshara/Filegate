@@ -592,3 +592,164 @@ input[type="submit"]:hover {
   background: rgba(231, 76, 60, 0.12);
   color: #9e3428;
 }
+
+.notice.muted {
+  background: rgba(15, 23, 42, 0.05);
+  color: rgba(28, 37, 48, 0.65);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin: 0;
+}
+
+.dataset-manager {
+  margin-top: 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dataset-manager > h2 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.dataset-manager > p {
+  margin: 0;
+  color: rgba(28, 37, 48, 0.7);
+  line-height: 1.6;
+}
+
+.dataset-card {
+  border: 1px solid rgba(28, 37, 48, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.dataset-card[open] {
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+  border-color: rgba(54, 87, 255, 0.35);
+}
+
+.dataset-card summary {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.dataset-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.dataset-label {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: rgba(28, 37, 48, 0.95);
+}
+
+.dataset-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dataset-chip {
+  background: rgba(34, 53, 92, 0.08);
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(28, 37, 48, 0.7);
+}
+
+.dataset-chip.warning {
+  background: rgba(231, 76, 60, 0.12);
+  color: #c0392b;
+}
+
+.dataset-body {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dataset-description {
+  margin: 0;
+  color: rgba(28, 37, 48, 0.75);
+  line-height: 1.6;
+}
+
+.dataset-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.dataset-form .field-label {
+  font-weight: 600;
+  color: rgba(28, 37, 48, 0.92);
+}
+
+.dataset-form .field-control textarea {
+  width: 100%;
+  min-height: 200px;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(28, 37, 48, 0.15);
+  padding: 0.85rem 1rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(28, 37, 48, 0.88);
+  background: rgba(255, 255, 255, 0.95);
+  resize: vertical;
+}
+
+.dataset-form .field-control textarea[readonly] {
+  background: rgba(15, 23, 42, 0.06);
+  color: rgba(28, 37, 48, 0.6);
+  cursor: not-allowed;
+}
+
+.dataset-form .field-control input[type="file"] {
+  width: 100%;
+  font-size: 0.92rem;
+  border: 1px dashed rgba(28, 37, 48, 0.2);
+  border-radius: 0.9rem;
+  padding: 0.6rem 0.9rem;
+  background: rgba(15, 23, 42, 0.05);
+  color: rgba(28, 37, 48, 0.75);
+}
+
+.dataset-form .field-control input[type="file"][disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dataset-form .field-description {
+  font-size: 0.8rem;
+  color: rgba(28, 37, 48, 0.6);
+}
+
+.dataset-form .action-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.dataset-form .button.primary {
+  background: #3657ff;
+  color: #fff;
+}
+
+.dataset-form .button.danger {
+  background: #e74c3c;
+  color: #fff;
+}

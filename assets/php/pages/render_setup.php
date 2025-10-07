@@ -8,6 +8,7 @@ function fg_render_setup_page(array $data = []): void
     $overrides = $data['overrides']['records'] ?? ['global' => [], 'roles' => [], 'users' => []];
     $roles = $data['roles'] ?? [];
     $users = $data['users'] ?? [];
+    $datasets = $data['datasets'] ?? [];
     $message = $data['message'] ?? '';
     $errors = $data['errors'] ?? [];
 
@@ -313,6 +314,95 @@ function fg_render_setup_page(array $data = []): void
     }
 
     $body .= '</div>';
+
+    if (!empty($datasets)) {
+        $body .= '<section class="dataset-manager">';
+        $body .= '<h2>Dataset Management</h2>';
+        $body .= '<p>Review and regenerate the local datasets that power Filegate. Upload replacements or edit the payloads directly without leaving the browser.</p>';
+
+        foreach ($datasets as $dataset) {
+            $datasetName = $dataset['name'] ?? '';
+            $label = $dataset['label'] ?? $datasetName;
+            $description = $dataset['description'] ?? '';
+            $nature = $dataset['nature'] ?? 'dynamic';
+            $format = $dataset['format'] ?? 'json';
+            $size = $dataset['size'] ?? '0 B';
+            $modified = $dataset['modified'] ?? '';
+            $payload = $dataset['payload'] ?? '';
+            $rows = (int) ($dataset['rows'] ?? 12);
+            $editable = !empty($dataset['editable']);
+            $missing = !empty($dataset['missing']);
+            $hasDefaults = !empty($dataset['has_defaults']);
+
+            $detailsAttributes = 'class="dataset-card" data-dataset="' . htmlspecialchars($datasetName) . '" data-nature="' . htmlspecialchars($nature) . '" data-format="' . htmlspecialchars($format) . '"';
+            if ($missing) {
+                $detailsAttributes .= ' open';
+            }
+
+            $body .= '<details ' . $detailsAttributes . '>';
+            $body .= '<summary>';
+            $body .= '<span class="dataset-label">' . htmlspecialchars($label) . '</span>';
+            $body .= '<span class="dataset-meta">';
+            $body .= '<span class="dataset-chip">Nature: ' . htmlspecialchars(ucfirst($nature)) . '</span>';
+            $body .= '<span class="dataset-chip">Format: ' . htmlspecialchars(strtoupper($format)) . '</span>';
+            $body .= '<span class="dataset-chip">Size: ' . htmlspecialchars($size) . '</span>';
+            $body .= '<span class="dataset-chip">Updated: ' . htmlspecialchars($modified) . '</span>';
+            if ($missing) {
+                $body .= '<span class="dataset-chip warning">Not generated</span>';
+            }
+            $body .= '</span>';
+            $body .= '</summary>';
+
+            $body .= '<div class="dataset-body">';
+            if ($description !== '') {
+                $body .= '<p class="dataset-description">' . htmlspecialchars($description) . '</p>';
+            }
+
+            if (!$editable) {
+                $body .= '<p class="notice muted">This dataset is currently read-only because the target path is not writable. Adjust filesystem permissions to modify it from the browser.</p>';
+            }
+
+            $body .= '<form method="post" action="/setup.php" class="dataset-form" enctype="multipart/form-data">';
+            $body .= '<input type="hidden" name="action" value="save_dataset">';
+            $body .= '<input type="hidden" name="dataset" value="' . htmlspecialchars($datasetName) . '">';
+            $textareaAttributes = 'name="dataset_payload" rows="' . $rows . '"';
+            if (!$editable) {
+                $textareaAttributes .= ' readonly';
+            }
+            $body .= '<label class="field">';
+            $body .= '<span class="field-label">Dataset payload</span>';
+            $body .= '<span class="field-control"><textarea ' . $textareaAttributes . '>' . htmlspecialchars($payload) . '</textarea></span>';
+            $body .= '<span class="field-description">Paste or edit the dataset contents directly. For XML datasets, provide complete XML markup.</span>';
+            $body .= '</label>';
+
+            $body .= '<label class="field upload-field">';
+            $body .= '<span class="field-label">Upload replacement</span>';
+            $fileAttributes = 'type="file" name="dataset_file" accept=".' . htmlspecialchars($format) . '"';
+            if (!$editable) {
+                $fileAttributes .= ' disabled';
+            }
+            $body .= '<span class="field-control"><input ' . $fileAttributes . '></span>';
+            $body .= '<span class="field-description">Choose a local .' . htmlspecialchars($format) . ' file to replace the current dataset. Uploaded content overrides any text edits above.</span>';
+            $body .= '</label>';
+
+            $body .= '<div class="action-row">';
+            if ($editable) {
+                $body .= '<button type="submit" class="button primary">Save dataset</button>';
+            } else {
+                $body .= '<button type="submit" class="button" disabled>Save dataset</button>';
+            }
+            if ($hasDefaults && $editable) {
+                $body .= '<button type="submit" name="action_override" value="reset_dataset" class="button danger">Reset to defaults</button>';
+            }
+            $body .= '</div>';
+            $body .= '</form>';
+
+            $body .= '</div>';
+            $body .= '</details>';
+        }
+
+        $body .= '</section>';
+    }
 
     fg_render_layout('Asset Setup', $body);
 }

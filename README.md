@@ -69,7 +69,8 @@ Every PHP, CSS, JSON, JS, XML, and HTTP controller is catalogued automatically t
 - review the generated defaults (enable/disable flags, mode selectors, and template variants) for each asset;
 - assign which roles can personalise an asset and whether members may apply overrides from their own settings page;
 - capture global or role-level overrides that cascade to every user; and
-- create or clear user-specific values without editing flat files.
+- create or clear user-specific values without editing flat files; and
+- open the dataset manager to upload replacements, edit payloads, or regenerate seeded defaults for JSON and XML stores.
 
 The setup dashboard mirrors the `assets/php/global` convention by saving each change straight into the flat-file datasets (`asset_configurations.json` and `asset_overrides.json`). As new files are introduced, the manifest is refreshed automatically during bootstrap so the dashboard always reflects the real filesystem.
 
@@ -104,9 +105,9 @@ Statistics follow the **Post Statistics Visibility** setting. When hidden, the v
 
 ## Managing datasets
 
-Administrators can replace the entire contents of `users`, `posts`, or `settings` by pasting JSON into the dataset form on `/settings.php`. The manifest ensures each dataset is routed to the right `static` or `dynamic` store, enabling migrations without SSH access while keeping a clear audit of every dataset’s purpose.
+Administrators can expand the **Dataset Management** section on `/setup.php` to edit or upload replacements for any dataset in the manifest. The summary panel highlights each store’s nature, format, size, and last update time, and the inline editor routes writes to the correct `static` or `dynamic` directory automatically. When a supported dataset (such as `users`, `posts`, `uploads`, `notifications`, `settings`, or `asset_overrides`) exposes defaults, the **Reset to defaults** button regenerates the seeded payload without touching the shell.
 
-Buttons in the dataset table trigger local AJAX calls to `/dataset.php`, which respects the manifest’s `expose_via_api` flag. Sensitive stores such as `users` remain blocked, while public data (like `html5_elements`) and operational metadata (like `settings`) are available for quick inspection.
+The dataset manager works alongside the dataset viewer endpoint (`/dataset.php`), which still honours the manifest’s `expose_via_api` flag. Sensitive stores such as `users` remain blocked, while reference data (for example `html5_elements`) and operational metadata (`settings`) are available for quick inspection directly from the browser.
 
 The feed and composer use the same client runtime to fetch the HTML5 element reference on demand, provide live previews, and post likes asynchronously without full page reloads. All network calls terminate within the application—no remote APIs are required.
 
