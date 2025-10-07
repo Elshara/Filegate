@@ -392,3 +392,92 @@ input[type="submit"]:hover {
     flex-wrap: wrap;
   }
 }
+.inline-fieldset {
+  border: 1px solid rgba(34, 53, 92, 0.15);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.inline-fieldset legend {
+  padding: 0 0.5rem;
+  font-weight: 700;
+}
+
+.post-summary {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.post-attachments,
+.preview-attachments {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.preview-attachments[hidden] {
+  display: none;
+}
+
+.post-attachments li,
+.preview-attachments li {
+  background: rgba(34, 53, 92, 0.06);
+  border-radius: 0.65rem;
+  padding: 0.6rem 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.post-attachments a {
+  color: #1c2530;
+  font-weight: 600;
+}
+
+.post-tags {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.post-tags li {
+  background: rgba(54, 87, 255, 0.15);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.post-template {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  font-style: italic;
+  color: rgba(28, 37, 48, 0.75);
+}
+
+.upload-limit-notice {
+  color: #c0392b;
+  font-style: italic;
+}
+
+.checkbox-label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-weight: 600;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}

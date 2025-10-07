@@ -10,6 +10,8 @@ Filegate is a profile-centred social application designed for shared hosting. Ev
 - **Localized presentation** – Shared styles live in `assets/css`, while each page controller builds its markup on demand to keep the runtime light.
 - **Delegated configuration** – Administrators can rename the network, expose or lock individual settings, and even swap out entire datasets without touching the filesystem.
 - **HTML5-native content** – Profiles and posts accept a wide range of HTML5 elements, allowing creators to publish rich articles, galleries, conversations, or custom post types.
+- **Attachment-friendly composer** – Members can upload files directly into `/assets/uploads/<extension>` with local previews and secure delivery via `media.php`.
+- **Rich notifications** – Post activity queues email, browser, cookie, and file-cache notifications driven by JSON and XML templates with admin-controlled channels.
 
 ## Directory layout
 
@@ -19,13 +21,18 @@ assets/
   js/global/           Client runtime helpers (mirrored to public/assets)
   json/static/         Manifested metadata (dataset registry, other static assets)
   json/dynamic/        Flat-file datasets (users, posts, settings)
+  xml/static/          XML descriptors (notification templates, XHTML prototypes)
+  xml/dynamic/         Reserved for future XML datasets
   php/global/          Global helper functions (one function per file)
   php/pages/           Localised renderers for feed, settings, and profile views
+  uploads/             Extension-based storage for user attachments
 public/
   assets/css/global/   Web-exposed copy of shared styles
+  assets/js/global/    Web-exposed JavaScript helpers
   index.php            Authenticated feed controller
   login.php            Sign-in form
   logout.php           Session terminator
+  media.php            Authenticated attachment streamer
   post.php             Composer/editor for posts
   profile.php          Profile viewer & editor
   register.php         Registration form (first account becomes admin)
@@ -58,6 +65,15 @@ Admins can change both the value and the delegation policy for each entry. Non-a
 
 Posts are stored with HTML5-friendly bodies plus additional metadata:
 
+- `summary` – Short notification copy used by templates, previews, and cards.
+- `tags` – Array of comma-separated labels for filtering or search.
+- `attachments` – Metadata for uploaded files living under `/assets/uploads/<extension>`.
+- `template` – Selected layout name sourced from `template_options`.
+- `format_options` – Rendering hints such as `content_format` (`html`, `xhtml`, `markdown`).
+- `display_options` – Flags for showing statistics or embeds on a per-post basis.
+- `notification_template` – XML/JSON template key for queued notifications.
+- `notification_channels` – Channels requested in addition to admin defaults.
+- `variables` – Key/value replacements merged into notification templates.
 - `custom_type` – Optional label (e.g. `article`, `event`, `stream`).
 - `privacy` – `public`, `connections`, or `private` per entry.
 - `collaborators` – Usernames allowed to co-edit an entry.
@@ -79,6 +95,19 @@ Administrators can replace the entire contents of `users`, `posts`, or `settings
 Buttons in the dataset table trigger local AJAX calls to `/dataset.php`, which respects the manifest’s `expose_via_api` flag. Sensitive stores such as `users` remain blocked, while public data (like `html5_elements`) and operational metadata (like `settings`) are available for quick inspection.
 
 The feed and composer use the same client runtime to fetch the HTML5 element reference on demand, provide live previews, and post likes asynchronously without full page reloads. All network calls terminate within the application—no remote APIs are required.
+
+## Notifications and delivery
+
+Filegate keeps notification metadata in flat files so delivery agents can operate without remote APIs.
+
+- `assets/json/static/notification_channels.json` defines the available transports (email, browser push, cookie banner, file-cache) and their capabilities.
+- `assets/xml/static/notification_templates.xml` stores channel-specific subjects and bodies; admins may extend it with additional `<template>` nodes.
+- `assets/json/dynamic/notifications.json` is the delivery queue written by post creation and updates.
+- `assets/uploads/<extension>` holds binary attachments that can be referenced inside notification payloads.
+
+The **Default Notification Channels** and **Notification Cache Driver** settings in `/settings.php` decide which transports are queued automatically and whether file-based caching is active. For Apache hosts you can add caching or cookie headers via `.htaccess`; for Nginx, mirror those directives inside your server block (e.g. caching `/assets/uploads/` and exposing the `media.php` download endpoint).
+
+A local service worker or CRON job can inspect `notifications.json` and the per-channel cache files generated under `/assets/uploads/file-cache/` to send emails or push payloads using platform-specific tooling.
 
 ## Development
 

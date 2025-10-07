@@ -1,9 +1,11 @@
 <?php
 
-function fg_data_directory(string $nature = 'dynamic'): string
+function fg_data_directory(string $nature = 'dynamic', string $format = 'json'): string
 {
-    $base = __DIR__ . '/../../json';
-    $folder = in_array($nature, ['static', 'dynamic'], true) ? $nature : 'dynamic';
-    return $base . '/' . $folder;
+    $nature = in_array($nature, ['static', 'dynamic'], true) ? $nature : 'dynamic';
+    $format = in_array($format, ['json', 'xml'], true) ? $format : 'json';
+    $base = __DIR__ . '/../../' . $format;
+
+    return $base . '/' . $nature;
 }
 

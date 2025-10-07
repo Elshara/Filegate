@@ -9,6 +9,8 @@ require_once __DIR__ . '/../global/render_layout.php';
 require_once __DIR__ . '/../global/load_json.php';
 require_once __DIR__ . '/../global/seed_defaults.php';
 require_once __DIR__ . '/../global/dataset_is_exposable.php';
+require_once __DIR__ . '/../global/dataset_format.php';
+require_once __DIR__ . '/../global/dataset_path.php';
 
 function fg_render_settings_page(array $user, array $context = []): void
 {
@@ -69,10 +71,20 @@ function fg_render_settings_page(array $user, array $context = []): void
             $body .= '<p class="error">No datasets are registered in the manifest.</p>';
         } else {
             $body .= '<table class="dataset-table">';
-            $body .= '<thead><tr><th>Dataset</th><th>Description</th><th>Nature</th><th>API access</th><th>Preview</th></tr></thead><tbody>';
+            $body .= '<thead><tr><th>Dataset</th><th>Description</th><th>Nature</th><th>Format</th><th>API access</th><th>Preview</th></tr></thead><tbody>';
             foreach ($datasets as $key => $definition) {
-                $preview_json = json_encode(fg_load_json($key), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-                $preview = htmlspecialchars(substr($preview_json ?: '[]', 0, 280)) . '…';
+                $format = fg_dataset_format($key);
+                if ($format === 'xml') {
+                    $path_fragment = fg_dataset_path($key);
+                    $preview_source = file_exists($path_fragment) ? file_get_contents($path_fragment) : '';
+                } else {
+                    $preview_source = json_encode(fg_load_json($key), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                }
+                $snippet = $preview_source !== '' ? substr($preview_source, 0, 280) : '';
+                if ($preview_source !== '' && strlen($preview_source) > 280) {
+                    $snippet .= '…';
+                }
+                $preview = htmlspecialchars($snippet);
                 $nature = isset($definition['nature']) ? ucfirst((string) $definition['nature']) : 'Dynamic';
                 $exposed = fg_dataset_is_exposable($key);
                 $output_id = 'dataset-live-' . preg_replace('/[^a-z0-9_-]/', '-', strtolower($key));
@@ -80,6 +92,7 @@ function fg_render_settings_page(array $user, array $context = []): void
                 $body .= '<td>' . htmlspecialchars($definition['label'] ?? $key) . '</td>';
                 $body .= '<td>' . htmlspecialchars($definition['description'] ?? '') . '</td>';
                 $body .= '<td>' . htmlspecialchars($nature) . '</td>';
+                $body .= '<td>' . htmlspecialchars(strtoupper($format)) . '</td>';
                 $body .= '<td>' . ($exposed ? 'Allowed' : 'Restricted') . '</td>';
                 $body .= '<td><div class="dataset-actions"><button type="button" class="dataset-viewer" data-dataset="' . htmlspecialchars($key) . '" data-expose="' . ($exposed ? 'true' : 'false') . '" data-output="#' . htmlspecialchars($output_id) . '">Load live data</button><pre id="' . htmlspecialchars($output_id) . '" class="dataset-live-preview" data-dataset-output>' . $preview . '</pre></div></td>';
                 $body .= '</tr>';
@@ -89,6 +102,9 @@ function fg_render_settings_page(array $user, array $context = []): void
             $body .= '<input type="hidden" name="action" value="replace-dataset">';
             $body .= '<label>Select dataset<select name="dataset">';
             foreach ($datasets as $key => $definition) {
+                if (fg_dataset_format($key) !== 'json') {
+                    continue;
+                }
                 $body .= '<option value="' . htmlspecialchars($key) . '">' . htmlspecialchars($definition['label'] ?? $key) . '</option>';
             }
             $body .= '</select></label>';

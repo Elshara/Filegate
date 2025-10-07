@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../global/load_posts.php';
 require_once __DIR__ . '/../global/sanitize_html.php';
 require_once __DIR__ . '/../global/render_post_body.php';
+require_once __DIR__ . '/../global/load_notification_channels.php';
 
 function fg_render_profile_page(array $viewer, array $profile_user): string
 {
@@ -21,6 +22,7 @@ function fg_render_profile_page(array $viewer, array $profile_user): string
         return strtotime($b['created_at'] ?? 'now') <=> strtotime($a['created_at'] ?? 'now');
     });
 
+    $channels = fg_load_notification_channels();
     $body = '<section class="panel profile-grid">';
     $body .= '<header>';
     $body .= '<h1>' . htmlspecialchars($profile_user['display_name'] ?? $profile_user['username']) . '</h1>';
@@ -33,6 +35,16 @@ function fg_render_profile_page(array $viewer, array $profile_user): string
     }
     if (!empty($profile_user['location'])) {
         $body .= '<p>Location: ' . htmlspecialchars($profile_user['location']) . '</p>';
+    }
+    if (!empty($profile_user['notification_preferences'])) {
+        $labels = [];
+        foreach ($profile_user['notification_preferences'] as $preference) {
+            $labels[] = $channels[$preference]['label'] ?? ucfirst($preference);
+        }
+        $body .= '<p>Notifications: ' . htmlspecialchars(implode(', ', $labels)) . '</p>';
+    }
+    if (!empty($profile_user['cache_opt_in'])) {
+        $body .= '<p>Local cache delivery enabled.</p>';
     }
     $body .= '</header>';
 
@@ -55,6 +67,13 @@ function fg_render_profile_page(array $viewer, array $profile_user): string
             $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
         }
         $body .= '</select></label>';
+        $body .= '<fieldset class="inline-fieldset"><legend>Notification preferences</legend>';
+        foreach ($channels as $key => $channel) {
+            $checked = in_array($key, $profile_user['notification_preferences'] ?? [], true) ? ' checked' : '';
+            $body .= '<label><input type="checkbox" name="notification_preferences[]" value="' . htmlspecialchars($key) . '"' . $checked . '> ' . htmlspecialchars($channel['label'] ?? $key) . '</label>';
+        }
+        $body .= '</fieldset>';
+        $body .= '<label class="checkbox-label"><input type="checkbox" name="cache_opt_in" value="1"' . (!empty($profile_user['cache_opt_in']) ? ' checked' : '') . '> Enable local file cache delivery</label>';
         $body .= '<button type="submit">Save profile</button>';
         $body .= '</form>';
         $body .= '</section>';

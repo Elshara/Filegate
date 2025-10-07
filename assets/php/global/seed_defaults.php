@@ -6,6 +6,11 @@ require_once __DIR__ . '/load_posts.php';
 require_once __DIR__ . '/save_posts.php';
 require_once __DIR__ . '/load_settings.php';
 require_once __DIR__ . '/save_settings.php';
+require_once __DIR__ . '/load_uploads.php';
+require_once __DIR__ . '/save_uploads.php';
+require_once __DIR__ . '/load_notifications.php';
+require_once __DIR__ . '/save_notifications.php';
+require_once __DIR__ . '/dataset_path.php';
 
 function fg_seed_defaults(): void
 {
@@ -19,6 +24,22 @@ function fg_seed_defaults(): void
     if (!isset($posts['records']) || !is_array($posts['records'])) {
         $posts = ['records' => [], 'next_id' => 1];
         fg_save_posts($posts);
+    }
+
+    $uploads = fg_load_uploads();
+    if (!isset($uploads['records']) || !is_array($uploads['records'])) {
+        $uploads = ['records' => [], 'next_id' => 1];
+    }
+    if (!file_exists(fg_dataset_path('uploads'))) {
+        fg_save_uploads($uploads);
+    }
+
+    $notifications = fg_load_notifications();
+    if (!isset($notifications['records']) || !is_array($notifications['records'])) {
+        $notifications = ['records' => [], 'next_id' => 1];
+    }
+    if (!file_exists(fg_dataset_path('notifications'))) {
+        fg_save_notifications($notifications);
     }
 
     $settings = fg_load_settings();
@@ -73,10 +94,50 @@ function fg_seed_defaults(): void
                     'allowed_roles' => ['admin', 'moderator'],
                     'category' => 'collaboration',
                 ],
+                'notification_channel_defaults' => [
+                    'label' => 'Default Notification Channels',
+                    'description' => 'Channels queued when posts or settings trigger notifications.',
+                    'value' => ['email', 'browser', 'file-cache'],
+                    'managed_by' => 'admins',
+                    'allowed_roles' => ['admin'],
+                    'category' => 'notifications',
+                ],
+                'notification_cache_driver' => [
+                    'label' => 'Notification Cache Driver',
+                    'description' => 'Defines how notifications are cached for delivery.',
+                    'value' => 'file',
+                    'managed_by' => 'admins',
+                    'allowed_roles' => ['admin'],
+                    'category' => 'infrastructure',
+                ],
+                'cookie_notice_policy' => [
+                    'label' => 'Cookie Notice Policy',
+                    'description' => 'Controls whether the cookie banner is informational or required.',
+                    'value' => 'informational',
+                    'managed_by' => 'everyone',
+                    'allowed_roles' => [],
+                    'category' => 'privacy',
+                ],
+                'upload_limits' => [
+                    'label' => 'Upload Limits',
+                    'description' => 'Maximum number of attachments processed per post.',
+                    'value' => 5,
+                    'managed_by' => 'admins',
+                    'allowed_roles' => ['admin'],
+                    'category' => 'infrastructure',
+                ],
+                'template_selection_mode' => [
+                    'label' => 'Template Selection Mode',
+                    'description' => 'Determines whether members can choose from all templates or curated sets.',
+                    'value' => 'curated',
+                    'managed_by' => 'custom',
+                    'allowed_roles' => ['admin', 'moderator'],
+                    'category' => 'content',
+                ],
             ],
             'role_definitions' => [
                 'admin' => 'Full access to all datasets and settings delegation.',
-                'moderator' => 'May assist with collaboration flows as delegated.',
+                'moderator' => 'May assist with collaboration and template curation.',
                 'member' => 'Standard participant with profile and posting abilities.',
             ],
         ];

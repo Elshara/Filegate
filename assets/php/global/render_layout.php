@@ -26,6 +26,7 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
     echo '<script src="/assets/js/global/calculate_preview_statistics.js" defer></script>';
     echo '<script src="/assets/js/global/register_ajax_forms.js" defer></script>';
     echo '<script src="/assets/js/global/register_post_preview.js" defer></script>';
+    echo '<script src="/assets/js/global/register_upload_inputs.js" defer></script>';
     echo '<script src="/assets/js/global/register_embed_observer.js" defer></script>';
     echo '<script src="/assets/js/global/register_dataset_viewer.js" defer></script>';
     echo '<script src="/assets/js/global/init_client.js" defer></script>';

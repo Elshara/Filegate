@@ -20,3 +20,6 @@ Gemfile.lock
 # Application data
 data/social.db
 assets/json/*.json
+
+# User uploaded binaries
+assets/uploads/

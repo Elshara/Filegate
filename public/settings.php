@@ -8,6 +8,7 @@ require_once __DIR__ . '/../assets/php/global/list_datasets.php';
 require_once __DIR__ . '/../assets/php/global/save_json.php';
 require_once __DIR__ . '/../assets/php/global/render_layout.php';
 require_once __DIR__ . '/../assets/php/global/parse_allowed_list.php';
+require_once __DIR__ . '/../assets/php/global/normalize_setting_value.php';
 require_once __DIR__ . '/../assets/php/pages/render_settings.php';
 
 fg_bootstrap();
@@ -20,7 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'update-setting') {
         $setting = $_POST['setting'] ?? '';
-        $value = $_POST['value'] ?? '';
+        $value_raw = $_POST['value'] ?? '';
+        $value = is_string($value_raw) ? fg_normalize_setting_value($value_raw) : $value_raw;
         if (fg_update_setting($setting, $value, $user)) {
             $message = 'Setting updated.';
         } else {

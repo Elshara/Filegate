@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <template name="post_update" channel="email">
+        <description>Default notification triggered when a post is published or updated.</description>
+        <subject><![CDATA[{app_name}: {post_title} updated]]></subject>
+        <body><![CDATA[Hello {username},\n\n{author} just published "{post_title}". Visit {post_url} to review the update.\n\n— {app_name}]]></body>
+    </template>
+    <template name="post_update_browser" channel="browser">
+        <description>Push notification summarising a post update.</description>
+        <subject><![CDATA[{author} updated {post_title}]]></subject>
+        <body><![CDATA[{summary}]]></body>
+    </template>
+    <template name="policy_update" channel="cookie">
+        <description>Cookie banner copy for privacy and policy announcements.</description>
+        <subject><![CDATA[{app_name} policy update]]></subject>
+        <body><![CDATA[{message}]]></body>
+    </template>
+</templates>

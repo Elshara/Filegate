@@ -17,6 +17,36 @@
         "nature": "dynamic",
         "expose_via_api": true
     },
+    "uploads": {
+        "label": "Uploaded Assets",
+        "description": "Metadata describing user-provided files grouped by extension for local delivery.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "notifications": {
+        "label": "Notification Queue",
+        "description": "Queued notification payloads awaiting delivery via local channels.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "notification_channels": {
+        "label": "Notification Channels",
+        "description": "Static definitions of email, browser, cookie, and cache delivery mechanisms.",
+        "nature": "static",
+        "expose_via_api": true
+    },
+    "template_options": {
+        "label": "Template Options",
+        "description": "Available layout templates and their capabilities for posts and notifications.",
+        "nature": "static",
+        "expose_via_api": true
+    },
+    "editor_options": {
+        "label": "Editor Options",
+        "description": "Client-side editor toggles, formatting controls, and input variable defaults.",
+        "nature": "static",
+        "expose_via_api": true
+    },
     "embed_providers": {
         "label": "Embed Providers",
         "description": "Local templates that describe how recognised services and file types should render.",
@@ -28,5 +58,13 @@
         "description": "Reference list of supported HTML5 elements grouped by usage.",
         "nature": "static",
         "expose_via_api": true
+    },
+    "notification_templates": {
+        "label": "Notification Templates",
+        "description": "XML descriptors defining multi-channel notification subjects and bodies.",
+        "nature": "static",
+        "format": "xml",
+        "file": "notification_templates",
+        "expose_via_api": false
     }
 }

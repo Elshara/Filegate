@@ -7,6 +7,7 @@ require_once __DIR__ . '/../assets/php/global/upsert_user.php';
 require_once __DIR__ . '/../assets/php/global/sanitize_html.php';
 require_once __DIR__ . '/../assets/php/pages/render_profile.php';
 require_once __DIR__ . '/../assets/php/global/render_layout.php';
+require_once __DIR__ . '/../assets/php/global/load_notification_channels.php';
 
 fg_bootstrap();
 $current = fg_require_login();
@@ -28,6 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (int) $target['id'] === (int) $curr
         'location' => trim($_POST['location'] ?? ''),
         'privacy' => $_POST['privacy'] ?? ($current['privacy'] ?? 'public'),
     ];
+    $preferences = $_POST['notification_preferences'] ?? [];
+    if (!is_array($preferences)) {
+        $preferences = [$preferences];
+    }
+    $payload['notification_preferences'] = array_values(array_unique(array_filter(array_map('trim', $preferences))));
+    $payload['cache_opt_in'] = isset($_POST['cache_opt_in']);
     $target = fg_upsert_user(array_merge($current, $payload));
     $current = $target;
 }
