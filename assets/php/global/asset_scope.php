@@ -8,30 +8,11 @@ function fg_asset_scope(string $relative_path): string
         return 'global';
     }
 
-    $global_public = [
-        'public/index.php',
-        'public/login.php',
-        'public/logout.php',
-        'public/settings.php',
-        'public/setup.php',
-        'public/dataset.php',
-        'public/media.php',
-        'public/toggle-like.php',
-    ];
-
-    if (in_array($normalized, $global_public, true)) {
+    if (strpos($normalized, 'assets/php/public/') === 0) {
         return 'global';
     }
 
     if (strpos($normalized, 'assets/') === 0 && strpos($normalized, '/pages/') !== false) {
-        return 'local';
-    }
-
-    if (strpos($normalized, 'public/assets/') === 0) {
-        return 'local';
-    }
-
-    if (strpos($normalized, 'public/') === 0) {
         return 'local';
     }
 

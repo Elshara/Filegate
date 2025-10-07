@@ -9,7 +9,6 @@ function fg_list_asset_files(): array
 
     $directories = [
         $root . '/assets',
-        $root . '/public',
     ];
 
     $allowed_extensions = [
