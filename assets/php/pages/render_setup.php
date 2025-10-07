@@ -450,6 +450,8 @@ function fg_render_setup_page(array $data = []): void
             $editable = !empty($dataset['editable']);
             $missing = !empty($dataset['missing']);
             $hasDefaults = !empty($dataset['has_defaults']);
+            $snapshots = $dataset['snapshots'] ?? [];
+            $snapshotLimit = (int) ($dataset['snapshot_limit'] ?? 0);
 
             $detailsAttributes = 'class="dataset-card" data-dataset="' . htmlspecialchars($datasetName) . '" data-nature="' . htmlspecialchars($nature) . '" data-format="' . htmlspecialchars($format) . '"';
             if ($missing) {
@@ -513,6 +515,82 @@ function fg_render_setup_page(array $data = []): void
             }
             $body .= '</div>';
             $body .= '</form>';
+
+            $body .= '<div class="snapshot-section">';
+            $body .= '<h3>Snapshots</h3>';
+            if ($snapshotLimit > 0) {
+                $body .= '<p class="notice muted">Showing up to ' . htmlspecialchars((string) $snapshotLimit) . ' most recent captures for this dataset.</p>';
+            }
+            $body .= '<form method="post" action="/setup.php" class="snapshot-form">';
+            $body .= '<input type="hidden" name="action" value="create_snapshot">';
+            $body .= '<input type="hidden" name="dataset" value="' . htmlspecialchars($datasetName) . '">';
+            $body .= '<label class="field compact">';
+            $body .= '<span class="field-label">Snapshot label</span>';
+            $body .= '<span class="field-control"><input type="text" name="snapshot_label" placeholder="Manual snapshot"></span>';
+            $body .= '<span class="field-description">Provide a short label before capturing the current dataset state.</span>';
+            $body .= '</label>';
+            if ($editable) {
+                $body .= '<button type="submit" class="button">Create snapshot</button>';
+            } else {
+                $body .= '<button type="submit" class="button" disabled>Create snapshot</button>';
+            }
+            $body .= '</form>';
+
+            if (!empty($snapshots)) {
+                $body .= '<div class="snapshot-list">';
+                foreach ($snapshots as $snapshot) {
+                    $snapshotId = (int) ($snapshot['id'] ?? 0);
+                    $snapshotReason = $snapshot['reason'] ?? '';
+                    $snapshotCreatedAt = $snapshot['created_at'] ?? '';
+                    $snapshotUser = $snapshot['created_by'] ?? '';
+                    $snapshotPreview = $snapshot['preview'] ?? '';
+                    $snapshotFormat = strtoupper($snapshot['format'] ?? 'json');
+
+                    $body .= '<article class="snapshot-card" data-snapshot="' . htmlspecialchars((string) $snapshotId) . '">';
+                    $body .= '<header>';
+                    $body .= '<span class="snapshot-reason">' . htmlspecialchars($snapshotReason === '' ? 'Snapshot #' . $snapshotId : $snapshotReason) . '</span>';
+                    $body .= '<span class="snapshot-meta">';
+                    if ($snapshotCreatedAt !== '') {
+                        $body .= '<span class="snapshot-chip">' . htmlspecialchars($snapshotCreatedAt) . '</span>';
+                    }
+                    $body .= '<span class="snapshot-chip">Format: ' . htmlspecialchars($snapshotFormat) . '</span>';
+                    if ($snapshotUser !== '') {
+                        $body .= '<span class="snapshot-chip">Captured by ' . htmlspecialchars($snapshotUser) . '</span>';
+                    }
+                    $body .= '</span>';
+                    $body .= '</header>';
+                    $body .= '<div class="snapshot-preview">';
+                    $body .= '<textarea rows="6" readonly>' . htmlspecialchars($snapshotPreview) . '</textarea>';
+                    $body .= '</div>';
+                    $body .= '<div class="snapshot-actions">';
+                    $body .= '<form method="post" action="/setup.php" class="inline-form">';
+                    $body .= '<input type="hidden" name="action" value="restore_snapshot">';
+                    $body .= '<input type="hidden" name="dataset" value="' . htmlspecialchars($datasetName) . '">';
+                    $body .= '<input type="hidden" name="snapshot_id" value="' . htmlspecialchars((string) $snapshotId) . '">';
+                    if ($editable) {
+                        $body .= '<button type="submit" class="button primary">Restore</button>';
+                    } else {
+                        $body .= '<button type="submit" class="button" disabled>Restore</button>';
+                    }
+                    $body .= '</form>';
+                    $body .= '<form method="post" action="/setup.php" class="inline-form">';
+                    $body .= '<input type="hidden" name="action" value="delete_snapshot">';
+                    $body .= '<input type="hidden" name="dataset" value="' . htmlspecialchars($datasetName) . '">';
+                    $body .= '<input type="hidden" name="snapshot_id" value="' . htmlspecialchars((string) $snapshotId) . '">';
+                    if ($editable) {
+                        $body .= '<button type="submit" class="button danger">Delete</button>';
+                    } else {
+                        $body .= '<button type="submit" class="button" disabled>Delete</button>';
+                    }
+                    $body .= '</form>';
+                    $body .= '</div>';
+                    $body .= '</article>';
+                }
+                $body .= '</div>';
+            } else {
+                $body .= '<p class="notice muted">No snapshots have been recorded yet.</p>';
+            }
+            $body .= '</div>';
 
             $body .= '</div>';
             $body .= '</details>';

@@ -18,6 +18,9 @@ require_once __DIR__ . '/default_themes_dataset.php';
 require_once __DIR__ . '/load_pages.php';
 require_once __DIR__ . '/save_pages.php';
 require_once __DIR__ . '/default_pages_dataset.php';
+require_once __DIR__ . '/load_asset_snapshots.php';
+require_once __DIR__ . '/save_asset_snapshots.php';
+require_once __DIR__ . '/default_asset_snapshots_dataset.php';
 
 function fg_seed_defaults(): void
 {
@@ -65,6 +68,12 @@ function fg_seed_defaults(): void
     if (!isset($themes['records']) || !is_array($themes['records'])) {
         $themes = fg_default_themes_dataset();
         fg_save_themes($themes);
+    }
+
+    $snapshots = fg_load_asset_snapshots();
+    if (!isset($snapshots['records']) || !is_array($snapshots['records'])) {
+        $snapshots = fg_default_asset_snapshots_dataset();
+        fg_save_asset_snapshots($snapshots);
     }
 }
 

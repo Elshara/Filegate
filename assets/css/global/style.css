@@ -760,6 +760,119 @@ input[type="submit"]:hover {
   color: #fff;
 }
 
+.snapshot-section {
+  border-top: 1px solid rgba(28, 37, 48, 0.08);
+  padding-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.snapshot-section h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(28, 37, 48, 0.9);
+}
+
+.snapshot-form {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.snapshot-form .field {
+  flex: 1 1 240px;
+}
+
+.snapshot-form .button {
+  align-self: flex-end;
+  height: 42px;
+}
+
+.snapshot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.snapshot-card {
+  border: 1px solid rgba(28, 37, 48, 0.12);
+  border-radius: 0.9rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.snapshot-card header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.snapshot-reason {
+  font-weight: 600;
+  color: rgba(28, 37, 48, 0.92);
+}
+
+.snapshot-meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.snapshot-chip {
+  background: rgba(34, 53, 92, 0.1);
+  border-radius: 999px;
+  padding: 0.15rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(28, 37, 48, 0.7);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.snapshot-preview textarea {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(28, 37, 48, 0.15);
+  padding: 0.65rem 0.85rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', monospace;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  background: rgba(15, 23, 42, 0.05);
+  color: rgba(28, 37, 48, 0.8);
+  resize: vertical;
+}
+
+.snapshot-preview textarea:focus {
+  outline: 2px solid rgba(54, 87, 255, 0.4);
+  outline-offset: 2px;
+}
+
+.snapshot-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.snapshot-actions .inline-form {
+  display: inline-flex;
+}
+
+.snapshot-actions .button {
+  min-width: 96px;
+}
+
+.snapshot-actions .button.danger {
+  background: #c0392b;
+  color: #fff;
+}
+
 .theme-panel,
 .theme-manager {
   margin-top: 2rem;

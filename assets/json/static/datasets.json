@@ -53,6 +53,12 @@
         "nature": "dynamic",
         "expose_via_api": false
     },
+    "asset_snapshots": {
+        "label": "Dataset Snapshots",
+        "description": "Historical captures of dataset payloads recorded before changes are applied.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
     "notification_channels": {
         "label": "Notification Channels",
         "description": "Static definitions of email, browser, cookie, and cache delivery mechanisms.",

@@ -123,6 +123,10 @@ Statistics follow the **Post Statistics Visibility** setting. When hidden, the v
 
 Administrators can expand the **Dataset Management** section on `/setup.php` to edit or upload replacements for any dataset in the manifest. The summary panel highlights each store’s nature, format, size, and last update time, and the inline editor routes writes to the correct `static` or `dynamic` directory automatically. When a supported dataset (such as `users`, `posts`, `uploads`, `notifications`, `settings`, or `asset_overrides`) exposes defaults, the **Reset to defaults** button regenerates the seeded payload without touching the shell.
 
+Before any dataset write lands, Filegate now records the previous payload into the `asset_snapshots` store (`assets/json/dynamic/asset_snapshots.json`). The setup dashboard surfaces the most recent captures for each dataset—complete with timestamps, the member who triggered the change, the original reason, and a trimmed preview. Administrators can create named snapshots on demand, restore an older payload in a single click, or prune redundant snapshots without leaving the browser.
+
+Snapshot storage honours the dataset manifest’s static/dynamic split and enforces per-dataset limits so shared hosts stay tidy. Restoring a snapshot automatically records the current payload first, making every change reversible from the UI.
+
 The dataset manager works alongside the dataset viewer endpoint (`/dataset.php`), which still honours the manifest’s `expose_via_api` flag. Sensitive stores such as `users` remain blocked, while reference data (for example `html5_elements`) and operational metadata (`settings`) are available for quick inspection directly from the browser.
 
 The feed and composer use the same client runtime to fetch the HTML5 element reference on demand, provide live previews, and post likes asynchronously without full page reloads. All network calls terminate within the application—no remote APIs are required.

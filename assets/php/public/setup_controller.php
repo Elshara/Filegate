@@ -33,6 +33,11 @@ require_once __DIR__ . '/../global/default_pages_dataset.php';
 require_once __DIR__ . '/../global/save_pages.php';
 require_once __DIR__ . '/../pages/render_setup.php';
 require_once __DIR__ . '/../global/guard_asset.php';
+require_once __DIR__ . '/../global/load_asset_snapshots.php';
+require_once __DIR__ . '/../global/record_dataset_snapshot.php';
+require_once __DIR__ . '/../global/list_dataset_snapshots.php';
+require_once __DIR__ . '/../global/restore_dataset_snapshot.php';
+require_once __DIR__ . '/../global/delete_dataset_snapshot.php';
 
 function fg_public_setup_controller(): void
 {
@@ -63,7 +68,7 @@ function fg_public_setup_controller(): void
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action_override'] ?? ($_POST['action'] ?? '');
-        if (in_array($action, ['save_dataset', 'reset_dataset'], true)) {
+        if (in_array($action, ['save_dataset', 'reset_dataset', 'create_snapshot', 'restore_snapshot', 'delete_snapshot'], true)) {
             $dataset = $_POST['dataset'] ?? '';
             if ($dataset === '' || !isset($manifest[$dataset])) {
                 $errors[] = 'Unknown dataset supplied.';
@@ -87,7 +92,15 @@ function fg_public_setup_controller(): void
                         $errors[] = 'Dataset payload cannot be empty.';
                     } else {
                         try {
-                            fg_save_dataset_contents($dataset, $payload);
+                            fg_save_dataset_contents(
+                                $dataset,
+                                $payload,
+                                'Setup dashboard save',
+                                [
+                                    'trigger' => 'setup_dashboard',
+                                    'performed_by' => $current['id'] ?? null,
+                                ]
+                            );
                             $message = 'Dataset ' . $dataset . ' saved successfully.';
                         } catch (Throwable $exception) {
                             $errors[] = $exception->getMessage();
@@ -99,8 +112,79 @@ function fg_public_setup_controller(): void
                         $errors[] = 'This dataset does not define automatic defaults.';
                     } else {
                         try {
-                            fg_save_dataset_contents($dataset, $defaultPayload);
+                            fg_save_dataset_contents(
+                                $dataset,
+                                $defaultPayload,
+                                'Dataset reset',
+                                [
+                                    'trigger' => 'setup_dashboard',
+                                    'performed_by' => $current['id'] ?? null,
+                                    'reset_to_defaults' => true,
+                                ]
+                            );
                             $message = 'Dataset ' . $dataset . ' has been reset to its defaults.';
+                        } catch (Throwable $exception) {
+                            $errors[] = $exception->getMessage();
+                        }
+                    }
+                } elseif ($action === 'create_snapshot') {
+                    $labelInput = trim((string) ($_POST['snapshot_label'] ?? ''));
+                    $label = $labelInput === '' ? 'Manual snapshot' : $labelInput;
+                    try {
+                        $payload = fg_load_dataset_contents($dataset);
+                        if ($payload === '') {
+                            $errors[] = 'Dataset is empty. Generate contents before recording a snapshot.';
+                        } else {
+                            $created = fg_record_dataset_snapshot(
+                                $dataset,
+                                $label,
+                                [
+                                    'trigger' => 'manual',
+                                    'source' => 'setup_dashboard',
+                                    'created_by' => $current['id'] ?? null,
+                                ],
+                                $payload
+                            );
+                            if ($created) {
+                                $message = 'Snapshot recorded for ' . $dataset . '.';
+                            } else {
+                                $errors[] = 'Snapshot not recorded because an identical copy already exists.';
+                            }
+                        }
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                } elseif ($action === 'restore_snapshot') {
+                    $snapshotId = (int) ($_POST['snapshot_id'] ?? 0);
+                    if ($snapshotId <= 0) {
+                        $errors[] = 'Snapshot identifier is required to restore a dataset.';
+                    } else {
+                        try {
+                            fg_restore_dataset_snapshot(
+                                $dataset,
+                                $snapshotId,
+                                [
+                                    'restored_by' => $current['id'] ?? null,
+                                    'trigger' => 'setup_dashboard',
+                                ]
+                            );
+                            $message = 'Snapshot restored for ' . $dataset . '.';
+                        } catch (Throwable $exception) {
+                            $errors[] = $exception->getMessage();
+                        }
+                    }
+                } elseif ($action === 'delete_snapshot') {
+                    $snapshotId = (int) ($_POST['snapshot_id'] ?? 0);
+                    if ($snapshotId <= 0) {
+                        $errors[] = 'Snapshot identifier missing for deletion.';
+                    } else {
+                        try {
+                            $removed = fg_delete_dataset_snapshot($snapshotId, $dataset);
+                            if ($removed) {
+                                $message = 'Snapshot removed.';
+                            } else {
+                                $errors[] = 'Snapshot not found or already removed.';
+                            }
                         } catch (Throwable $exception) {
                             $errors[] = $exception->getMessage();
                         }
@@ -407,6 +491,8 @@ function fg_public_setup_controller(): void
     $themeTokens = fg_load_theme_tokens();
     $defaultThemeSetting = $settings['settings']['default_theme']['value'] ?? ($themesData['metadata']['default'] ?? '');
     $themePolicy = $settings['settings']['theme_personalisation_policy']['value'] ?? 'enabled';
+    $snapshotStore = fg_load_asset_snapshots();
+    $snapshotMetadata = $snapshotStore['metadata'] ?? [];
 
     $datasets = [];
     foreach ($manifest as $name => $definition) {
@@ -457,6 +543,37 @@ function fg_public_setup_controller(): void
             'editable' => $editable,
             'missing' => !$exists,
             'has_defaults' => fg_dataset_default_payload($name) !== null,
+            'snapshots' => array_map(
+                static function (array $snapshot) use ($users) {
+                    $createdBy = $snapshot['context']['created_by'] ?? null;
+                    $userLabel = '';
+                    if ($createdBy !== null) {
+                        foreach ($users as $user) {
+                            if ((int) ($user['id'] ?? 0) === (int) $createdBy) {
+                                $userLabel = $user['username'] ?? ($user['email'] ?? '');
+                                break;
+                            }
+                        }
+                    }
+
+                    $preview = trim((string) ($snapshot['payload'] ?? ''));
+                    if (strlen($preview) > 600) {
+                        $preview = substr($preview, 0, 600) . "\n...";
+                    }
+
+                    return [
+                        'id' => (int) ($snapshot['id'] ?? 0),
+                        'reason' => $snapshot['reason'] ?? '',
+                        'created_at' => $snapshot['created_at'] ?? '',
+                        'created_by' => $userLabel,
+                        'preview' => $preview,
+                        'format' => $snapshot['format'] ?? 'json',
+                        'context' => $snapshot['context'] ?? [],
+                    ];
+                },
+                fg_list_dataset_snapshots($name, 5)
+            ),
+            'snapshot_limit' => (int) ($snapshotMetadata['per_dataset_limit'] ?? 0),
         ];
     }
 

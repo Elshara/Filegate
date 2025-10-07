@@ -3,12 +3,29 @@
 require_once __DIR__ . '/ensure_data_directory.php';
 require_once __DIR__ . '/dataset_path.php';
 require_once __DIR__ . '/dataset_format.php';
+require_once __DIR__ . '/load_dataset_contents.php';
+require_once __DIR__ . '/record_dataset_snapshot.php';
 
-function fg_save_dataset_contents(string $name, string $contents): void
+function fg_save_dataset_contents(string $name, string $contents, ?string $reason = null, array $context = []): void
 {
     fg_ensure_data_directory();
     $path = fg_dataset_path($name);
     $format = fg_dataset_format($name);
+
+    $previousPayload = null;
+    if ($name !== 'asset_snapshots' && file_exists($path)) {
+        $previousPayload = fg_load_dataset_contents($name);
+        $snapshotContext = $context;
+        if (!isset($snapshotContext['trigger'])) {
+            $snapshotContext['trigger'] = 'system';
+        }
+        fg_record_dataset_snapshot(
+            $name,
+            $reason ?? 'Dataset save',
+            $snapshotContext,
+            $previousPayload
+        );
+    }
 
     if ($format === 'json') {
         $decoded = json_decode($contents, true);
