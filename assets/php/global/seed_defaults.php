@@ -15,6 +15,9 @@ require_once __DIR__ . '/save_themes.php';
 require_once __DIR__ . '/dataset_path.php';
 require_once __DIR__ . '/default_settings_dataset.php';
 require_once __DIR__ . '/default_themes_dataset.php';
+require_once __DIR__ . '/load_pages.php';
+require_once __DIR__ . '/save_pages.php';
+require_once __DIR__ . '/default_pages_dataset.php';
 
 function fg_seed_defaults(): void
 {
@@ -28,6 +31,12 @@ function fg_seed_defaults(): void
     if (!isset($posts['records']) || !is_array($posts['records'])) {
         $posts = ['records' => [], 'next_id' => 1];
         fg_save_posts($posts);
+    }
+
+    $pages = fg_load_pages();
+    if (!isset($pages['records']) || !is_array($pages['records'])) {
+        $pages = fg_default_pages_dataset();
+        fg_save_pages($pages);
     }
 
     $uploads = fg_load_uploads();

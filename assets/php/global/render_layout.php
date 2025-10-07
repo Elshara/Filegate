@@ -6,6 +6,7 @@ require_once __DIR__ . '/get_asset_parameter_value.php';
 require_once __DIR__ . '/is_admin.php';
 require_once __DIR__ . '/resolve_theme_tokens.php';
 require_once __DIR__ . '/theme_inline_style.php';
+require_once __DIR__ . '/pages_for_navigation.php';
 
 function fg_render_layout(string $title, string $body, array $options = []): void
 {
@@ -71,6 +72,8 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
         htmlspecialchars((string) $themeKey)
     );
     echo '<body ' . $bodyAttributes . '>';
+    $navPages = fg_pages_for_navigation($current);
+
     echo '<header class="app-header">';
     echo '<div class="app-title">' . htmlspecialchars($app_name) . '</div>';
     if ($nav) {
@@ -82,10 +85,24 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
             if (fg_is_admin($current)) {
                 echo '<a href="/setup.php">Setup</a>';
             }
+            echo '<a href="/page.php">Pages</a>';
+            foreach ($navPages as $navPage) {
+                if (empty($navPage['slug'])) {
+                    continue;
+                }
+                echo '<a href="/page.php?slug=' . urlencode((string) $navPage['slug']) . '">' . htmlspecialchars($navPage['title']) . '</a>';
+            }
             echo '<form method="post" action="/logout.php" class="logout-form"><button type="submit">Sign out</button></form>';
         } else {
             echo '<a href="/login.php">Sign in</a>';
             echo '<a href="/register.php">Create account</a>';
+            echo '<a href="/page.php">Pages</a>';
+            foreach ($navPages as $navPage) {
+                if (empty($navPage['slug'])) {
+                    continue;
+                }
+                echo '<a href="/page.php?slug=' . urlencode((string) $navPage['slug']) . '">' . htmlspecialchars($navPage['title']) . '</a>';
+            }
         }
         echo '</nav>';
     }

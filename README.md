@@ -79,6 +79,19 @@ The setup dashboard mirrors the `assets/php/global` convention by saving each ch
 
 Members with permission to personalise assets will see an **Asset personalisation** section inside `/settings.php`. The UI surfaces the default, global, and role-derived values alongside the active value for each parameter so users can confidently tune their experience without breaking dependent assets.
 
+## Page management and navigation
+
+The setup dashboard now ships with a **Page Management** section dedicated to the flat-file `pages` dataset. Administrators can:
+
+- review every published page in card form, complete with visibility, template keyword, and navigation status;
+- edit titles, slugs, summaries, content, visibility, allowed roles, and navigation flags via labelled controls (no JSON editing required);
+- delete obsolete pages safely with confirmation prompts; and
+- draft brand-new pages from the browser, seeding content, template, and visibility defaults in one action.
+
+Pages live in `assets/json/dynamic/pages.json` and are seeded with a welcome page by default. The dataset is configurable like any other store—use the dataset manager to inspect the payload or reset to defaults. Each page honours the visibility model (`public`, `members`, or selected roles), and the global navigation automatically surfaces entries marked **Show in navigation** for both authenticated and guest visitors. Members still benefit from per-asset overrides because the renderer participates in the configuration manifest like every other asset.
+
+Visit `/page.php` to see the published list. Linking directly to `/page.php?slug=welcome` (or any custom slug) renders the page using the stored template keyword, and administrators can create additional templates via existing asset tooling to extend the layout catalogue.
+
 ## Posting model
 
 Posts are stored with HTML5-friendly bodies plus additional metadata:

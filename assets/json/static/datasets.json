@@ -11,6 +11,12 @@
         "nature": "dynamic",
         "expose_via_api": false
     },
+    "pages": {
+        "label": "Pages",
+        "description": "Locally managed navigation pages with visibility controls and template metadata.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
     "settings": {
         "label": "Settings",
         "description": "Delegated configuration entries defining application branding and behavior.",

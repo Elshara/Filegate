@@ -25,6 +25,12 @@ require_once __DIR__ . '/../global/load_themes.php';
 require_once __DIR__ . '/../global/save_themes.php';
 require_once __DIR__ . '/../global/default_themes_dataset.php';
 require_once __DIR__ . '/../global/save_settings.php';
+require_once __DIR__ . '/../global/load_pages.php';
+require_once __DIR__ . '/../global/add_page.php';
+require_once __DIR__ . '/../global/update_page.php';
+require_once __DIR__ . '/../global/delete_page.php';
+require_once __DIR__ . '/../global/default_pages_dataset.php';
+require_once __DIR__ . '/../global/save_pages.php';
 require_once __DIR__ . '/../pages/render_setup.php';
 require_once __DIR__ . '/../global/guard_asset.php';
 
@@ -228,6 +234,75 @@ function fg_public_setup_controller(): void
                     $message = 'Default theme updated.';
                 }
             }
+        } elseif (in_array($action, ['create_page', 'update_page', 'delete_page'], true)) {
+            try {
+                $pages = fg_load_pages();
+                if (!isset($pages['records']) || !is_array($pages['records'])) {
+                    $pages = fg_default_pages_dataset();
+                    fg_save_pages($pages);
+                }
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to load pages dataset: ' . $exception->getMessage();
+                $pages = fg_default_pages_dataset();
+            }
+
+            if ($action === 'create_page') {
+                $input = [
+                    'title' => $_POST['title'] ?? '',
+                    'slug' => $_POST['slug'] ?? '',
+                    'summary' => $_POST['summary'] ?? '',
+                    'content' => $_POST['content'] ?? '',
+                    'format' => $_POST['format'] ?? 'html',
+                    'visibility' => $_POST['visibility'] ?? 'public',
+                    'allowed_roles' => $_POST['allowed_roles'] ?? [],
+                    'show_in_navigation' => isset($_POST['show_in_navigation']),
+                    'template' => $_POST['template'] ?? 'standard',
+                    'variables' => [],
+                    'owner_id' => $current['id'] ?? null,
+                ];
+                try {
+                    fg_add_page($input);
+                    $message = 'Page created successfully.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            } elseif ($action === 'update_page') {
+                $pageId = (int) ($_POST['page_id'] ?? 0);
+                if ($pageId <= 0) {
+                    $errors[] = 'Invalid page identifier supplied.';
+                } else {
+                    $input = [
+                        'title' => $_POST['title'] ?? '',
+                        'slug' => $_POST['slug'] ?? '',
+                        'summary' => $_POST['summary'] ?? '',
+                        'content' => $_POST['content'] ?? '',
+                        'format' => $_POST['format'] ?? 'html',
+                        'visibility' => $_POST['visibility'] ?? 'public',
+                        'allowed_roles' => $_POST['allowed_roles'] ?? [],
+                        'show_in_navigation' => isset($_POST['show_in_navigation']),
+                        'template' => $_POST['template'] ?? 'standard',
+                        'variables' => [],
+                    ];
+                    try {
+                        fg_update_page($pageId, $input);
+                        $message = 'Page updated successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'delete_page') {
+                $pageId = (int) ($_POST['page_id'] ?? 0);
+                if ($pageId <= 0) {
+                    $errors[] = 'Unknown page specified for deletion.';
+                } else {
+                    try {
+                        fg_delete_page($pageId);
+                        $message = 'Page deleted successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            }
         } else {
             $asset = $_POST['asset'] ?? '';
             $configurations = fg_load_asset_configurations();
@@ -397,5 +472,6 @@ function fg_public_setup_controller(): void
         'theme_tokens' => $themeTokens,
         'default_theme' => $defaultThemeSetting,
         'theme_policy' => $themePolicy,
+        'pages' => fg_load_pages(),
     ]);
 }

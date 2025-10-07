@@ -13,6 +13,8 @@ function fg_render_setup_page(array $data = []): void
     $themeTokens = $data['theme_tokens']['tokens'] ?? [];
     $defaultTheme = $data['default_theme'] ?? '';
     $themePolicy = $data['theme_policy'] ?? 'enabled';
+    $pagesDataset = $data['pages'] ?? ['records' => [], 'next_id' => 1];
+    $pageRecords = $pagesDataset['records'] ?? [];
     $message = $data['message'] ?? '';
     $errors = $data['errors'] ?? [];
 
@@ -318,6 +320,117 @@ function fg_render_setup_page(array $data = []): void
     }
 
     $body .= '</div>';
+
+    $body .= '<section class="pages-manager">';
+    $body .= '<h2>Page Management</h2>';
+    $body .= '<p>Create and curate navigation-ready pages without editing code. Assign visibility, templates, and navigation stati';
+    $body .= 'us per page.</p>';
+
+    if (empty($pageRecords)) {
+        $body .= '<p class="notice info">No pages published yet. Use the form below to create the first one.</p>';
+    }
+
+    foreach ($pageRecords as $page) {
+        $pageId = (int) ($page['id'] ?? 0);
+        $pageTitle = $page['title'] ?? 'Page';
+        $pageSlug = $page['slug'] ?? '';
+        $pageSummary = $page['summary'] ?? '';
+        $pageContent = $page['content'] ?? '';
+        $pageVisibility = $page['visibility'] ?? 'public';
+        $pageFormat = $page['format'] ?? 'html';
+        $pageTemplate = $page['template'] ?? 'standard';
+        $pageRoles = array_map('strval', $page['allowed_roles'] ?? []);
+        $pageNav = !empty($page['show_in_navigation']);
+
+        $body .= '<article class="page-card" data-page="' . htmlspecialchars((string) $pageSlug) . '">';
+        $body .= '<header><h3>' . htmlspecialchars($pageTitle) . '</h3>';
+        $body .= '<p class="page-card-meta"><code>' . htmlspecialchars((string) $pageSlug) . '</code> · Visibility: ' . htmlspecialchars(ucfirst((string) $pageVisibility)) . '</p>';
+        $body .= '</header>';
+        $body .= '<form method="post" action="/setup.php" class="page-form">';
+        $body .= '<input type="hidden" name="action" value="update_page">';
+        $body .= '<input type="hidden" name="page_id" value="' . htmlspecialchars((string) $pageId) . '">';
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value="' . htmlspecialchars($pageTitle) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Slug</span><span class="field-control"><input type="text" name="slug" value="' . htmlspecialchars((string) $pageSlug) . '"></span><span class="field-description">Used for the page URL.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><input type="text" name="summary" value="' . htmlspecialchars($pageSummary) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Format</span><span class="field-control"><select name="format">';
+        foreach (['html' => 'HTML', 'text' => 'Plain text'] as $value => $labelOption) {
+            $selected = $pageFormat === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($labelOption) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Template</span><span class="field-control"><input type="text" name="template" value="' . htmlspecialchars($pageTemplate) . '"></span><span class="field-description">Reference a template keyword for layout variations.</span></label>';
+        $body .= '</div>';
+
+        $body .= '<label class="field"><span class="field-label">Content</span><span class="field-control"><textarea name="content" rows="8">' . htmlspecialchars($pageContent) . '</textarea></span></label>';
+
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+        foreach (['public' => 'Public', 'members' => 'Members', 'roles' => 'Selected roles'] as $value => $labelOption) {
+            $selected = $pageVisibility === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($labelOption) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<fieldset class="field"><legend>Roles permitted</legend><div class="field-checkbox-group">';
+        foreach ($roles as $roleKey => $roleDescription) {
+            $checked = in_array((string) $roleKey, $pageRoles, true) ? ' checked' : '';
+            $body .= '<label><input type="checkbox" name="allowed_roles[]" value="' . htmlspecialchars((string) $roleKey) . '"' . $checked . '> ' . htmlspecialchars(ucfirst((string) $roleKey)) . '</label>';
+        }
+        $body .= '</div><p class="field-description">Only used when visibility is set to selected roles.</p></fieldset>';
+        $checkedNav = $pageNav ? ' checked' : '';
+        $body .= '<label class="field-toggle"><input type="checkbox" name="show_in_navigation" value="1"' . $checkedNav . '> Show in navigation</label>';
+        $body .= '</div>';
+
+        $body .= '<div class="action-row">';
+        $body .= '<button type="submit" class="button primary">Save page</button>';
+        $body .= '</div>';
+        $body .= '</form>';
+
+        $body .= '<form method="post" action="/setup.php" class="page-delete-form" onsubmit="return confirm(\'Delete this page?\');">';
+        $body .= '<input type="hidden" name="action" value="delete_page">';
+        $body .= '<input type="hidden" name="page_id" value="' . htmlspecialchars((string) $pageId) . '">';
+        $body .= '<button type="submit" class="button danger">Delete page</button>';
+        $body .= '</form>';
+
+        $body .= '</article>';
+    }
+
+    $body .= '<article class="page-card create">';
+    $body .= '<header><h3>Create new page</h3><p>Draft a new page with full control over visibility and placement.</p></header>';
+    $body .= '<form method="post" action="/setup.php" class="page-form">';
+    $body .= '<input type="hidden" name="action" value="create_page">';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value=""></span></label>';
+    $body .= '<label class="field"><span class="field-label">Slug</span><span class="field-control"><input type="text" name="slug" value=""></span></label>';
+    $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><input type="text" name="summary" value=""></span></label>';
+    $body .= '<label class="field"><span class="field-label">Format</span><span class="field-control"><select name="format">';
+    foreach (['html' => 'HTML', 'text' => 'Plain text'] as $value => $labelOption) {
+        $body .= '<option value="' . htmlspecialchars($value) . '">' . htmlspecialchars($labelOption) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Template</span><span class="field-control"><input type="text" name="template" value="standard"></span></label>';
+    $body .= '</div>';
+    $body .= '<label class="field"><span class="field-label">Content</span><span class="field-control"><textarea name="content" rows="6"></textarea></span></label>';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+    foreach (['public' => 'Public', 'members' => 'Members', 'roles' => 'Selected roles'] as $value => $labelOption) {
+        $body .= '<option value="' . htmlspecialchars($value) . '">' . htmlspecialchars($labelOption) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<fieldset class="field"><legend>Roles permitted</legend><div class="field-checkbox-group">';
+    foreach ($roles as $roleKey => $roleDescription) {
+        $body .= '<label><input type="checkbox" name="allowed_roles[]" value="' . htmlspecialchars((string) $roleKey) . '"> ' . htmlspecialchars(ucfirst((string) $roleKey)) . '</label>';
+    }
+    $body .= '</div><p class="field-description">Only active when restricting to selected roles.</p></fieldset>';
+    $body .= '<label class="field-toggle"><input type="checkbox" name="show_in_navigation" value="1" checked> Show in navigation</label>';
+    $body .= '</div>';
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Create page</button>';
+    $body .= '</div>';
+    $body .= '</form>';
+    $body .= '</article>';
+
+    $body .= '</section>';
 
     if (!empty($datasets)) {
         $body .= '<section class="dataset-manager">';

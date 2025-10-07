@@ -3,6 +3,7 @@
 require_once __DIR__ . '/dataset_format.php';
 require_once __DIR__ . '/default_settings_dataset.php';
 require_once __DIR__ . '/default_themes_dataset.php';
+require_once __DIR__ . '/default_pages_dataset.php';
 
 function fg_dataset_default_payload(string $name): ?string
 {
@@ -16,6 +17,9 @@ function fg_dataset_default_payload(string $name): ?string
             case 'uploads':
             case 'notifications':
                 $defaults = ['records' => [], 'next_id' => 1];
+                break;
+            case 'pages':
+                $defaults = fg_default_pages_dataset();
                 break;
             case 'asset_overrides':
                 $defaults = ['records' => ['global' => [], 'roles' => [], 'users' => []]];

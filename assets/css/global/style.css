@@ -919,3 +919,50 @@ input[type="submit"]:hover {
   gap: 0.75rem;
   align-items: center;
 }
+
+.pages-manager {
+  margin-top: 2rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.pages-manager .page-card {
+  background: var(--fg-surface, #ffffff);
+  border: 1px solid rgba(28, 37, 48, 0.12);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.pages-manager .page-card header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.pages-manager .page-card header .page-card-meta {
+  margin: 0.35rem 0 0;
+  color: rgba(28, 37, 48, 0.55);
+  font-size: 0.9rem;
+}
+
+.pages-manager .page-card.create {
+  border-style: dashed;
+  background: rgba(28, 37, 48, 0.04);
+}
+
+.pages-manager .page-form textarea {
+  width: 100%;
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.pages-manager .page-delete-form {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pages-manager .page-delete-form .button {
+  background: #e53e3e;
+  color: #ffffff;
+}
