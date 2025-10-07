@@ -4610,534 +4610,261 @@
             "label": "Public Assets Css Global Style",
             "scope": "local",
             "extension": "css",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/css/global/style.css"
         },
         "public/assets/js/global/calculate_preview_statistics.js": {
             "label": "Public Assets Js Global Calculate Preview Statistics",
             "scope": "local",
             "extension": "js",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/js/global/calculate_preview_statistics.js"
         },
         "public/assets/js/global/detect_embed.js": {
             "label": "Public Assets Js Global Detect Embed",
             "scope": "local",
             "extension": "js",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/js/global/detect_embed.js"
         },
         "public/assets/js/global/extract_urls.js": {
             "label": "Public Assets Js Global Extract Urls",
             "scope": "local",
             "extension": "js",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/js/global/extract_urls.js"
         },
         "public/assets/js/global/init_client.js": {
             "label": "Public Assets Js Global Init Client",
             "scope": "local",
             "extension": "js",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/js/global/init_client.js"
         },
         "public/assets/js/global/register_ajax_forms.js": {
             "label": "Public Assets Js Global Register Ajax Forms",
             "scope": "local",
             "extension": "js",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/js/global/register_ajax_forms.js"
         },
         "public/assets/js/global/register_dataset_viewer.js": {
             "label": "Public Assets Js Global Register Dataset Viewer",
             "scope": "local",
             "extension": "js",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/js/global/register_dataset_viewer.js"
         },
         "public/assets/js/global/register_embed_observer.js": {
             "label": "Public Assets Js Global Register Embed Observer",
             "scope": "local",
             "extension": "js",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/js/global/register_embed_observer.js"
         },
         "public/assets/js/global/register_post_preview.js": {
             "label": "Public Assets Js Global Register Post Preview",
             "scope": "local",
             "extension": "js",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/js/global/register_post_preview.js"
         },
         "public/assets/js/global/register_upload_inputs.js": {
             "label": "Public Assets Js Global Register Upload Inputs",
             "scope": "local",
             "extension": "js",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/js/global/register_upload_inputs.js"
         },
         "public/assets/js/global/render_embed_fragment.js": {
             "label": "Public Assets Js Global Render Embed Fragment",
             "scope": "local",
             "extension": "js",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/js/global/render_embed_fragment.js"
         },
         "public/assets/js/global/sanitize_preview_html.js": {
             "label": "Public Assets Js Global Sanitize Preview Html",
             "scope": "local",
             "extension": "js",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/js/global/sanitize_preview_html.js"
         },
         "public/assets/style.css": {
             "label": "Public Assets Style",
             "scope": "local",
             "extension": "css",
-            "allow_user_override": true,
+            "allow_user_override": false,
             "allowed_roles": [
-                "admin",
-                "moderator"
+                "admin"
             ],
             "parameters": {
                 "enabled": {
                     "label": "Enable Asset",
                     "type": "boolean",
                     "default": true,
-                    "description": "Toggle whether this asset is active.",
+                    "description": "Toggle whether the mirrored asset should be published to the public directory.",
                     "allow_user_override": false,
                     "baseline_allow_user_override": false
-                },
-                "mode": {
-                    "label": "Mode",
-                    "type": "select",
-                    "options": [
-                        "default",
-                        "minimal",
-                        "extended"
-                    ],
-                    "default": "default",
-                    "description": "Choose the default operating mode for this asset.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
-                },
-                "variant": {
-                    "label": "Template Variant",
-                    "type": "text",
-                    "default": "",
-                    "description": "Optional variant keyword applied when rendering.",
-                    "allow_user_override": true,
-                    "baseline_allow_user_override": true
                 }
-            }
+            },
+            "mirror_of": "assets/css/global/style.css"
         },
         "public/dataset.php": {
             "label": "Public Dataset",

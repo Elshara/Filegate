@@ -509,6 +509,30 @@ input[type="submit"]:hover {
   color: rgba(28, 37, 48, 0.55);
 }
 
+.asset-meta-note {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  color: rgba(28, 37, 48, 0.6);
+}
+
+.asset-card[data-mirror="true"] {
+  border-style: dashed;
+  background: rgba(79, 70, 229, 0.05);
+}
+
+.asset-card[data-mirror="true"] header h2 {
+  color: rgba(79, 70, 229, 0.95);
+}
+
+.asset-note {
+  background: rgba(79, 70, 229, 0.08);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(28, 37, 48, 0.75);
+}
+
 .asset-section + .asset-section,
 .asset-preference + .asset-preference {
   margin-top: 1.5rem;

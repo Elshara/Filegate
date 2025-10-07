@@ -137,6 +137,8 @@ $settings = fg_load_settings();
 $roles = $settings['role_definitions'] ?? [];
 $users = fg_load_users()['records'] ?? [];
 
+fg_sync_public_assets();
+
 fg_render_setup_page([
     'message' => $message,
     'errors' => $errors,

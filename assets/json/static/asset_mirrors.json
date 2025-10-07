@@ -1,0 +1,82 @@
+{
+    "mirrors": [
+        {
+            "source": "assets/css/global/style.css",
+            "target": "public/assets/css/global/style.css",
+            "nature": "static",
+            "scope": "global"
+        },
+        {
+            "source": "assets/css/global/style.css",
+            "target": "public/assets/style.css",
+            "nature": "static",
+            "scope": "local"
+        },
+        {
+            "source": "assets/js/global/calculate_preview_statistics.js",
+            "target": "public/assets/js/global/calculate_preview_statistics.js",
+            "nature": "static",
+            "scope": "global"
+        },
+        {
+            "source": "assets/js/global/detect_embed.js",
+            "target": "public/assets/js/global/detect_embed.js",
+            "nature": "static",
+            "scope": "global"
+        },
+        {
+            "source": "assets/js/global/extract_urls.js",
+            "target": "public/assets/js/global/extract_urls.js",
+            "nature": "static",
+            "scope": "global"
+        },
+        {
+            "source": "assets/js/global/init_client.js",
+            "target": "public/assets/js/global/init_client.js",
+            "nature": "static",
+            "scope": "global"
+        },
+        {
+            "source": "assets/js/global/register_ajax_forms.js",
+            "target": "public/assets/js/global/register_ajax_forms.js",
+            "nature": "static",
+            "scope": "global"
+        },
+        {
+            "source": "assets/js/global/register_dataset_viewer.js",
+            "target": "public/assets/js/global/register_dataset_viewer.js",
+            "nature": "static",
+            "scope": "global"
+        },
+        {
+            "source": "assets/js/global/register_embed_observer.js",
+            "target": "public/assets/js/global/register_embed_observer.js",
+            "nature": "static",
+            "scope": "global"
+        },
+        {
+            "source": "assets/js/global/register_post_preview.js",
+            "target": "public/assets/js/global/register_post_preview.js",
+            "nature": "static",
+            "scope": "global"
+        },
+        {
+            "source": "assets/js/global/register_upload_inputs.js",
+            "target": "public/assets/js/global/register_upload_inputs.js",
+            "nature": "static",
+            "scope": "global"
+        },
+        {
+            "source": "assets/js/global/render_embed_fragment.js",
+            "target": "public/assets/js/global/render_embed_fragment.js",
+            "nature": "static",
+            "scope": "global"
+        },
+        {
+            "source": "assets/js/global/sanitize_preview_html.js",
+            "target": "public/assets/js/global/sanitize_preview_html.js",
+            "nature": "static",
+            "scope": "global"
+        }
+    ]
+}
