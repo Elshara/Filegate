@@ -4,7 +4,8 @@ Filegate is a profile-centred social application designed for shared hosting. Ev
 
 ## Key principles
 
-- **Flat-file persistence** – Users, posts, and settings are stored as JSON documents under `assets/json`, keeping deployment portable and backup-friendly.
+- **Flat-file persistence** – Users, posts, and settings are stored as JSON documents under `assets/json/dynamic`, keeping deployment portable and backup-friendly.
+- **Asset classification** – A manifest in `assets/json/static/datasets.json` labels each dataset as `static` or `dynamic` so the platform can route reads and writes to the correct store automatically.
 - **Function-per-file PHP** – Each reusable routine lives in its own PHP file under `assets/php/{global|pages}` so pages load only the logic they need.
 - **Localized presentation** – Shared styles live in `assets/css`, while each page controller builds its markup on demand to keep the runtime light.
 - **Delegated configuration** – Administrators can rename the network, expose or lock individual settings, and even swap out entire datasets without touching the filesystem.
@@ -15,7 +16,8 @@ Filegate is a profile-centred social application designed for shared hosting. Ev
 ```
 assets/
   css/global/          Shared styles (mirrored to public/assets for direct serving)
-  json/                Flat-file datasets (users, posts, settings)
+  json/static/         Manifested metadata (dataset registry, other static assets)
+  json/dynamic/        Flat-file datasets (users, posts, settings)
   php/global/          Global helper functions (one function per file)
   php/pages/           Localised renderers for feed, settings, and profile views
 public/
@@ -40,7 +42,7 @@ public/
 
 ## Settings model
 
-Settings are described in `assets/json/settings.json` with the following structure:
+Settings are described in `assets/json/dynamic/settings.json` with the following structure:
 
 - `value` – Current value (string or JSON serialised string via the UI).
 - `managed_by` – `admins`, `everyone`, `custom`, or `none`.
@@ -63,7 +65,7 @@ The home feed honours privacy and collaborator rules, and collaborators can open
 
 ## Managing datasets
 
-Administrators can replace the entire contents of `users`, `posts`, or `settings` by pasting JSON into the dataset form on `/settings.php`. This mechanism lets you migrate or seed data without SSH access while keeping a clear audit of each dataset’s purpose.
+Administrators can replace the entire contents of `users`, `posts`, or `settings` by pasting JSON into the dataset form on `/settings.php`. The manifest ensures each dataset is routed to the right `static` or `dynamic` store, enabling migrations without SSH access while keeping a clear audit of every dataset’s purpose.
 
 ## Development
 

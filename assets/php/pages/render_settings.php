@@ -59,31 +59,39 @@ function fg_render_settings_page(array $user, array $context = []): void
     }
     $body .= '</section>';
 
+    $datasets = fg_list_datasets();
+
     if (($user['role'] ?? 'member') === 'admin') {
         $body .= '<section class="panel">';
         $body .= '<h2>Datasets</h2>';
-        $body .= '<table class="dataset-table">';
-        $body .= '<thead><tr><th>Dataset</th><th>Description</th><th>Preview</th></tr></thead><tbody>';
-        foreach (fg_list_datasets() as $key => $definition) {
-            $preview_json = json_encode(fg_load_json($key), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            $preview = htmlspecialchars(substr($preview_json ?: '[]', 0, 280)) . '…';
-            $body .= '<tr>';
-            $body .= '<td>' . htmlspecialchars($definition['label']) . '</td>';
-            $body .= '<td>' . htmlspecialchars($definition['description']) . '</td>';
-            $body .= '<td><pre>' . $preview . '</pre></td>';
-            $body .= '</tr>';
+        if ($datasets === []) {
+            $body .= '<p class="error">No datasets are registered in the manifest.</p>';
+        } else {
+            $body .= '<table class="dataset-table">';
+            $body .= '<thead><tr><th>Dataset</th><th>Description</th><th>Nature</th><th>Preview</th></tr></thead><tbody>';
+            foreach ($datasets as $key => $definition) {
+                $preview_json = json_encode(fg_load_json($key), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                $preview = htmlspecialchars(substr($preview_json ?: '[]', 0, 280)) . '…';
+                $nature = isset($definition['nature']) ? ucfirst((string) $definition['nature']) : 'Dynamic';
+                $body .= '<tr>';
+                $body .= '<td>' . htmlspecialchars($definition['label'] ?? $key) . '</td>';
+                $body .= '<td>' . htmlspecialchars($definition['description'] ?? '') . '</td>';
+                $body .= '<td>' . htmlspecialchars($nature) . '</td>';
+                $body .= '<td><pre>' . $preview . '</pre></td>';
+                $body .= '</tr>';
+            }
+            $body .= '</tbody></table>';
+            $body .= '<form method="post" action="/settings.php">';
+            $body .= '<input type="hidden" name="action" value="replace-dataset">';
+            $body .= '<label>Select dataset<select name="dataset">';
+            foreach ($datasets as $key => $definition) {
+                $body .= '<option value="' . htmlspecialchars($key) . '">' . htmlspecialchars($definition['label'] ?? $key) . '</option>';
+            }
+            $body .= '</select></label>';
+            $body .= '<label>JSON payload<textarea name="payload" placeholder="{"example":true}" required></textarea></label>';
+            $body .= '<button type="submit">Replace dataset</button>';
+            $body .= '</form>';
         }
-        $body .= '</tbody></table>';
-        $body .= '<form method="post" action="/settings.php">';
-        $body .= '<input type="hidden" name="action" value="replace-dataset">';
-        $body .= '<label>Select dataset<select name="dataset">';
-        foreach (fg_list_datasets() as $key => $definition) {
-            $body .= '<option value="' . htmlspecialchars($key) . '">' . htmlspecialchars($definition['label']) . '</option>';
-        }
-        $body .= '</select></label>';
-        $body .= '<label>JSON payload<textarea name="payload" placeholder="{"example":true}" required></textarea></label>';
-        $body .= '<button type="submit">Replace dataset</button>';
-        $body .= '</form>';
         $body .= '</section>';
     }
 

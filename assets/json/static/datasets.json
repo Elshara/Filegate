@@ -1,0 +1,17 @@
+{
+    "users": {
+        "label": "User Profiles",
+        "description": "Profile-centric records including roles, privacy preferences, and biography variables.",
+        "nature": "dynamic"
+    },
+    "posts": {
+        "label": "Posts",
+        "description": "HTML5-ready post entries with collaborators, privacy, and statistics metadata.",
+        "nature": "dynamic"
+    },
+    "settings": {
+        "label": "Settings",
+        "description": "Delegated configuration entries defining application branding and behavior.",
+        "nature": "dynamic"
+    }
+}
