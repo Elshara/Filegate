@@ -131,6 +131,16 @@ The dataset manager works alongside the dataset viewer endpoint (`/dataset.php`)
 
 The feed and composer use the same client runtime to fetch the HTML5 element reference on demand, provide live previews, and post likes asynchronously without full page reloads. All network calls terminate within the application—no remote APIs are required.
 
+## Activity log
+
+Every dataset mutation, snapshot operation, and setup action is written to the flat-file `activity_log` dataset. The **Activity log** section on `/setup.php` lets administrators:
+
+- filter entries by dataset, category, action, or user (by username, role, or numeric ID);
+- adjust how many records appear at once without touching the filesystem; and
+- inspect the raw payload and context for each event, complete with request metadata and trigger notes.
+
+The activity history is captured before and after snapshot restores, dataset resets, override changes, and API requests routed through the controllers. Logs stay on disk alongside other dynamic datasets so hosts without server access can still audit changes directly from the browser.
+
 ## Themes and palette personalisation
 
 Colour palettes live entirely in flat files so hosts without shell access can still rebrand Filegate.

@@ -17,6 +17,13 @@ function fg_render_setup_page(array $data = []): void
     $pageRecords = $pagesDataset['records'] ?? [];
     $message = $data['message'] ?? '';
     $errors = $data['errors'] ?? [];
+    $activityRecords = $data['activity_records'] ?? [];
+    $activityFilters = $data['activity_filters'] ?? ['dataset' => '', 'category' => '', 'action' => '', 'user' => ''];
+    $activityLimit = (int) ($data['activity_limit'] ?? 50);
+    $activityTotal = (int) ($data['activity_total'] ?? count($activityRecords));
+    $activityDatasetLabels = $data['activity_dataset_labels'] ?? [];
+    $activityCategories = $data['activity_categories'] ?? [];
+    $activityActions = $data['activity_actions'] ?? [];
 
     $userIndex = [];
     foreach ($users as $user) {
@@ -598,6 +605,146 @@ function fg_render_setup_page(array $data = []): void
 
         $body .= '</section>';
     }
+
+    $datasetOptions = $activityDatasetLabels;
+    if (!is_array($datasetOptions)) {
+        $datasetOptions = [];
+    } else {
+        asort($datasetOptions);
+    }
+
+    if (!is_array($activityCategories)) {
+        $activityCategories = [];
+    }
+
+    if (!is_array($activityActions)) {
+        $activityActions = [];
+    }
+
+    $body .= '<section class="activity-log" id="activity-log">';
+    $body .= '<h2>Activity log</h2>';
+    $body .= '<p>Inspect the audit trail for dataset saves, snapshot operations, and administrative actions without leaving the browser.</p>';
+    $body .= '<form method="get" action="/setup.php" class="activity-filter-form">';
+    $body .= '<div class="activity-filter-grid">';
+    $body .= '<label class="field"><span class="field-label">Dataset</span><span class="field-control"><select name="log_dataset">';
+    $body .= '<option value="">All datasets</option>';
+    foreach ($datasetOptions as $datasetKey => $datasetLabel) {
+        $selected = ((string) ($activityFilters['dataset'] ?? '') === (string) $datasetKey) ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars((string) $datasetKey) . '"' . $selected . '>' . htmlspecialchars($datasetLabel) . '</option>';
+    }
+    $body .= '</select></span></label>';
+
+    $body .= '<label class="field"><span class="field-label">Category</span><span class="field-control"><select name="log_category">';
+    $body .= '<option value="">All categories</option>';
+    foreach ($activityCategories as $categoryValue) {
+        $categoryValue = (string) $categoryValue;
+        $selected = ((string) ($activityFilters['category'] ?? '') === $categoryValue) ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($categoryValue) . '"' . $selected . '>' . htmlspecialchars(ucfirst($categoryValue)) . '</option>';
+    }
+    $body .= '</select></span></label>';
+
+    $body .= '<label class="field"><span class="field-label">Action</span><span class="field-control"><select name="log_action">';
+    $body .= '<option value="">All actions</option>';
+    foreach ($activityActions as $actionValue) {
+        $actionValue = (string) $actionValue;
+        $selected = ((string) ($activityFilters['action'] ?? '') === $actionValue) ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($actionValue) . '"' . $selected . '>' . htmlspecialchars(ucfirst($actionValue)) . '</option>';
+    }
+    $body .= '</select></span></label>';
+
+    $body .= '<label class="field"><span class="field-label">User filter</span><span class="field-control"><input type="text" name="log_user" value="' . htmlspecialchars((string) ($activityFilters['user'] ?? '')) . '" placeholder="username, #id, role"></span><span class="field-description">Matches usernames, roles, and numeric identifiers.</span></label>';
+
+    $body .= '<label class="field compact"><span class="field-label">Show</span><span class="field-control"><input type="number" name="log_limit" min="5" max="200" value="' . htmlspecialchars((string) $activityLimit) . '"></span><span class="field-description">Maximum entries to display.</span></label>';
+    $body .= '</div>';
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Apply filters</button>';
+    $body .= '<a class="button" href="/setup.php#activity-log">Reset</a>';
+    $body .= '</div>';
+    $body .= '</form>';
+
+    $body .= '<p class="activity-summary">Showing ' . htmlspecialchars((string) count($activityRecords)) . ' of ' . htmlspecialchars((string) $activityTotal) . ' recorded events.</p>';
+
+    if (empty($activityRecords)) {
+        $body .= '<p class="notice muted">No activity recorded for the selected filters yet.</p>';
+    } else {
+        $body .= '<div class="activity-entries">';
+        foreach ($activityRecords as $entry) {
+            $categoryLabel = (string) ($entry['category'] ?? '');
+            $actionLabel = (string) ($entry['action'] ?? '');
+            $datasetLabel = (string) ($entry['dataset_label'] ?? '');
+            $datasetKey = (string) ($entry['dataset'] ?? '');
+            $summaryParts = [];
+            if ($categoryLabel !== '') {
+                $summaryParts[] = ucfirst($categoryLabel);
+            }
+            if ($actionLabel !== '') {
+                $summaryParts[] = ucfirst($actionLabel);
+            }
+            if ($datasetLabel !== '') {
+                $summaryParts[] = $datasetLabel;
+            }
+            $summaryText = implode(' · ', $summaryParts);
+            if ($summaryText === '') {
+                $summaryText = 'Activity entry';
+            }
+
+            $metaParts = [];
+            $metaParts[] = '#' . (int) ($entry['id'] ?? 0);
+            if (!empty($entry['created_at_display'])) {
+                $metaParts[] = (string) $entry['created_at_display'];
+            }
+            if (!empty($entry['performed_by_display'])) {
+                $metaParts[] = (string) $entry['performed_by_display'];
+            }
+
+            $body .= '<details class="activity-entry">';
+            $body .= '<summary><span class="activity-summary-main">' . htmlspecialchars($summaryText) . '</span><span class="activity-summary-meta">' . htmlspecialchars(implode(' · ', $metaParts)) . '</span></summary>';
+            $body .= '<div class="activity-entry-body">';
+            $body .= '<dl class="activity-entry-grid">';
+            $body .= '<dt>Event ID</dt><dd>#' . htmlspecialchars((string) ($entry['id'] ?? 0)) . '</dd>';
+            if (!empty($entry['created_at_display'])) {
+                $body .= '<dt>Recorded at</dt><dd>' . htmlspecialchars((string) $entry['created_at_display']) . ' UTC</dd>';
+            }
+            if (!empty($entry['trigger'])) {
+                $body .= '<dt>Trigger</dt><dd>' . htmlspecialchars((string) $entry['trigger']) . '</dd>';
+            }
+            if (!empty($entry['performed_by_display'])) {
+                $body .= '<dt>Actor</dt><dd>' . htmlspecialchars((string) $entry['performed_by_display']) . '</dd>';
+            }
+            if ($datasetLabel !== '' || $datasetKey !== '') {
+                $body .= '<dt>Dataset</dt><dd>' . htmlspecialchars($datasetLabel === '' ? $datasetKey : $datasetLabel);
+                if ($datasetLabel !== '' && $datasetKey !== '' && $datasetKey !== $datasetLabel) {
+                    $body .= ' <span class="activity-dataset-key">(' . htmlspecialchars($datasetKey) . ')</span>';
+                }
+                $body .= '</dd>';
+            }
+            if (!empty($entry['ip_address'])) {
+                $body .= '<dt>IP address</dt><dd>' . htmlspecialchars((string) $entry['ip_address']) . '</dd>';
+            }
+            if (!empty($entry['user_agent_display'])) {
+                $body .= '<dt>User agent</dt><dd>' . htmlspecialchars((string) $entry['user_agent_display']);
+                if (!empty($entry['user_agent']) && (string) $entry['user_agent'] !== (string) $entry['user_agent_display']) {
+                    $body .= ' <span class="activity-truncate-note">(truncated)</span>';
+                }
+                $body .= '</dd>';
+            }
+            $body .= '</dl>';
+
+            if (!empty($entry['details_json'])) {
+                $body .= '<div class="activity-json"><h4>Details</h4><pre>' . htmlspecialchars((string) $entry['details_json']) . '</pre></div>';
+            }
+
+            if (!empty($entry['context_json'])) {
+                $body .= '<div class="activity-json"><h4>Context</h4><pre>' . htmlspecialchars((string) $entry['context_json']) . '</pre></div>';
+            }
+
+            $body .= '</div>';
+            $body .= '</details>';
+        }
+        $body .= '</div>';
+    }
+
+    $body .= '</section>';
 
     if (!empty($themes)) {
         $body .= '<section class="theme-manager">';

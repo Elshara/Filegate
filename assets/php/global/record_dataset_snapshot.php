@@ -5,6 +5,7 @@ require_once __DIR__ . '/save_asset_snapshots.php';
 require_once __DIR__ . '/dataset_format.php';
 require_once __DIR__ . '/dataset_path.php';
 require_once __DIR__ . '/load_dataset_contents.php';
+require_once __DIR__ . '/record_activity_event.php';
 
 function fg_record_dataset_snapshot(string $dataset, string $reason, array $context = [], ?string $payload = null): bool
 {
@@ -68,6 +69,25 @@ function fg_record_dataset_snapshot(string $dataset, string $reason, array $cont
     }
 
     fg_save_asset_snapshots($snapshots);
+
+    $activityContext = $context;
+    if (!is_array($activityContext)) {
+        $activityContext = [];
+    }
+    if (!isset($activityContext['dataset'])) {
+        $activityContext['dataset'] = $dataset;
+    }
+    if (!isset($activityContext['trigger'])) {
+        $activityContext['trigger'] = 'snapshot_record';
+    }
+
+    fg_record_activity_event('snapshot', 'recorded', [
+        'dataset' => $dataset,
+        'snapshot_id' => $record['id'],
+        'reason' => $reason,
+        'format' => $record['format'],
+        'payload_hash' => sha1((string) $payload),
+    ], $activityContext);
 
     return true;
 }

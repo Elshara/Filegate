@@ -38,6 +38,7 @@ require_once __DIR__ . '/../global/record_dataset_snapshot.php';
 require_once __DIR__ . '/../global/list_dataset_snapshots.php';
 require_once __DIR__ . '/../global/restore_dataset_snapshot.php';
 require_once __DIR__ . '/../global/delete_dataset_snapshot.php';
+require_once __DIR__ . '/../global/load_activity_log.php';
 
 function fg_public_setup_controller(): void
 {
@@ -179,7 +180,10 @@ function fg_public_setup_controller(): void
                         $errors[] = 'Snapshot identifier missing for deletion.';
                     } else {
                         try {
-                            $removed = fg_delete_dataset_snapshot($snapshotId, $dataset);
+                            $removed = fg_delete_dataset_snapshot($snapshotId, $dataset, [
+                                'trigger' => 'setup_dashboard',
+                                'performed_by' => $current['id'] ?? null,
+                            ]);
                             if ($removed) {
                                 $message = 'Snapshot removed.';
                             } else {
@@ -577,6 +581,156 @@ function fg_public_setup_controller(): void
         ];
     }
 
+    $activityLog = fg_load_activity_log();
+    $activityRecordsRaw = $activityLog['records'] ?? [];
+
+    $datasetLabels = [];
+    foreach ($manifest as $name => $definition) {
+        $datasetLabels[$name] = $definition['label'] ?? $name;
+    }
+
+    $activityFilters = [
+        'dataset' => trim((string) ($_GET['log_dataset'] ?? '')),
+        'category' => trim((string) ($_GET['log_category'] ?? '')),
+        'action' => trim((string) ($_GET['log_action'] ?? '')),
+        'user' => trim((string) ($_GET['log_user'] ?? '')),
+    ];
+
+    $activityLimit = (int) ($_GET['log_limit'] ?? 50);
+    if ($activityLimit < 5) {
+        $activityLimit = 5;
+    }
+    if ($activityLimit > 200) {
+        $activityLimit = 200;
+    }
+
+    $activityCategories = [];
+    $activityActions = [];
+    foreach ($activityRecordsRaw as $entry) {
+        $categoryName = (string) ($entry['category'] ?? '');
+        if ($categoryName !== '') {
+            $activityCategories[$categoryName] = true;
+        }
+        $actionName = (string) ($entry['action'] ?? '');
+        if ($actionName !== '') {
+            $activityActions[$actionName] = true;
+        }
+    }
+    ksort($activityCategories);
+    ksort($activityActions);
+
+    $activityRecords = [];
+    foreach ($activityRecordsRaw as $entry) {
+        $categoryName = (string) ($entry['category'] ?? '');
+        if ($activityFilters['category'] !== '' && $activityFilters['category'] !== $categoryName) {
+            continue;
+        }
+
+        $actionName = (string) ($entry['action'] ?? '');
+        if ($activityFilters['action'] !== '' && $activityFilters['action'] !== $actionName) {
+            continue;
+        }
+
+        $datasetName = (string) ($entry['dataset'] ?? ($entry['details']['dataset'] ?? ''));
+        if ($activityFilters['dataset'] !== '' && $activityFilters['dataset'] !== $datasetName) {
+            continue;
+        }
+
+        $performedBy = $entry['performed_by'] ?? null;
+        if ($activityFilters['user'] !== '') {
+            $needle = strtolower($activityFilters['user']);
+            $match = false;
+            if (is_array($performedBy)) {
+                $candidateFields = [
+                    (string) ($performedBy['username'] ?? ''),
+                    (string) ($performedBy['email'] ?? ''),
+                    (string) ($performedBy['role'] ?? ''),
+                    (string) ($performedBy['id'] ?? ''),
+                ];
+                foreach ($candidateFields as $field) {
+                    if ($field !== '' && strpos(strtolower($field), $needle) !== false) {
+                        $match = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!$match) {
+                continue;
+            }
+        }
+
+        $createdAt = (string) ($entry['created_at'] ?? '');
+        $createdAtDisplay = '';
+        if ($createdAt !== '') {
+            $timestamp = strtotime($createdAt);
+            if ($timestamp !== false) {
+                $createdAtDisplay = gmdate('Y-m-d H:i', $timestamp);
+            }
+        }
+
+        $performedByLabel = '';
+        if (is_array($performedBy)) {
+            $parts = [];
+            if (!empty($performedBy['username'])) {
+                $parts[] = (string) $performedBy['username'];
+            }
+            if (isset($performedBy['id'])) {
+                $parts[] = '#' . (int) $performedBy['id'];
+            }
+            if (!empty($performedBy['role'])) {
+                $parts[] = ucfirst((string) $performedBy['role']);
+            }
+            $performedByLabel = implode(' · ', $parts);
+        }
+
+        $details = $entry['details'] ?? [];
+        $contextDetails = $entry['context'] ?? [];
+        $detailsJson = '';
+        if (!empty($details)) {
+            $encoded = json_encode($details, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            if ($encoded !== false) {
+                $detailsJson = $encoded;
+            }
+        }
+
+        $contextJson = '';
+        if (!empty($contextDetails) && is_array($contextDetails)) {
+            $encoded = json_encode($contextDetails, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            if ($encoded !== false) {
+                $contextJson = $encoded;
+            }
+        }
+
+        $ipAddress = (string) ($entry['ip_address'] ?? '');
+        $userAgent = (string) ($entry['user_agent'] ?? '');
+        $userAgentDisplay = $userAgent;
+        if ($userAgent !== '' && strlen($userAgent) > 160) {
+            $userAgentDisplay = substr($userAgent, 0, 157) . '...';
+        }
+
+        $activityRecords[] = [
+            'id' => (int) ($entry['id'] ?? 0),
+            'category' => $categoryName,
+            'action' => $actionName,
+            'dataset' => $datasetName,
+            'dataset_label' => $datasetName !== '' ? ($datasetLabels[$datasetName] ?? $datasetName) : '',
+            'created_at' => $createdAt,
+            'created_at_display' => $createdAtDisplay,
+            'trigger' => $entry['trigger'] ?? ($entry['details']['trigger'] ?? ''),
+            'performed_by_display' => $performedByLabel,
+            'details_json' => $detailsJson,
+            'context_json' => $contextJson,
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
+            'user_agent_display' => $userAgentDisplay,
+        ];
+
+        if (count($activityRecords) >= $activityLimit) {
+            break;
+        }
+    }
+
     fg_render_setup_page([
         'message' => $message,
         'errors' => $errors,
@@ -590,5 +744,12 @@ function fg_public_setup_controller(): void
         'default_theme' => $defaultThemeSetting,
         'theme_policy' => $themePolicy,
         'pages' => fg_load_pages(),
+        'activity_records' => $activityRecords,
+        'activity_filters' => $activityFilters,
+        'activity_limit' => $activityLimit,
+        'activity_total' => count($activityRecordsRaw),
+        'activity_dataset_labels' => $datasetLabels,
+        'activity_categories' => array_keys($activityCategories),
+        'activity_actions' => array_keys($activityActions),
     ]);
 }

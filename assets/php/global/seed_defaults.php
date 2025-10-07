@@ -21,6 +21,9 @@ require_once __DIR__ . '/default_pages_dataset.php';
 require_once __DIR__ . '/load_asset_snapshots.php';
 require_once __DIR__ . '/save_asset_snapshots.php';
 require_once __DIR__ . '/default_asset_snapshots_dataset.php';
+require_once __DIR__ . '/load_activity_log.php';
+require_once __DIR__ . '/save_activity_log.php';
+require_once __DIR__ . '/default_activity_log_dataset.php';
 
 function fg_seed_defaults(): void
 {
@@ -74,6 +77,12 @@ function fg_seed_defaults(): void
     if (!isset($snapshots['records']) || !is_array($snapshots['records'])) {
         $snapshots = fg_default_asset_snapshots_dataset();
         fg_save_asset_snapshots($snapshots);
+    }
+
+    $activityLog = fg_load_activity_log();
+    if (!isset($activityLog['records']) || !is_array($activityLog['records'])) {
+        $activityLog = fg_default_activity_log_dataset();
+        fg_save_activity_log($activityLog);
     }
 }
 

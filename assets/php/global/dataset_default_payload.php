@@ -4,6 +4,7 @@ require_once __DIR__ . '/dataset_format.php';
 require_once __DIR__ . '/default_settings_dataset.php';
 require_once __DIR__ . '/default_themes_dataset.php';
 require_once __DIR__ . '/default_pages_dataset.php';
+require_once __DIR__ . '/default_activity_log_dataset.php';
 
 function fg_dataset_default_payload(string $name): ?string
 {
@@ -29,6 +30,9 @@ function fg_dataset_default_payload(string $name): ?string
                 break;
             case 'themes':
                 $defaults = fg_default_themes_dataset();
+                break;
+            case 'activity_log':
+                $defaults = fg_default_activity_log_dataset();
                 break;
             default:
                 $defaults = null;

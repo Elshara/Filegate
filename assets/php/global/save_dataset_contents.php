@@ -5,6 +5,7 @@ require_once __DIR__ . '/dataset_path.php';
 require_once __DIR__ . '/dataset_format.php';
 require_once __DIR__ . '/load_dataset_contents.php';
 require_once __DIR__ . '/record_dataset_snapshot.php';
+require_once __DIR__ . '/record_activity_event.php';
 
 function fg_save_dataset_contents(string $name, string $contents, ?string $reason = null, array $context = []): void
 {
@@ -13,13 +14,16 @@ function fg_save_dataset_contents(string $name, string $contents, ?string $reaso
     $format = fg_dataset_format($name);
 
     $previousPayload = null;
-    if ($name !== 'asset_snapshots' && file_exists($path)) {
+    $snapshotRecorded = false;
+    $shouldSnapshot = !in_array($name, ['asset_snapshots', 'activity_log'], true);
+
+    if ($shouldSnapshot && file_exists($path)) {
         $previousPayload = fg_load_dataset_contents($name);
         $snapshotContext = $context;
         if (!isset($snapshotContext['trigger'])) {
             $snapshotContext['trigger'] = 'system';
         }
-        fg_record_dataset_snapshot(
+        $snapshotRecorded = fg_record_dataset_snapshot(
             $name,
             $reason ?? 'Dataset save',
             $snapshotContext,
@@ -52,8 +56,44 @@ function fg_save_dataset_contents(string $name, string $contents, ?string $reaso
         $payload = $contents;
     }
 
+    $previousHash = null;
+    if ($previousPayload !== null) {
+        $previousHash = sha1((string) $previousPayload);
+    }
+
+    $currentHash = sha1($payload);
+
     if (file_put_contents($path, $payload) === false) {
         throw new RuntimeException('Unable to write dataset file: ' . $name);
+    }
+
+    if ($name !== 'activity_log') {
+        $activityContext = $context;
+        if (!is_array($activityContext)) {
+            $activityContext = [];
+        }
+        if (!isset($activityContext['dataset'])) {
+            $activityContext['dataset'] = $name;
+        }
+        if (!isset($activityContext['trigger'])) {
+            $activityContext['trigger'] = 'dataset_save';
+        }
+
+        $activityDetails = [
+            'dataset' => $name,
+            'format' => $format,
+            'reason' => $reason ?? 'Dataset save',
+            'trigger' => $activityContext['trigger'],
+            'snapshot_recorded' => $snapshotRecorded,
+            'had_previous_payload' => $previousPayload !== null,
+            'changed' => $previousPayload === null ? true : ((string) $previousPayload !== $payload),
+            'bytes_written' => strlen($payload),
+            'path' => $path,
+            'previous_hash' => $previousHash,
+            'current_hash' => $currentHash,
+        ];
+
+        fg_record_activity_event('dataset', 'save', $activityDetails, $activityContext);
     }
 }
 

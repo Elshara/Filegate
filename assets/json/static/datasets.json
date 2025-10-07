@@ -59,6 +59,12 @@
         "nature": "dynamic",
         "expose_via_api": false
     },
+    "activity_log": {
+        "label": "Activity Log",
+        "description": "Operational history of dataset saves, restores, and administrative actions.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
     "notification_channels": {
         "label": "Notification Channels",
         "description": "Static definitions of email, browser, cookie, and cache delivery mechanisms.",
