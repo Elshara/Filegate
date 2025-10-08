@@ -34,6 +34,36 @@ function fg_render_setup_page(array $data = []): void
         $changelogDataset['records'] = [];
     }
     $changelogRecords = $changelogDataset['records'];
+    $featureRequestDataset = $data['feature_requests'] ?? ['records' => [], 'next_id' => 1];
+    if (!isset($featureRequestDataset['records']) || !is_array($featureRequestDataset['records'])) {
+        $featureRequestDataset['records'] = [];
+    }
+    $featureRequestRecords = $featureRequestDataset['records'];
+    $featureRequestStatusOptions = $data['feature_request_statuses'] ?? ['open', 'researching', 'planned', 'in_progress', 'completed', 'declined'];
+    if (!is_array($featureRequestStatusOptions) || empty($featureRequestStatusOptions)) {
+        $featureRequestStatusOptions = ['open'];
+    }
+    $featureRequestStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $featureRequestStatusOptions)));
+    if (empty($featureRequestStatusOptions)) {
+        $featureRequestStatusOptions = ['open'];
+    }
+    $featureRequestPriorityOptions = $data['feature_request_priorities'] ?? ['low', 'medium', 'high', 'critical'];
+    if (!is_array($featureRequestPriorityOptions) || empty($featureRequestPriorityOptions)) {
+        $featureRequestPriorityOptions = ['medium'];
+    }
+    $featureRequestPriorityOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $featureRequestPriorityOptions)));
+    if (empty($featureRequestPriorityOptions)) {
+        $featureRequestPriorityOptions = ['medium'];
+    }
+    $featureRequestPolicy = (string) ($data['feature_request_policy'] ?? 'members');
+    $featureRequestDefaultVisibility = strtolower((string) ($data['feature_request_default_visibility'] ?? 'members'));
+    if (!in_array($featureRequestDefaultVisibility, ['public', 'members', 'private'], true)) {
+        $featureRequestDefaultVisibility = 'members';
+    }
     $message = $data['message'] ?? '';
     $errors = $data['errors'] ?? [];
     $activityRecords = $data['activity_records'] ?? [];
@@ -695,6 +725,321 @@ function fg_render_setup_page(array $data = []): void
 
     $body .= '<div class="action-row">';
     $body .= '<button type="submit" class="button primary">Create roadmap entry</button>';
+    $body .= '</div>';
+    $body .= '</form>';
+    $body .= '</article>';
+
+    $body .= '</section>';
+
+    $featureRequestStatusLabels = [];
+    $featureRequestStatusCounts = [];
+    foreach ($featureRequestStatusOptions as $statusOption) {
+        $featureRequestStatusLabels[$statusOption] = ucwords(str_replace('_', ' ', $statusOption));
+        $featureRequestStatusCounts[$statusOption] = 0;
+    }
+    $featureRequestPriorityLabels = [];
+    foreach ($featureRequestPriorityOptions as $priorityOption) {
+        $featureRequestPriorityLabels[$priorityOption] = ucwords(str_replace('_', ' ', $priorityOption));
+    }
+    $featureRequestEntries = [];
+    $featureRequestTotalVotes = 0;
+    $statusRank = [];
+    foreach ($featureRequestStatusOptions as $index => $statusOption) {
+        $statusRank[$statusOption] = $index;
+    }
+
+    foreach ($featureRequestRecords as $request) {
+        if (!is_array($request)) {
+            continue;
+        }
+
+        $status = strtolower((string) ($request['status'] ?? $featureRequestStatusOptions[0]));
+        if (!isset($featureRequestStatusLabels[$status])) {
+            $featureRequestStatusLabels[$status] = ucwords(str_replace('_', ' ', $status));
+            $featureRequestStatusCounts[$status] = 0;
+            $statusRank[$status] = count($statusRank);
+        }
+        $featureRequestStatusCounts[$status] = ($featureRequestStatusCounts[$status] ?? 0) + 1;
+
+        $priority = strtolower((string) ($request['priority'] ?? $featureRequestPriorityOptions[0]));
+        if (!isset($featureRequestPriorityLabels[$priority])) {
+            $featureRequestPriorityLabels[$priority] = ucwords(str_replace('_', ' ', $priority));
+        }
+
+        $supporters = $request['supporters'] ?? [];
+        if (!is_array($supporters)) {
+            $supporters = [];
+        }
+        $supporters = array_values(array_unique(array_filter(array_map('intval', $supporters), static function ($value) {
+            return $value > 0;
+        })));
+        $voteCount = (int) ($request['vote_count'] ?? count($supporters));
+        if ($voteCount < count($supporters)) {
+            $voteCount = count($supporters);
+        }
+        $featureRequestTotalVotes += $voteCount;
+
+        $linksValue = '';
+        if (!empty($request['reference_links']) && is_array($request['reference_links'])) {
+            $linksValue = implode("\n", array_map(static function ($link) {
+                return (string) $link;
+            }, $request['reference_links']));
+        }
+
+        $tagsValue = '';
+        if (!empty($request['tags']) && is_array($request['tags'])) {
+            $tagsValue = implode(', ', array_map(static function ($tag) {
+                return (string) $tag;
+            }, $request['tags']));
+        }
+
+        $featureRequestEntries[] = array_merge($request, [
+            'status' => $status,
+            'priority' => $priority,
+            'supporters' => $supporters,
+            'vote_count' => $voteCount,
+            'links_value' => $linksValue,
+            'tags_value' => $tagsValue,
+            'supporters_input' => implode("\n", array_map('strval', $supporters)),
+        ]);
+    }
+
+    if (!empty($featureRequestEntries)) {
+        usort($featureRequestEntries, static function (array $a, array $b) use ($statusRank) {
+            $rankA = $statusRank[$a['status'] ?? ''] ?? PHP_INT_MAX;
+            $rankB = $statusRank[$b['status'] ?? ''] ?? PHP_INT_MAX;
+            if ($rankA !== $rankB) {
+                return $rankA <=> $rankB;
+            }
+
+            $timeA = strtotime((string) ($a['updated_at'] ?? $a['created_at'] ?? 'now'));
+            $timeB = strtotime((string) ($b['updated_at'] ?? $b['created_at'] ?? 'now'));
+            return $timeB <=> $timeA;
+        });
+    }
+
+    $visibilityOptions = ['public' => 'Public', 'members' => 'Members', 'private' => 'Private'];
+
+    $body .= '<section class="feature-request-manager">';
+    $body .= '<h2>Feature request catalogue</h2>';
+    $body .= '<p>Review and triage community ideas, adjust their visibility, and delegate ownership without editing datasets manually.</p>';
+
+    if ($featureRequestPolicy === 'disabled') {
+        $body .= '<p class="notice muted">Member submissions are currently disabled. Administrators can still create and manage feature requests from this dashboard.</p>';
+    } elseif ($featureRequestPolicy === 'admins') {
+        $body .= '<p class="notice muted">Only administrators may submit new requests while this policy is active.</p>';
+    } elseif ($featureRequestPolicy === 'moderators') {
+        $body .= '<p class="notice muted">Administrators and moderators may submit new requests. Members can follow along here.</p>';
+    }
+
+    if (!empty($featureRequestEntries)) {
+        $body .= '<div class="feature-request-summary">';
+        foreach ($featureRequestStatusLabels as $statusKey => $label) {
+            $count = (int) ($featureRequestStatusCounts[$statusKey] ?? 0);
+            $body .= '<article class="feature-request-chip feature-request-status-' . htmlspecialchars($statusKey) . '">';
+            $body .= '<h3>' . htmlspecialchars($label) . '</h3>';
+            $body .= '<p class="feature-request-total">' . $count . ' ' . ($count === 1 ? 'entry' : 'entries') . '</p>';
+            $body .= '</article>';
+        }
+        $body .= '<article class="feature-request-chip feature-request-votes">';
+        $body .= '<h3>Total support</h3>';
+        $body .= '<p class="feature-request-total">' . $featureRequestTotalVotes . '</p>';
+        $body .= '</article>';
+        $body .= '</div>';
+    } else {
+        $body .= '<p class="notice muted">No feature requests logged yet. Use the form below to capture your first idea.</p>';
+    }
+
+    foreach ($featureRequestEntries as $request) {
+        $status = (string) ($request['status'] ?? 'open');
+        $priority = (string) ($request['priority'] ?? 'medium');
+        $title = trim((string) ($request['title'] ?? 'Untitled request'));
+        $summary = trim((string) ($request['summary'] ?? ''));
+        $details = trim((string) ($request['details'] ?? ''));
+        $visibility = strtolower((string) ($request['visibility'] ?? $featureRequestDefaultVisibility));
+        if (!isset($visibilityOptions[$visibility])) {
+            $visibility = $featureRequestDefaultVisibility;
+        }
+        $impact = (int) ($request['impact'] ?? 0);
+        $effort = (int) ($request['effort'] ?? 0);
+        $ownerRole = (string) ($request['owner_role'] ?? '');
+        $ownerUserId = $request['owner_user_id'] ?? null;
+        $requestorUserId = $request['requestor_user_id'] ?? null;
+
+        $supportersInput = $request['supporters_input'] ?? '';
+        $tagsValue = $request['tags_value'] ?? '';
+        $linksValue = $request['links_value'] ?? '';
+
+        $body .= '<article class="feature-request-admin-card">';
+        $body .= '<header class="feature-request-admin-header">';
+        $body .= '<h3>' . htmlspecialchars($title) . '</h3>';
+        $body .= '<p class="feature-request-admin-meta">Status: ' . htmlspecialchars($featureRequestStatusLabels[$status] ?? ucwords(str_replace('_', ' ', $status)))
+            . ' · Priority: ' . htmlspecialchars($featureRequestPriorityLabels[$priority] ?? ucwords(str_replace('_', ' ', $priority)))
+            . ' · Supporters: ' . (int) ($request['vote_count'] ?? 0) . '</p>';
+        if ($summary !== '') {
+            $body .= '<p class="feature-request-admin-summary">' . htmlspecialchars($summary) . '</p>';
+        }
+        $body .= '</header>';
+
+        $body .= '<form method="post" action="/setup.php" class="feature-request-form">';
+        $body .= '<input type="hidden" name="action" value="update_feature_request">';
+        $body .= '<input type="hidden" name="feature_request_id" value="' . (int) ($request['id'] ?? 0) . '">';
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value="' . htmlspecialchars($title) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+        foreach ($featureRequestStatusLabels as $value => $label) {
+            $selected = $status === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Priority</span><span class="field-control"><select name="priority">';
+        foreach ($featureRequestPriorityLabels as $value => $label) {
+            $selected = $priority === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '</div>';
+
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+        foreach ($visibilityOptions as $value => $label) {
+            $selected = $visibility === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Impact (1-5)</span><span class="field-control"><input type="number" name="impact" min="1" max="5" value="' . $impact . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Effort (1-5)</span><span class="field-control"><input type="number" name="effort" min="1" max="5" value="' . $effort . '"></span></label>';
+        $body .= '</div>';
+
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Owner role</span><span class="field-control"><select name="owner_role">';
+        $body .= '<option value="">Unassigned</option>';
+        foreach ($roles as $roleKey => $roleDescription) {
+            $selected = $ownerRole === (string) $roleKey ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars((string) $roleKey) . '"' . $selected . '>' . htmlspecialchars(ucfirst((string) $roleKey)) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Owner profile</span><span class="field-control"><select name="owner_user_id">';
+        $body .= '<option value="">Unassigned</option>';
+        foreach ($users as $user) {
+            $userId = (int) ($user['id'] ?? 0);
+            if ($userId <= 0) {
+                continue;
+            }
+            $selected = ($ownerUserId !== null && (int) $ownerUserId === $userId) ? ' selected' : '';
+            $username = $user['username'] ?? ('User #' . $userId);
+            $body .= '<option value="' . $userId . '"' . $selected . '>' . htmlspecialchars($username) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Requestor</span><span class="field-control"><select name="requestor_user_id">';
+        $body .= '<option value="">Unassigned</option>';
+        foreach ($users as $user) {
+            $userId = (int) ($user['id'] ?? 0);
+            if ($userId <= 0) {
+                continue;
+            }
+            $selected = ($requestorUserId !== null && (int) $requestorUserId === $userId) ? ' selected' : '';
+            $username = $user['username'] ?? ('User #' . $userId);
+            $body .= '<option value="' . $userId . '"' . $selected . '>' . htmlspecialchars($username) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '</div>';
+
+        $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><textarea name="summary" rows="2">' . htmlspecialchars($summary) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Details</span><span class="field-control"><textarea name="details" rows="4">' . htmlspecialchars($details) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Tags</span><span class="field-control"><input type="text" name="tags" value="' . htmlspecialchars($tagsValue) . '"></span><span class="field-description">Comma-separated keywords for filtering.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Reference links</span><span class="field-control"><textarea name="reference_links" rows="3" placeholder="One URL or path per line">' . htmlspecialchars($linksValue) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Supporter IDs</span><span class="field-control"><textarea name="supporters" rows="3" placeholder="One user ID per line">' . htmlspecialchars($supportersInput) . '</textarea></span><span class="field-description">Use numeric profile IDs to prefill acknowledgement lists.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Admin notes</span><span class="field-control"><textarea name="admin_notes" rows="2">' . htmlspecialchars((string) ($request['admin_notes'] ?? '')) . '</textarea></span></label>';
+
+        $body .= '<div class="action-row">';
+        $body .= '<button type="submit" class="button primary">Save changes</button>';
+        $body .= '</div>';
+        $body .= '</form>';
+
+        $body .= '<form method="post" action="/setup.php" class="feature-request-delete-form" onsubmit="return confirm(\'Delete this feature request?\');">';
+        $body .= '<input type="hidden" name="action" value="delete_feature_request">';
+        $body .= '<input type="hidden" name="feature_request_id" value="' . (int) ($request['id'] ?? 0) . '">';
+        $body .= '<button type="submit" class="button danger">Delete request</button>';
+        $body .= '</form>';
+
+        $body .= '</article>';
+    }
+
+    $defaultStatus = $featureRequestStatusOptions[0] ?? 'open';
+    $defaultPriority = $featureRequestPriorityOptions[0] ?? 'medium';
+
+    $body .= '<article class="feature-request-admin-card feature-request-create">';
+    $body .= '<header><h3>Create new feature request</h3><p>Capture a new idea or administrative task and classify it before publishing to members.</p></header>';
+    $body .= '<form method="post" action="/setup.php" class="feature-request-form">';
+    $body .= '<input type="hidden" name="action" value="create_feature_request">';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value=""></span></label>';
+    $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+    foreach ($featureRequestStatusLabels as $value => $label) {
+        $selected = $value === $defaultStatus ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Priority</span><span class="field-control"><select name="priority">';
+    foreach ($featureRequestPriorityLabels as $value => $label) {
+        $selected = $value === $defaultPriority ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '</div>';
+
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+    foreach ($visibilityOptions as $value => $label) {
+        $selected = $value === $featureRequestDefaultVisibility ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Impact (1-5)</span><span class="field-control"><input type="number" name="impact" min="1" max="5" value="3"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Effort (1-5)</span><span class="field-control"><input type="number" name="effort" min="1" max="5" value="3"></span></label>';
+    $body .= '</div>';
+
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Owner role</span><span class="field-control"><select name="owner_role">';
+    $body .= '<option value="">Unassigned</option>';
+    foreach ($roles as $roleKey => $roleDescription) {
+        $body .= '<option value="' . htmlspecialchars((string) $roleKey) . '">' . htmlspecialchars(ucfirst((string) $roleKey)) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Owner profile</span><span class="field-control"><select name="owner_user_id">';
+    $body .= '<option value="">Unassigned</option>';
+    foreach ($users as $user) {
+        $userId = (int) ($user['id'] ?? 0);
+        if ($userId <= 0) {
+            continue;
+        }
+        $username = $user['username'] ?? ('User #' . $userId);
+        $body .= '<option value="' . $userId . '">' . htmlspecialchars($username) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Requestor</span><span class="field-control"><select name="requestor_user_id">';
+    $body .= '<option value="">Unassigned</option>';
+    foreach ($users as $user) {
+        $userId = (int) ($user['id'] ?? 0);
+        if ($userId <= 0) {
+            continue;
+        }
+        $username = $user['username'] ?? ('User #' . $userId);
+        $body .= '<option value="' . $userId . '">' . htmlspecialchars($username) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '</div>';
+
+    $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><textarea name="summary" rows="2"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Details</span><span class="field-control"><textarea name="details" rows="4"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Tags</span><span class="field-control"><input type="text" name="tags" placeholder="design, automation"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Reference links</span><span class="field-control"><textarea name="reference_links" rows="3" placeholder="One URL or path per line"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Supporter IDs</span><span class="field-control"><textarea name="supporters" rows="3" placeholder="Optional numeric IDs for initial supporters"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Admin notes</span><span class="field-control"><textarea name="admin_notes" rows="2"></textarea></span></label>';
+
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Create feature request</button>';
     $body .= '</div>';
     $body .= '</form>';
     $body .= '</article>';

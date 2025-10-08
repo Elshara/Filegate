@@ -121,6 +121,12 @@
         "nature": "dynamic",
         "expose_via_api": false
     },
+    "feature_requests": {
+        "label": "Feature Requests",
+        "description": "Member-submitted feature ideas with prioritisation, visibility, and support tracking.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
     "changelog": {
         "label": "Changelog",
         "description": "Release notes and highlights that communicate what changed across Filegate.",

@@ -24,6 +24,9 @@ require_once __DIR__ . '/default_project_status_dataset.php';
 require_once __DIR__ . '/load_changelog.php';
 require_once __DIR__ . '/save_changelog.php';
 require_once __DIR__ . '/default_changelog_dataset.php';
+require_once __DIR__ . '/load_feature_requests.php';
+require_once __DIR__ . '/save_feature_requests.php';
+require_once __DIR__ . '/default_feature_requests_dataset.php';
 require_once __DIR__ . '/load_asset_snapshots.php';
 require_once __DIR__ . '/save_asset_snapshots.php';
 require_once __DIR__ . '/default_asset_snapshots_dataset.php';
@@ -64,6 +67,12 @@ function fg_seed_defaults(): void
     if (!isset($changelog['records']) || !is_array($changelog['records'])) {
         $changelog = fg_default_changelog_dataset();
         fg_save_changelog($changelog, 'Seed changelog dataset', ['trigger' => 'seed_defaults']);
+    }
+
+    $featureRequests = fg_load_feature_requests();
+    if (!isset($featureRequests['records']) || !is_array($featureRequests['records'])) {
+        $featureRequests = fg_default_feature_requests_dataset();
+        fg_save_feature_requests($featureRequests, 'Seed feature request dataset', ['trigger' => 'seed_defaults']);
     }
 
     $uploads = fg_load_uploads();

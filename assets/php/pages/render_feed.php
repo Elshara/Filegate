@@ -10,6 +10,7 @@ require_once __DIR__ . '/../global/load_notification_channels.php';
 require_once __DIR__ . '/../global/translate.php';
 require_once __DIR__ . '/../global/load_project_status.php';
 require_once __DIR__ . '/../global/load_changelog.php';
+require_once __DIR__ . '/../global/load_feature_requests.php';
 
 function fg_render_feed(array $viewer): string
 {
@@ -18,6 +19,173 @@ function fg_render_feed(array $viewer): string
     usort($records, static function ($a, $b) {
         return strtotime($b['created_at'] ?? 'now') <=> strtotime($a['created_at'] ?? 'now');
     });
+
+    $viewerRole = strtolower((string) ($viewer['role'] ?? ''));
+    $isMember = !empty($viewer);
+    $canModerate = in_array($viewerRole, ['admin', 'moderator'], true);
+    $canViewPrivate = $canModerate;
+
+    $noticeCode = isset($_GET['notice']) ? (string) $_GET['notice'] : '';
+    $errorCode = isset($_GET['error']) ? (string) $_GET['error'] : '';
+    $alerts = [];
+    if ($noticeCode === 'feature-request-created') {
+        $alerts[] = ['type' => 'success', 'message' => 'Feature request submitted successfully.'];
+    } elseif ($noticeCode === 'feature-request-supported') {
+        $alerts[] = ['type' => 'success', 'message' => 'Your support was recorded.'];
+    } elseif ($noticeCode === 'feature-request-withdrawn') {
+        $alerts[] = ['type' => 'success', 'message' => 'Support withdrawn from the feature request.'];
+    } elseif ($noticeCode === 'feature-request-updated') {
+        $alerts[] = ['type' => 'success', 'message' => 'Feature request updated.'];
+    } elseif ($noticeCode === 'feature-request-deleted') {
+        $alerts[] = ['type' => 'success', 'message' => 'Feature request removed.'];
+    }
+
+    if ($errorCode === 'feature-request-disabled') {
+        $alerts[] = ['type' => 'error', 'message' => 'Feature requests are currently disabled.'];
+    } elseif ($errorCode === 'feature-request-unauthorised') {
+        $alerts[] = ['type' => 'error', 'message' => 'You do not have permission to manage that feature request.'];
+    } elseif ($errorCode === 'feature-request-invalid') {
+        $alerts[] = ['type' => 'error', 'message' => 'The requested feature entry could not be found.'];
+    }
+
+    $featureRequestPolicy = strtolower((string) fg_get_setting('feature_request_policy', 'members'));
+    if ($featureRequestPolicy === 'enabled') {
+        $featureRequestPolicy = 'members';
+    }
+    $featureRequestDefaultVisibility = strtolower((string) fg_get_setting('feature_request_default_visibility', 'members'));
+
+    $featureRequestStatusOptions = fg_get_setting('feature_request_statuses', ['open', 'researching', 'planned', 'in_progress', 'completed', 'declined']);
+    if (!is_array($featureRequestStatusOptions) || empty($featureRequestStatusOptions)) {
+        $featureRequestStatusOptions = ['open'];
+    }
+    $featureRequestStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $featureRequestStatusOptions)));
+    if (empty($featureRequestStatusOptions)) {
+        $featureRequestStatusOptions = ['open'];
+    }
+
+    $featureRequestPriorityOptions = fg_get_setting('feature_request_priorities', ['low', 'medium', 'high', 'critical']);
+    if (!is_array($featureRequestPriorityOptions) || empty($featureRequestPriorityOptions)) {
+        $featureRequestPriorityOptions = ['medium'];
+    }
+    $featureRequestPriorityOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $featureRequestPriorityOptions)));
+    if (empty($featureRequestPriorityOptions)) {
+        $featureRequestPriorityOptions = ['medium'];
+    }
+
+    $featureRequestsDataset = fg_load_feature_requests();
+    $featureRequestRecords = $featureRequestsDataset['records'] ?? [];
+    $featureRequestEntries = [];
+    $featureRequestStatusLabels = [];
+    $featureRequestStatusCounts = [];
+    foreach ($featureRequestStatusOptions as $statusOption) {
+        $featureRequestStatusLabels[$statusOption] = ucwords(str_replace('_', ' ', $statusOption));
+        $featureRequestStatusCounts[$statusOption] = 0;
+    }
+    $featureRequestPriorityLabels = [];
+    $featureRequestPriorityOrder = [];
+    foreach ($featureRequestPriorityOptions as $priorityIndex => $priorityOption) {
+        $featureRequestPriorityLabels[$priorityOption] = ucwords(str_replace('_', ' ', $priorityOption));
+        $featureRequestPriorityOrder[$priorityOption] = $priorityIndex;
+    }
+    $featureRequestTotalVotes = 0;
+
+    if (is_array($featureRequestRecords)) {
+        foreach ($featureRequestRecords as $record) {
+            if (!is_array($record)) {
+                continue;
+            }
+
+            $visibility = strtolower((string) ($record['visibility'] ?? $featureRequestDefaultVisibility));
+            if ($visibility === 'private' && !$canModerate) {
+                continue;
+            }
+            if ($visibility === 'members' && !$isMember) {
+                continue;
+            }
+
+            $status = strtolower((string) ($record['status'] ?? $featureRequestStatusOptions[0]));
+            if (!isset($featureRequestStatusLabels[$status])) {
+                $featureRequestStatusLabels[$status] = ucwords(str_replace('_', ' ', $status));
+                $featureRequestStatusCounts[$status] = 0;
+            }
+            $featureRequestStatusCounts[$status] = ($featureRequestStatusCounts[$status] ?? 0) + 1;
+
+            $priority = strtolower((string) ($record['priority'] ?? $featureRequestPriorityOptions[0]));
+            if (!isset($featureRequestPriorityLabels[$priority])) {
+                $featureRequestPriorityLabels[$priority] = ucwords(str_replace('_', ' ', $priority));
+                $featureRequestPriorityOrder[$priority] = count($featureRequestPriorityOrder);
+            }
+
+            $supporters = $record['supporters'] ?? [];
+            if (!is_array($supporters)) {
+                $supporters = [];
+            }
+            $supporters = array_values(array_unique(array_filter(array_map('intval', $supporters), static function ($value) {
+                return $value > 0;
+            })));
+
+            $voteCount = (int) ($record['vote_count'] ?? count($supporters));
+            if ($voteCount < count($supporters)) {
+                $voteCount = count($supporters);
+            }
+            $featureRequestTotalVotes += $voteCount;
+
+            $record['supporters'] = $supporters;
+            $record['vote_count'] = $voteCount;
+            $record['viewer_has_supported'] = in_array((int) ($viewer['id'] ?? 0), $supporters, true);
+            $record['priority'] = $priority;
+            $record['priority_rank'] = $featureRequestPriorityOrder[$priority] ?? count($featureRequestPriorityOrder);
+            $record['status'] = $status;
+            $record['visibility'] = $visibility;
+            if (empty($record['last_activity_at'])) {
+                $record['last_activity_at'] = $record['updated_at'] ?? $record['created_at'] ?? date(DATE_ATOM);
+            }
+
+            $featureRequestEntries[] = $record;
+        }
+    }
+
+    if (!empty($featureRequestEntries)) {
+        usort($featureRequestEntries, static function (array $a, array $b) {
+            $votesA = (int) ($a['vote_count'] ?? 0);
+            $votesB = (int) ($b['vote_count'] ?? 0);
+            if ($votesA !== $votesB) {
+                return $votesB <=> $votesA;
+            }
+
+            $rankA = (int) ($a['priority_rank'] ?? PHP_INT_MAX);
+            $rankB = (int) ($b['priority_rank'] ?? PHP_INT_MAX);
+            if ($rankA !== $rankB) {
+                return $rankA <=> $rankB;
+            }
+
+            $timeA = strtotime((string) ($a['last_activity_at'] ?? $a['updated_at'] ?? $a['created_at'] ?? 'now'));
+            $timeB = strtotime((string) ($b['last_activity_at'] ?? $b['updated_at'] ?? $b['created_at'] ?? 'now'));
+            return $timeB <=> $timeA;
+        });
+    }
+
+    $canSubmitFeatureRequests = $featureRequestPolicy !== 'disabled'
+        && (
+            $featureRequestPolicy === 'members'
+            || ($featureRequestPolicy === 'moderators' && $canModerate)
+            || ($featureRequestPolicy === 'admins' && $viewerRole === 'admin')
+        );
+
+    $featureRequestSubmissionMessage = '';
+    if (!$canSubmitFeatureRequests) {
+        if ($featureRequestPolicy === 'disabled') {
+            $featureRequestSubmissionMessage = 'Feature request submissions are currently disabled.';
+        } elseif ($featureRequestPolicy === 'admins') {
+            $featureRequestSubmissionMessage = 'Only administrators can submit new feature requests right now.';
+        } elseif ($featureRequestPolicy === 'moderators') {
+            $featureRequestSubmissionMessage = 'Only administrators and moderators can submit new feature requests right now.';
+        }
+    }
 
     $roadmapDataset = fg_load_project_status();
     $roadmapRecords = $roadmapDataset['records'] ?? [];
@@ -84,9 +252,6 @@ function fg_render_feed(array $viewer): string
     $changelogDataset = fg_load_changelog();
     $changelogRecords = $changelogDataset['records'] ?? [];
     $changelogEntries = [];
-    $viewerRole = strtolower((string) ($viewer['role'] ?? ''));
-    $isMember = !empty($viewer);
-    $canViewPrivate = in_array($viewerRole, ['admin', 'moderator'], true);
     $nowTs = time();
 
     if (is_array($changelogRecords)) {
@@ -204,6 +369,242 @@ function fg_render_feed(array $viewer): string
     $html .= '<button type="submit">Publish</button>';
     $html .= '</form></section>';
     $html .= '<section class="panel preview-panel" id="composer-preview" data-preview-output hidden><h2>Live preview</h2><div class="preview-body" data-preview-body><div class="preview-placeholder">Start writing to see your live preview, embeds, and statistics.</div></div><div class="preview-embeds" data-preview-embeds hidden></div><dl class="preview-statistics" data-preview-stats hidden></dl><ul class="preview-attachments" data-upload-list hidden></ul></section>';
+
+    if (!empty($alerts)) {
+        $html .= '<section class="panel feed-alerts">';
+        foreach ($alerts as $alert) {
+            $class = $alert['type'] === 'error' ? 'notice error' : 'notice success';
+            $html .= '<div class="' . $class . '">' . htmlspecialchars($alert['message']) . '</div>';
+        }
+        $html .= '</section>';
+    }
+
+    if (!empty($featureRequestEntries) || $canSubmitFeatureRequests) {
+        $html .= '<section class="panel feature-request-panel">';
+        $html .= '<h2>Feature requests</h2>';
+        $html .= '<p class="feature-request-intro">Capture, review, and prioritise ideas without relying on remote services.</p>';
+
+        if (!empty($featureRequestEntries)) {
+            $html .= '<div class="feature-request-summary">';
+            foreach ($featureRequestStatusLabels as $statusKey => $label) {
+                $count = (int) ($featureRequestStatusCounts[$statusKey] ?? 0);
+                $html .= '<article class="feature-request-chip feature-request-status-' . htmlspecialchars($statusKey) . '">';
+                $html .= '<h3>' . htmlspecialchars($label) . '</h3>';
+                $html .= '<p class="feature-request-total">' . $count . ' ' . ($count === 1 ? 'idea' : 'ideas') . '</p>';
+                $html .= '</article>';
+            }
+            $html .= '<article class="feature-request-chip feature-request-votes">';
+            $html .= '<h3>Total support</h3>';
+            $html .= '<p class="feature-request-total">' . $featureRequestTotalVotes . '</p>';
+            $html .= '</article>';
+            $html .= '</div>';
+
+            $html .= '<ul class="feature-request-list">';
+            foreach ($featureRequestEntries as $entry) {
+                $id = (int) ($entry['id'] ?? 0);
+                $title = trim((string) ($entry['title'] ?? 'Untitled request'));
+                $summaryText = trim((string) ($entry['summary'] ?? ''));
+                $detailsText = trim((string) ($entry['details'] ?? ''));
+                $statusKey = strtolower((string) ($entry['status'] ?? 'open'));
+                $statusLabel = $featureRequestStatusLabels[$statusKey] ?? ucwords(str_replace('_', ' ', $statusKey));
+                $priorityKey = strtolower((string) ($entry['priority'] ?? ''));
+                $priorityLabel = $featureRequestPriorityLabels[$priorityKey] ?? ucwords(str_replace('_', ' ', $priorityKey));
+                $visibilityKey = strtolower((string) ($entry['visibility'] ?? $featureRequestDefaultVisibility));
+                $visibilityLabel = $visibilityKey === 'members' ? 'Members' : ucfirst($visibilityKey);
+                $impactScore = (int) ($entry['impact'] ?? 0);
+                $effortScore = (int) ($entry['effort'] ?? 0);
+                $voteCount = (int) ($entry['vote_count'] ?? 0);
+                $lastActivity = (string) ($entry['last_activity_at'] ?? $entry['updated_at'] ?? $entry['created_at'] ?? '');
+                $lastActivityLabel = '';
+                if ($lastActivity !== '') {
+                    $timestamp = strtotime($lastActivity);
+                    if ($timestamp) {
+                        $lastActivityLabel = 'Updated ' . date('M j, Y', $timestamp);
+                    }
+                }
+
+                $ownerRole = (string) ($entry['owner_role'] ?? '');
+                $ownerUserId = $entry['owner_user_id'] ?? null;
+                $ownerLabel = '';
+                if ($ownerUserId) {
+                    $ownerUser = fg_find_user_by_id((int) $ownerUserId);
+                    if ($ownerUser) {
+                        $ownerLabel = '@' . ($ownerUser['username'] ?? $ownerUserId);
+                    }
+                }
+                $requestorLabel = '';
+                if (!empty($entry['requestor_user_id'])) {
+                    $requestorUser = fg_find_user_by_id((int) $entry['requestor_user_id']);
+                    if ($requestorUser) {
+                        $requestorLabel = '@' . ($requestorUser['username'] ?? $entry['requestor_user_id']);
+                    }
+                }
+
+                $tags = $entry['tags'] ?? [];
+                if (!is_array($tags)) {
+                    $tags = [];
+                }
+                $referenceLinks = $entry['reference_links'] ?? [];
+                if (!is_array($referenceLinks)) {
+                    $referenceLinks = [];
+                }
+
+                $html .= '<li class="feature-request-card feature-request-priority-' . htmlspecialchars($priorityKey) . '" id="feature-request-' . $id . '">';
+                $html .= '<header class="feature-request-header">';
+                $html .= '<span class="feature-request-status feature-request-status-' . htmlspecialchars($statusKey) . '">' . htmlspecialchars($statusLabel) . '</span>';
+                $html .= '<span class="feature-request-priority-label">' . htmlspecialchars($priorityLabel) . '</span>';
+                $html .= '<span class="feature-request-support-count">' . $voteCount . ' ' . ($voteCount === 1 ? 'supporter' : 'supporters') . '</span>';
+                if ($lastActivityLabel !== '') {
+                    $html .= '<span class="feature-request-updated">' . htmlspecialchars($lastActivityLabel) . '</span>';
+                }
+                $html .= '</header>';
+
+                $html .= '<h3>' . htmlspecialchars($title) . '</h3>';
+                if ($summaryText !== '') {
+                    $html .= '<p class="feature-request-summary-text">' . htmlspecialchars($summaryText) . '</p>';
+                }
+                if ($detailsText !== '') {
+                    $html .= '<details class="feature-request-details"><summary>Details</summary><p>' . nl2br(htmlspecialchars($detailsText)) . '</p></details>';
+                }
+
+                $metaParts = [];
+                if ($impactScore > 0) {
+                    $metaParts[] = 'Impact ' . $impactScore . '/5';
+                }
+                if ($effortScore > 0) {
+                    $metaParts[] = 'Effort ' . $effortScore . '/5';
+                }
+                $metaParts[] = 'Visibility: ' . $visibilityLabel;
+                if ($ownerRole !== '') {
+                    $metaParts[] = 'Owner role: ' . ucfirst($ownerRole);
+                }
+                if ($ownerLabel !== '') {
+                    $metaParts[] = 'Owner: ' . $ownerLabel;
+                }
+                if ($requestorLabel !== '') {
+                    $metaParts[] = 'Requested by ' . $requestorLabel;
+                }
+                if (!empty($metaParts)) {
+                    $html .= '<p class="feature-request-meta">' . htmlspecialchars(implode(' · ', $metaParts)) . '</p>';
+                }
+
+                if (!empty($tags)) {
+                    $html .= '<ul class="feature-request-tags">';
+                    foreach ($tags as $tag) {
+                        $html .= '<li>' . htmlspecialchars((string) $tag) . '</li>';
+                    }
+                    $html .= '</ul>';
+                }
+
+                if (!empty($referenceLinks)) {
+                    $html .= '<ul class="feature-request-links">';
+                    foreach ($referenceLinks as $link) {
+                        $url = trim((string) $link);
+                        if ($url === '') {
+                            continue;
+                        }
+                        $html .= '<li><a href="' . htmlspecialchars($url) . '">' . htmlspecialchars($url) . '</a></li>';
+                    }
+                    $html .= '</ul>';
+                }
+
+                $adminNotes = trim((string) ($entry['admin_notes'] ?? ''));
+                if ($canModerate && $adminNotes !== '') {
+                    $html .= '<p class="feature-request-notes"><strong>Notes:</strong> ' . htmlspecialchars($adminNotes) . '</p>';
+                }
+
+                if ($canModerate && !empty($entry['supporters'])) {
+                    $supporterLabels = [];
+                    foreach ($entry['supporters'] as $supporterId) {
+                        $supporterUser = fg_find_user_by_id((int) $supporterId);
+                        if ($supporterUser) {
+                            $supporterLabels[] = '@' . ($supporterUser['username'] ?? $supporterId);
+                        } else {
+                            $supporterLabels[] = '#' . $supporterId;
+                        }
+                    }
+                    if (!empty($supporterLabels)) {
+                        $html .= '<p class="feature-request-supporters"><strong>Supporters:</strong> ' . htmlspecialchars(implode(', ', $supporterLabels)) . '</p>';
+                    }
+                }
+
+                $html .= '<div class="feature-request-actions">';
+                $html .= '<form method="post" action="/feature-request.php" class="inline-form feature-request-support-form">';
+                $html .= '<input type="hidden" name="action" value="toggle_support">';
+                $html .= '<input type="hidden" name="feature_request_id" value="' . $id . '">';
+                $buttonClass = !empty($entry['viewer_has_supported']) ? 'button secondary' : 'button primary';
+                $buttonLabel = !empty($entry['viewer_has_supported']) ? 'Withdraw support' : 'Support idea';
+                $html .= '<button type="submit" class="' . $buttonClass . '">' . htmlspecialchars($buttonLabel) . '</button>';
+                $html .= '</form>';
+                if ($canModerate) {
+                    $html .= '<a class="feature-request-manage" href="/setup.php#feature-requests">Manage in setup</a>';
+                }
+                $html .= '</div>';
+
+                $html .= '</li>';
+            }
+            $html .= '</ul>';
+        } else {
+            $html .= '<p class="notice muted">No feature requests yet. Be the first to propose an idea below.</p>';
+        }
+
+        if (!$canSubmitFeatureRequests && $featureRequestSubmissionMessage !== '') {
+            $html .= '<p class="notice muted">' . htmlspecialchars($featureRequestSubmissionMessage) . '</p>';
+        }
+
+        if ($canSubmitFeatureRequests) {
+            $html .= '<article class="feature-request-card feature-request-create">';
+            $html .= '<h3>Submit a new idea</h3>';
+            $html .= '<form method="post" action="/feature-request.php" class="feature-request-form">';
+            $html .= '<input type="hidden" name="action" value="create_feature_request">';
+
+            if ($canModerate) {
+                $html .= '<label>Workflow status<select name="status">';
+                foreach ($featureRequestStatusOptions as $statusOption) {
+                    $html .= '<option value="' . htmlspecialchars($statusOption) . '">' . htmlspecialchars($featureRequestStatusLabels[$statusOption] ?? ucwords(str_replace('_', ' ', $statusOption))) . '</option>';
+                }
+                $html .= '</select></label>';
+            } else {
+                $defaultStatus = $featureRequestStatusOptions[0];
+                $html .= '<input type="hidden" name="status" value="' . htmlspecialchars($defaultStatus) . '">';
+            }
+
+            $html .= '<label>Title<input type="text" name="title" required></label>';
+            $html .= '<label>Summary<textarea name="summary" rows="2" placeholder="Short elevator pitch"></textarea></label>';
+            $html .= '<label>Details<textarea name="details" rows="4" placeholder="Explain the problem, audience, and success criteria"></textarea></label>';
+
+            $html .= '<label>Priority<select name="priority">';
+            foreach ($featureRequestPriorityOptions as $priorityOption) {
+                $html .= '<option value="' . htmlspecialchars($priorityOption) . '">' . htmlspecialchars($featureRequestPriorityLabels[$priorityOption] ?? ucwords(str_replace('_', ' ', $priorityOption))) . '</option>';
+            }
+            $html .= '</select></label>';
+
+            $html .= '<div class="feature-request-score-grid">';
+            $html .= '<label>Impact (1-5)<input type="number" name="impact" min="1" max="5" value="3"></label>';
+            $html .= '<label>Effort (1-5)<input type="number" name="effort" min="1" max="5" value="3"></label>';
+            $html .= '</div>';
+
+            if ($canModerate) {
+                $html .= '<label>Visibility<select name="visibility">';
+                foreach (['public' => 'Public', 'members' => 'Members', 'private' => 'Private'] as $value => $label) {
+                    $selected = $value === $featureRequestDefaultVisibility ? ' selected' : '';
+                    $html .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+                }
+                $html .= '</select></label>';
+            } else {
+                $html .= '<input type="hidden" name="visibility" value="' . htmlspecialchars($featureRequestDefaultVisibility) . '">';
+            }
+
+            $html .= '<label>Tags<input type="text" name="tags" placeholder="design, accessibility, onboarding"></label>';
+            $html .= '<label>Reference links<textarea name="reference_links" rows="2" placeholder="One URL or internal path per line"></textarea></label>';
+
+            $html .= '<button type="submit" class="button primary">Submit feature request</button>';
+            $html .= '</form>';
+            $html .= '</article>';
+        }
+
+        $html .= '</section>';
+    }
 
     if (!empty($roadmapEntries)) {
         $html .= '<section class="panel roadmap-feed-panel">';

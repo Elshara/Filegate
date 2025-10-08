@@ -81,6 +81,59 @@
             ],
             "category": "collaboration"
         },
+        "feature_request_policy": {
+            "label": "Feature Request Submission Policy",
+            "description": "Determines which roles can submit new feature requests from the feed.",
+            "value": "members",
+            "managed_by": "custom",
+            "allowed_roles": [
+                "admin",
+                "moderator"
+            ],
+            "category": "feedback"
+        },
+        "feature_request_default_visibility": {
+            "label": "Feature Request Default Visibility",
+            "description": "Sets the baseline visibility for newly created feature requests.",
+            "value": "members",
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "feedback"
+        },
+        "feature_request_statuses": {
+            "label": "Feature Request Statuses",
+            "description": "Ordered list of statuses available when triaging feature ideas.",
+            "value": [
+                "open",
+                "researching",
+                "planned",
+                "in_progress",
+                "completed",
+                "declined"
+            ],
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "feedback"
+        },
+        "feature_request_priorities": {
+            "label": "Feature Request Priorities",
+            "description": "Defines the selectable priority buckets for feature requests.",
+            "value": [
+                "low",
+                "medium",
+                "high",
+                "critical"
+            ],
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "feedback"
+        },
         "notification_channel_defaults": {
             "label": "Default Notification Channels",
             "description": "Channels queued when posts or settings trigger notifications.",

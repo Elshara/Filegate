@@ -42,6 +42,11 @@ require_once __DIR__ . '/../global/default_changelog_dataset.php';
 require_once __DIR__ . '/../global/add_changelog_entry.php';
 require_once __DIR__ . '/../global/update_changelog_entry.php';
 require_once __DIR__ . '/../global/delete_changelog_entry.php';
+require_once __DIR__ . '/../global/load_feature_requests.php';
+require_once __DIR__ . '/../global/default_feature_requests_dataset.php';
+require_once __DIR__ . '/../global/add_feature_request.php';
+require_once __DIR__ . '/../global/update_feature_request.php';
+require_once __DIR__ . '/../global/delete_feature_request.php';
 require_once __DIR__ . '/../pages/render_setup.php';
 require_once __DIR__ . '/../global/guard_asset.php';
 require_once __DIR__ . '/../global/load_asset_snapshots.php';
@@ -102,6 +107,48 @@ function fg_public_setup_controller(): void
     } catch (Throwable $exception) {
         $errors[] = 'Unable to load changelog dataset: ' . $exception->getMessage();
         $changelog = fg_default_changelog_dataset();
+    }
+
+    try {
+        $featureRequests = fg_load_feature_requests();
+        if (!isset($featureRequests['records']) || !is_array($featureRequests['records'])) {
+            $featureRequests = fg_default_feature_requests_dataset();
+        }
+    } catch (Throwable $exception) {
+        $errors[] = 'Unable to load feature request dataset: ' . $exception->getMessage();
+        $featureRequests = fg_default_feature_requests_dataset();
+    }
+
+    $featureRequestStatusOptions = fg_get_setting('feature_request_statuses', ['open', 'researching', 'planned', 'in_progress', 'completed', 'declined']);
+    if (!is_array($featureRequestStatusOptions) || empty($featureRequestStatusOptions)) {
+        $featureRequestStatusOptions = ['open'];
+    }
+    $featureRequestStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $featureRequestStatusOptions)));
+    if (empty($featureRequestStatusOptions)) {
+        $featureRequestStatusOptions = ['open'];
+    }
+
+    $featureRequestPriorityOptions = fg_get_setting('feature_request_priorities', ['low', 'medium', 'high', 'critical']);
+    if (!is_array($featureRequestPriorityOptions) || empty($featureRequestPriorityOptions)) {
+        $featureRequestPriorityOptions = ['medium'];
+    }
+    $featureRequestPriorityOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $featureRequestPriorityOptions)));
+    if (empty($featureRequestPriorityOptions)) {
+        $featureRequestPriorityOptions = ['medium'];
+    }
+
+    $featureRequestDefaultVisibility = strtolower((string) fg_get_setting('feature_request_default_visibility', 'members'));
+    if (!in_array($featureRequestDefaultVisibility, ['public', 'members', 'private'], true)) {
+        $featureRequestDefaultVisibility = 'members';
+    }
+
+    $featureRequestPolicy = strtolower((string) fg_get_setting('feature_request_policy', 'members'));
+    if ($featureRequestPolicy === 'enabled') {
+        $featureRequestPolicy = 'members';
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -813,6 +860,90 @@ function fg_public_setup_controller(): void
             }
 
             $changelog = fg_load_changelog();
+        } elseif (in_array($action, ['create_feature_request', 'update_feature_request', 'delete_feature_request'], true)) {
+            try {
+                $featureRequests = fg_load_feature_requests();
+                if (!isset($featureRequests['records']) || !is_array($featureRequests['records'])) {
+                    $featureRequests = fg_default_feature_requests_dataset();
+                }
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to load feature request dataset: ' . $exception->getMessage();
+                $featureRequests = fg_default_feature_requests_dataset();
+            }
+
+            if ($action === 'create_feature_request') {
+                try {
+                    fg_add_feature_request([
+                        'title' => $_POST['title'] ?? '',
+                        'summary' => $_POST['summary'] ?? '',
+                        'details' => $_POST['details'] ?? '',
+                        'status' => $_POST['status'] ?? ($featureRequestStatusOptions[0] ?? 'open'),
+                        'priority' => $_POST['priority'] ?? ($featureRequestPriorityOptions[0] ?? 'medium'),
+                        'visibility' => $_POST['visibility'] ?? $featureRequestDefaultVisibility,
+                        'impact' => $_POST['impact'] ?? 3,
+                        'effort' => $_POST['effort'] ?? 3,
+                        'tags' => $_POST['tags'] ?? '',
+                        'reference_links' => $_POST['reference_links'] ?? '',
+                        'supporters' => $_POST['supporters'] ?? '',
+                        'requestor_user_id' => $_POST['requestor_user_id'] ?? null,
+                        'owner_role' => $_POST['owner_role'] ?? '',
+                        'owner_user_id' => $_POST['owner_user_id'] ?? null,
+                        'admin_notes' => $_POST['admin_notes'] ?? '',
+                        'performed_by' => $current['id'] ?? null,
+                        'trigger' => 'setup_ui',
+                    ]);
+                    $message = 'Feature request created successfully.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            } elseif ($action === 'update_feature_request') {
+                $requestId = (int) ($_POST['feature_request_id'] ?? 0);
+                if ($requestId <= 0) {
+                    $errors[] = 'Unknown feature request specified for update.';
+                } else {
+                    try {
+                        fg_update_feature_request($requestId, [
+                            'title' => $_POST['title'] ?? '',
+                            'summary' => $_POST['summary'] ?? '',
+                            'details' => $_POST['details'] ?? '',
+                            'status' => $_POST['status'] ?? ($featureRequestStatusOptions[0] ?? 'open'),
+                            'priority' => $_POST['priority'] ?? ($featureRequestPriorityOptions[0] ?? 'medium'),
+                            'visibility' => $_POST['visibility'] ?? $featureRequestDefaultVisibility,
+                            'impact' => $_POST['impact'] ?? 3,
+                            'effort' => $_POST['effort'] ?? 3,
+                            'tags' => $_POST['tags'] ?? '',
+                            'reference_links' => $_POST['reference_links'] ?? '',
+                            'supporters' => $_POST['supporters'] ?? '',
+                            'requestor_user_id' => $_POST['requestor_user_id'] ?? null,
+                            'owner_role' => $_POST['owner_role'] ?? '',
+                            'owner_user_id' => $_POST['owner_user_id'] ?? null,
+                            'admin_notes' => $_POST['admin_notes'] ?? '',
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_ui',
+                        ]);
+                        $message = 'Feature request updated successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'delete_feature_request') {
+                $requestId = (int) ($_POST['feature_request_id'] ?? 0);
+                if ($requestId <= 0) {
+                    $errors[] = 'Unknown feature request specified for deletion.';
+                } else {
+                    try {
+                        fg_delete_feature_request($requestId, [
+                            'trigger' => 'setup_ui',
+                            'performed_by' => $current['id'] ?? null,
+                        ]);
+                        $message = 'Feature request deleted successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            }
+
+            $featureRequests = fg_load_feature_requests();
         } else {
             $asset = $_POST['asset'] ?? '';
             $configurations = fg_load_asset_configurations();
@@ -1168,6 +1299,11 @@ function fg_public_setup_controller(): void
         'translations' => $translations,
         'project_status' => $projectStatus,
         'changelog' => $changelog,
+        'feature_requests' => $featureRequests,
+        'feature_request_statuses' => $featureRequestStatusOptions,
+        'feature_request_priorities' => $featureRequestPriorityOptions,
+        'feature_request_policy' => $featureRequestPolicy,
+        'feature_request_default_visibility' => $featureRequestDefaultVisibility,
         'locale_policy' => fg_get_setting('locale_personalisation_policy', 'enabled'),
         'default_locale' => fg_get_setting('default_locale', $translations['fallback_locale'] ?? 'en'),
         'pages' => fg_load_pages(),

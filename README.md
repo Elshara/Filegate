@@ -143,6 +143,17 @@ Filegate seeds `assets/json/dynamic/project_status.json` with representative mil
 
 Every save updates the flat-file dataset, records an activity event, and keeps the roadmap in sync with asset permissions. Members see a condensed roadmap summary on the feed—complete with status counts, average progress, and the latest items—so teams can track what is shipping at a glance.
 
+## Feature request board
+
+Ideas, enhancements, and operational chores sit alongside roadmap items in `assets/json/dynamic/feature_requests.json`. Administrators open **Setup → Feature request catalogue** to:
+
+- review status and priority chips that summarise how many ideas are open, researching, planned, in progress, completed, or declined;
+- edit individual requests with forms for titles, summaries, detailed briefs, visibility, impact, effort, tags, requestor/owner assignments, and supporter lists without touching the file system;
+- queue internal notes and supporter IDs so moderators can acknowledge interest while keeping sensitive metadata out of the feed; and
+- create or delete requests directly from the browser while the activity log records every change.
+
+Statuses, priorities, the submission policy, and default visibility are all configurable from the Settings dataset. Members see a condensed feature request panel on the feed with supporter buttons, status badges, and reference links—no external API required.
+
 ## Changelog management
 
 Releases, fixes, and operational changes live in `assets/json/dynamic/changelog.json`. Administrators can open **Setup → Changelog** to:

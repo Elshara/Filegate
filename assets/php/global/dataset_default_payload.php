@@ -6,6 +6,7 @@ require_once __DIR__ . '/default_themes_dataset.php';
 require_once __DIR__ . '/default_pages_dataset.php';
 require_once __DIR__ . '/default_activity_log_dataset.php';
 require_once __DIR__ . '/default_changelog_dataset.php';
+require_once __DIR__ . '/default_feature_requests_dataset.php';
 
 function fg_dataset_default_payload(string $name): ?string
 {
@@ -25,6 +26,9 @@ function fg_dataset_default_payload(string $name): ?string
                 break;
             case 'changelog':
                 $defaults = fg_default_changelog_dataset();
+                break;
+            case 'feature_requests':
+                $defaults = fg_default_feature_requests_dataset();
                 break;
             case 'asset_overrides':
                 $defaults = ['records' => ['global' => [], 'roles' => [], 'users' => []]];
