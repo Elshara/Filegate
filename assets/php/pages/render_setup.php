@@ -24,6 +24,11 @@ function fg_render_setup_page(array $data = []): void
     $defaultLocaleSetting = $data['default_locale'] ?? $fallbackLocale;
     $pagesDataset = $data['pages'] ?? ['records' => [], 'next_id' => 1];
     $pageRecords = $pagesDataset['records'] ?? [];
+    $projectStatusDataset = $data['project_status'] ?? ['records' => [], 'next_id' => 1];
+    if (!isset($projectStatusDataset['records']) || !is_array($projectStatusDataset['records'])) {
+        $projectStatusDataset['records'] = [];
+    }
+    $projectStatusRecords = $projectStatusDataset['records'];
     $message = $data['message'] ?? '';
     $errors = $data['errors'] ?? [];
     $activityRecords = $data['activity_records'] ?? [];
@@ -81,7 +86,7 @@ function fg_render_setup_page(array $data = []): void
         $body .= '<form method="post" action="/setup.php" class="asset-form">';
         $body .= '<input type="hidden" name="action" value="update_defaults">';
         $body .= '<input type="hidden" name="asset" value="' . htmlspecialchars($asset) . '">';
-        $body .= '<div class="field-grid">';
+        $body .= '<div class="field-grid roadmap-basic-grid">';
 
         foreach ($parameters as $key => $definition) {
             $label = $definition['label'] ?? $key;
@@ -365,7 +370,7 @@ function fg_render_setup_page(array $data = []): void
         $body .= '<form method="post" action="/setup.php" class="page-form">';
         $body .= '<input type="hidden" name="action" value="update_page">';
         $body .= '<input type="hidden" name="page_id" value="' . htmlspecialchars((string) $pageId) . '">';
-        $body .= '<div class="field-grid">';
+        $body .= '<div class="field-grid roadmap-assignment-grid">';
         $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value="' . htmlspecialchars($pageTitle) . '"></span></label>';
         $body .= '<label class="field"><span class="field-label">Slug</span><span class="field-control"><input type="text" name="slug" value="' . htmlspecialchars((string) $pageSlug) . '"></span><span class="field-description">Used for the page URL.</span></label>';
         $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><input type="text" name="summary" value="' . htmlspecialchars($pageSummary) . '"></span></label>';
@@ -415,7 +420,7 @@ function fg_render_setup_page(array $data = []): void
     $body .= '<header><h3>Create new page</h3><p>Draft a new page with full control over visibility and placement.</p></header>';
     $body .= '<form method="post" action="/setup.php" class="page-form">';
     $body .= '<input type="hidden" name="action" value="create_page">';
-    $body .= '<div class="field-grid">';
+    $body .= '<div class="field-grid roadmap-basic-grid">';
     $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value=""></span></label>';
     $body .= '<label class="field"><span class="field-label">Slug</span><span class="field-control"><input type="text" name="slug" value=""></span></label>';
     $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><input type="text" name="summary" value=""></span></label>';
@@ -427,7 +432,7 @@ function fg_render_setup_page(array $data = []): void
     $body .= '<label class="field"><span class="field-label">Template</span><span class="field-control"><input type="text" name="template" value="standard"></span></label>';
     $body .= '</div>';
     $body .= '<label class="field"><span class="field-label">Content</span><span class="field-control"><textarea name="content" rows="6"></textarea></span></label>';
-    $body .= '<div class="field-grid">';
+    $body .= '<div class="field-grid roadmap-assignment-grid">';
     $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
     foreach (['public' => 'Public', 'members' => 'Members', 'roles' => 'Selected roles'] as $value => $labelOption) {
         $body .= '<option value="' . htmlspecialchars($value) . '">' . htmlspecialchars($labelOption) . '</option>';
@@ -442,6 +447,249 @@ function fg_render_setup_page(array $data = []): void
     $body .= '</div>';
     $body .= '<div class="action-row">';
     $body .= '<button type="submit" class="button primary">Create page</button>';
+    $body .= '</div>';
+    $body .= '</form>';
+    $body .= '</article>';
+
+    $body .= '</section>';
+
+    $statusLabels = [
+        'built' => 'Built',
+        'in_progress' => 'In progress',
+        'planned' => 'Planned',
+        'on_hold' => 'On hold',
+    ];
+    $statusDescriptions = [
+        'built' => 'Completed and available to everyone.',
+        'in_progress' => 'Currently being delivered by the team.',
+        'planned' => 'Prioritised for an upcoming milestone.',
+        'on_hold' => 'Paused until prerequisites are met.',
+    ];
+    $statusCounts = [];
+    $statusRank = [];
+    $indexCounter = 0;
+    foreach ($statusLabels as $statusKey => $label) {
+        $statusCounts[$statusKey] = 0;
+        $statusRank[$statusKey] = $indexCounter++;
+    }
+
+    $statusList = $projectStatusRecords;
+    $progressTotal = 0;
+    $progressCount = 0;
+    foreach ($statusList as $record) {
+        $state = (string) ($record['status'] ?? 'planned');
+        if (!isset($statusCounts[$state])) {
+            $statusCounts[$state] = 0;
+            $statusRank[$state] = $indexCounter++;
+            $statusLabels[$state] = ucwords(str_replace('_', ' ', $state));
+            $statusDescriptions[$state] = 'Custom status provided by administrators.';
+        }
+        $statusCounts[$state]++;
+
+        $progress = (int) ($record['progress'] ?? 0);
+        if ($progress < 0) {
+            $progress = 0;
+        }
+        if ($progress > 100) {
+            $progress = 100;
+        }
+        $progressTotal += $progress;
+        $progressCount++;
+    }
+
+    if (!empty($statusList)) {
+        usort($statusList, static function (array $a, array $b) use ($statusRank) {
+            $stateA = (string) ($a['status'] ?? 'planned');
+            $stateB = (string) ($b['status'] ?? 'planned');
+            $rankA = $statusRank[$stateA] ?? PHP_INT_MAX;
+            $rankB = $statusRank[$stateB] ?? PHP_INT_MAX;
+            if ($rankA === $rankB) {
+                return ((int) ($b['progress'] ?? 0)) <=> ((int) ($a['progress'] ?? 0));
+            }
+
+            return $rankA <=> $rankB;
+        });
+    }
+
+    $averageProgress = $progressCount > 0 ? (int) round($progressTotal / $progressCount) : 0;
+
+    $body .= '<section class="roadmap-manager">';
+    $body .= '<h2>Roadmap tracker</h2>';
+    $body .= '<p>Track what has shipped, what is in motion, and what is still planned so every profile, page, and dataset stays aligned.</p>';
+
+    if (empty($statusList)) {
+        $body .= '<p class="notice muted">No roadmap entries recorded yet. Use the form below to outline your first milestone.</p>';
+    } else {
+        $body .= '<div class="roadmap-summary">';
+        foreach ($statusLabels as $key => $label) {
+            $count = (int) ($statusCounts[$key] ?? 0);
+            $body .= '<article class="roadmap-chip roadmap-status-' . htmlspecialchars($key) . '">';
+            $body .= '<h3>' . htmlspecialchars($label) . '</h3>';
+            $body .= '<p class="roadmap-total">' . $count . ' ' . ($count === 1 ? 'item' : 'items') . '</p>';
+            $body .= '<p class="roadmap-description">' . htmlspecialchars($statusDescriptions[$key] ?? '') . '</p>';
+            $body .= '</article>';
+        }
+        $body .= '<article class="roadmap-chip roadmap-progress">';
+        $body .= '<h3>Average progress</h3>';
+        $body .= '<p class="roadmap-total">' . $averageProgress . '%</p>';
+        $body .= '<p class="roadmap-description">Mean completion across tracked work.</p>';
+        $body .= '</article>';
+        $body .= '</div>';
+    }
+
+    foreach ($statusList as $record) {
+        $statusKey = (string) ($record['status'] ?? 'planned');
+        $statusLabel = $statusLabels[$statusKey] ?? ucwords(str_replace('_', ' ', $statusKey));
+        $title = trim((string) ($record['title'] ?? 'Untitled milestone'));
+        $summaryText = trim((string) ($record['summary'] ?? ''));
+        $category = trim((string) ($record['category'] ?? ''));
+        $milestone = trim((string) ($record['milestone'] ?? ''));
+        $progress = (int) ($record['progress'] ?? 0);
+        if ($progress < 0) {
+            $progress = 0;
+        }
+        if ($progress > 100) {
+            $progress = 100;
+        }
+        $ownerRole = (string) ($record['owner_role'] ?? '');
+        $ownerUserId = $record['owner_user_id'] ?? null;
+        $linksValue = '';
+        if (!empty($record['links']) && is_array($record['links'])) {
+            $linksValue = implode("\n", array_map(static function ($link) {
+                return (string) $link;
+            }, $record['links']));
+        }
+
+        $metaParts = [];
+        $metaParts[] = 'Status: ' . $statusLabel;
+        $metaParts[] = 'Progress: ' . $progress . '%';
+        if ($category !== '') {
+            $metaParts[] = 'Category: ' . $category;
+        }
+        if ($milestone !== '') {
+            $metaParts[] = 'Milestone: ' . $milestone;
+        }
+        if ($ownerRole !== '') {
+            $metaParts[] = 'Role lead: ' . ucfirst($ownerRole);
+        }
+        if ($ownerUserId !== null && isset($userIndex[(string) $ownerUserId])) {
+            $metaParts[] = 'Owner: @' . ($userIndex[(string) $ownerUserId]['username'] ?? $ownerUserId);
+        }
+
+        $body .= '<article class="roadmap-card">';
+        $body .= '<header>';
+        $body .= '<h3>' . htmlspecialchars($title) . '</h3>';
+        if (!empty($metaParts)) {
+            $body .= '<p class="roadmap-meta">' . htmlspecialchars(implode(' · ', $metaParts)) . '</p>';
+        }
+        if ($summaryText !== '') {
+            $body .= '<p class="roadmap-summary-text">' . htmlspecialchars($summaryText) . '</p>';
+        }
+        if (!empty($record['updated_at'])) {
+            $timestamp = strtotime((string) $record['updated_at']);
+            if ($timestamp) {
+                $body .= '<p class="roadmap-updated">Last updated ' . htmlspecialchars(date('M j, Y H:i', $timestamp)) . '</p>';
+            }
+        }
+        $body .= '</header>';
+
+        $body .= '<form method="post" action="/setup.php" class="roadmap-form">';
+        $body .= '<input type="hidden" name="action" value="update_project_status">';
+        $body .= '<input type="hidden" name="project_status_id" value="' . (int) ($record['id'] ?? 0) . '">';
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value="' . htmlspecialchars($title) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Category</span><span class="field-control"><input type="text" name="category" value="' . htmlspecialchars($category) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Milestone</span><span class="field-control"><input type="text" name="milestone" value="' . htmlspecialchars($milestone) . '"></span></label>';
+        $body .= '</div>';
+
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+        foreach ($statusLabels as $value => $label) {
+            $selected = $statusKey === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Progress (%)</span><span class="field-control"><input type="number" name="progress" min="0" max="100" value="' . $progress . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Owner role</span><span class="field-control"><select name="owner_role">';
+        $body .= '<option value="">Unassigned</option>';
+        foreach ($roles as $roleKey => $roleDescription) {
+            $selected = $ownerRole === (string) $roleKey ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars((string) $roleKey) . '"' . $selected . '>' . htmlspecialchars(ucfirst((string) $roleKey)) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Owner profile</span><span class="field-control"><select name="owner_user_id">';
+        $body .= '<option value="">Unassigned</option>';
+        foreach ($users as $user) {
+            $userId = (int) ($user['id'] ?? 0);
+            if ($userId <= 0) {
+                continue;
+            }
+            $selected = ($ownerUserId !== null && (int) $ownerUserId === $userId) ? ' selected' : '';
+            $username = $user['username'] ?? ('User #' . $userId);
+            $body .= '<option value="' . $userId . '"' . $selected . '>' . htmlspecialchars($username) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '</div>';
+
+        $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><textarea name="summary" rows="3">' . htmlspecialchars($summaryText) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Reference links</span><span class="field-control"><textarea name="links" rows="3" placeholder="One link per line">' . htmlspecialchars($linksValue) . '</textarea></span><span class="field-description">Provide URLs or internal paths that contextualise this milestone.</span></label>';
+
+        $body .= '<div class="action-row">';
+        $body .= '<button type="submit" class="button primary">Save changes</button>';
+        $body .= '</div>';
+        $body .= '</form>';
+
+        $body .= '<form method="post" action="/setup.php" class="roadmap-delete-form" onsubmit="return confirm(\'Remove this roadmap entry?\');">';
+        $body .= '<input type="hidden" name="action" value="delete_project_status">';
+        $body .= '<input type="hidden" name="project_status_id" value="' . (int) ($record['id'] ?? 0) . '">';
+        $body .= '<button type="submit" class="button danger">Delete entry</button>';
+        $body .= '</form>';
+
+        $body .= '</article>';
+    }
+
+    $body .= '<article class="roadmap-card create">';
+    $body .= '<header><h3>Create new roadmap entry</h3><p>Outline a feature, milestone, or enhancement and classify its status for everyone.</p></header>';
+    $body .= '<form method="post" action="/setup.php" class="roadmap-form">';
+    $body .= '<input type="hidden" name="action" value="create_project_status">';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value=""></span></label>';
+    $body .= '<label class="field"><span class="field-label">Category</span><span class="field-control"><input type="text" name="category" value=""></span></label>';
+    $body .= '<label class="field"><span class="field-label">Milestone</span><span class="field-control"><input type="text" name="milestone" value=""></span></label>';
+    $body .= '</div>';
+
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+    foreach ($statusLabels as $value => $label) {
+        $selected = $value === 'planned' ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Progress (%)</span><span class="field-control"><input type="number" name="progress" min="0" max="100" value="0"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Owner role</span><span class="field-control"><select name="owner_role">';
+    $body .= '<option value="">Unassigned</option>';
+    foreach ($roles as $roleKey => $roleDescription) {
+        $body .= '<option value="' . htmlspecialchars((string) $roleKey) . '">' . htmlspecialchars(ucfirst((string) $roleKey)) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Owner profile</span><span class="field-control"><select name="owner_user_id">';
+    $body .= '<option value="">Unassigned</option>';
+    foreach ($users as $user) {
+        $userId = (int) ($user['id'] ?? 0);
+        if ($userId <= 0) {
+            continue;
+        }
+        $username = $user['username'] ?? ('User #' . $userId);
+        $body .= '<option value="' . $userId . '">' . htmlspecialchars($username) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '</div>';
+
+    $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><textarea name="summary" rows="3" placeholder="What is this roadmap item about?"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Reference links</span><span class="field-control"><textarea name="links" rows="3" placeholder="One link per line"></textarea></span><span class="field-description">Provide URLs, dataset names, or documentation paths that will help collaborators.</span></label>';
+
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Create roadmap entry</button>';
     $body .= '</div>';
     $body .= '</form>';
     $body .= '</article>';

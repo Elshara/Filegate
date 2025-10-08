@@ -32,6 +32,11 @@ require_once __DIR__ . '/../global/update_page.php';
 require_once __DIR__ . '/../global/delete_page.php';
 require_once __DIR__ . '/../global/default_pages_dataset.php';
 require_once __DIR__ . '/../global/save_pages.php';
+require_once __DIR__ . '/../global/load_project_status.php';
+require_once __DIR__ . '/../global/default_project_status_dataset.php';
+require_once __DIR__ . '/../global/add_project_status.php';
+require_once __DIR__ . '/../global/update_project_status.php';
+require_once __DIR__ . '/../global/delete_project_status.php';
 require_once __DIR__ . '/../pages/render_setup.php';
 require_once __DIR__ . '/../global/guard_asset.php';
 require_once __DIR__ . '/../global/load_asset_snapshots.php';
@@ -63,6 +68,7 @@ function fg_public_setup_controller(): void
             'overrides' => fg_load_asset_overrides(),
             'roles' => (fg_load_settings()['role_definitions'] ?? []),
             'users' => (fg_load_users()['records'] ?? []),
+            'project_status' => fg_default_project_status_dataset(),
         ]);
         return;
     }
@@ -72,6 +78,15 @@ function fg_public_setup_controller(): void
     fg_ensure_data_directory();
     $manifest = fg_load_dataset_manifest();
     $translations = fg_load_translations();
+    try {
+        $projectStatus = fg_load_project_status();
+        if (!isset($projectStatus['records']) || !is_array($projectStatus['records'])) {
+            $projectStatus = fg_default_project_status_dataset();
+        }
+    } catch (Throwable $exception) {
+        $errors[] = 'Unable to load project status dataset: ' . $exception->getMessage();
+        $projectStatus = fg_default_project_status_dataset();
+    }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action_override'] ?? ($_POST['action'] ?? '');
@@ -630,6 +645,91 @@ function fg_public_setup_controller(): void
                     }
                 }
             }
+        } elseif (in_array($action, ['create_project_status', 'update_project_status', 'delete_project_status'], true)) {
+            try {
+                $projectStatus = fg_load_project_status();
+                if (!isset($projectStatus['records']) || !is_array($projectStatus['records'])) {
+                    $projectStatus = fg_default_project_status_dataset();
+                }
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to load project status dataset: ' . $exception->getMessage();
+                $projectStatus = fg_default_project_status_dataset();
+            }
+
+            if ($action === 'create_project_status') {
+                $linksInput = $_POST['links'] ?? '';
+                $links = [];
+                if (is_array($linksInput)) {
+                    $links = $linksInput;
+                } else {
+                    $parts = preg_split('/\r?\n/', (string) $linksInput);
+                    foreach ($parts as $part) {
+                        $trimmed = trim($part);
+                        if ($trimmed !== '') {
+                            $links[] = $trimmed;
+                        }
+                    }
+                }
+
+                try {
+                    fg_add_project_status([
+                        'title' => $_POST['title'] ?? '',
+                        'summary' => $_POST['summary'] ?? '',
+                        'status' => $_POST['status'] ?? 'planned',
+                        'category' => $_POST['category'] ?? '',
+                        'owner_role' => $_POST['owner_role'] ?? '',
+                        'owner_user_id' => $_POST['owner_user_id'] ?? null,
+                        'milestone' => $_POST['milestone'] ?? '',
+                        'progress' => $_POST['progress'] ?? 0,
+                        'links' => $links,
+                    ]);
+                    $message = 'Roadmap entry created successfully.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            } elseif ($action === 'update_project_status') {
+                $statusId = (int) ($_POST['project_status_id'] ?? 0);
+                $linksInput = $_POST['links'] ?? '';
+                $links = [];
+                if (is_array($linksInput)) {
+                    $links = $linksInput;
+                } else {
+                    $parts = preg_split('/\r?\n/', (string) $linksInput);
+                    foreach ($parts as $part) {
+                        $trimmed = trim($part);
+                        if ($trimmed !== '') {
+                            $links[] = $trimmed;
+                        }
+                    }
+                }
+
+                try {
+                    fg_update_project_status($statusId, [
+                        'title' => $_POST['title'] ?? '',
+                        'summary' => $_POST['summary'] ?? '',
+                        'status' => $_POST['status'] ?? 'planned',
+                        'category' => $_POST['category'] ?? '',
+                        'owner_role' => $_POST['owner_role'] ?? '',
+                        'owner_user_id' => $_POST['owner_user_id'] ?? null,
+                        'milestone' => $_POST['milestone'] ?? '',
+                        'progress' => $_POST['progress'] ?? 0,
+                        'links' => $links,
+                    ]);
+                    $message = 'Roadmap entry updated successfully.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            } elseif ($action === 'delete_project_status') {
+                $statusId = (int) ($_POST['project_status_id'] ?? 0);
+                try {
+                    fg_delete_project_status($statusId);
+                    $message = 'Roadmap entry deleted.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            }
+
+            $projectStatus = fg_load_project_status();
         } else {
             $asset = $_POST['asset'] ?? '';
             $configurations = fg_load_asset_configurations();
@@ -983,6 +1083,7 @@ function fg_public_setup_controller(): void
         'default_theme' => $defaultThemeSetting,
         'theme_policy' => $themePolicy,
         'translations' => $translations,
+        'project_status' => $projectStatus,
         'locale_policy' => fg_get_setting('locale_personalisation_policy', 'enabled'),
         'default_locale' => fg_get_setting('default_locale', $translations['fallback_locale'] ?? 'en'),
         'pages' => fg_load_pages(),

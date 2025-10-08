@@ -13,6 +13,7 @@ Filegate is a profile-centred social application designed for shared hosting. Ev
 - **Attachment-friendly composer** – Members can upload files directly into `/assets/uploads/<extension>` with local previews and secure delivery via `media.php`.
 - **Rich notifications** – Post activity queues email, browser, cookie, and file-cache notifications driven by JSON and XML templates with admin-controlled channels.
 - **Themeable interface** – Palette presets live in flat files so administrators and members can rebrand Filegate from the browser without touching CSS.
+- **Roadmap transparency** – A dedicated roadmap dataset tracks built, in-progress, and planned initiatives with browser-based management and feed summaries.
 
 ## Directory layout
 
@@ -130,6 +131,17 @@ Snapshot storage honours the dataset manifest’s static/dynamic split and enfor
 The dataset manager works alongside the dataset viewer endpoint (`/dataset.php`), which still honours the manifest’s `expose_via_api` flag. Sensitive stores such as `users` remain blocked, while reference data (for example `html5_elements`) and operational metadata (`settings`) are available for quick inspection directly from the browser.
 
 The feed and composer use the same client runtime to fetch the HTML5 element reference on demand, provide live previews, and post likes asynchronously without full page reloads. All network calls terminate within the application—no remote APIs are required.
+
+## Roadmap tracking
+
+Filegate seeds `assets/json/dynamic/project_status.json` with representative milestones so operators can document what is built, in progress, or still planned without touching the filesystem. Administrators curate the roadmap from **Setup → Roadmap tracker**, where they can:
+
+- capture entries with titles, categories, milestones, and summaries that explain the initiative;
+- assign ownership to specific roles or profiles and define the desired status (`Built`, `In progress`, `Planned`, or `On hold`);
+- record percentage progress and attach reference links for supporting datasets, templates, or documents; and
+- review live status chips and audit trails before creating, updating, or deleting entries.
+
+Every save updates the flat-file dataset, records an activity event, and keeps the roadmap in sync with asset permissions. Members see a condensed roadmap summary on the feed—complete with status counts, average progress, and the latest items—so teams can track what is shipping at a glance.
 
 ## Activity log
 

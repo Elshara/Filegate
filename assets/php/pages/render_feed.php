@@ -8,6 +8,7 @@ require_once __DIR__ . '/../global/load_template_options.php';
 require_once __DIR__ . '/../global/load_editor_options.php';
 require_once __DIR__ . '/../global/load_notification_channels.php';
 require_once __DIR__ . '/../global/translate.php';
+require_once __DIR__ . '/../global/load_project_status.php';
 
 function fg_render_feed(array $viewer): string
 {
@@ -16,6 +17,68 @@ function fg_render_feed(array $viewer): string
     usort($records, static function ($a, $b) {
         return strtotime($b['created_at'] ?? 'now') <=> strtotime($a['created_at'] ?? 'now');
     });
+
+    $roadmapDataset = fg_load_project_status();
+    $roadmapRecords = $roadmapDataset['records'] ?? [];
+    $roadmapEntries = [];
+    if (is_array($roadmapRecords)) {
+        foreach ($roadmapRecords as $entry) {
+            if (is_array($entry)) {
+                $roadmapEntries[] = $entry;
+            }
+        }
+    }
+
+    $statusLabels = [
+        'in_progress' => 'In progress',
+        'planned' => 'Planned',
+        'built' => 'Built',
+        'on_hold' => 'On hold',
+    ];
+    $statusCounts = [];
+    $statusRank = ['in_progress' => 0, 'planned' => 1, 'built' => 2, 'on_hold' => 3];
+    foreach ($statusLabels as $statusKey => $label) {
+        $statusCounts[$statusKey] = 0;
+    }
+
+    $progressTotal = 0;
+    $progressCount = 0;
+    foreach ($roadmapEntries as $entry) {
+        $state = (string) ($entry['status'] ?? 'planned');
+        if (!isset($statusCounts[$state])) {
+            $statusCounts[$state] = 0;
+            $statusLabels[$state] = ucwords(str_replace('_', ' ', $state));
+            $statusRank[$state] = count($statusRank);
+        }
+        $statusCounts[$state]++;
+        $progress = (int) ($entry['progress'] ?? 0);
+        if ($progress < 0) {
+            $progress = 0;
+        }
+        if ($progress > 100) {
+            $progress = 100;
+        }
+        $progressTotal += $progress;
+        $progressCount++;
+    }
+
+    if (!empty($roadmapEntries)) {
+        usort($roadmapEntries, static function (array $a, array $b) use ($statusRank) {
+            $stateA = (string) ($a['status'] ?? 'planned');
+            $stateB = (string) ($b['status'] ?? 'planned');
+            $rankA = $statusRank[$stateA] ?? PHP_INT_MAX;
+            $rankB = $statusRank[$stateB] ?? PHP_INT_MAX;
+            if ($rankA === $rankB) {
+                $timeA = strtotime((string) ($a['updated_at'] ?? $a['created_at'] ?? 'now'));
+                $timeB = strtotime((string) ($b['updated_at'] ?? $b['created_at'] ?? 'now'));
+                return $timeB <=> $timeA;
+            }
+
+            return $rankA <=> $rankB;
+        });
+    }
+
+    $averageProgress = $progressCount > 0 ? (int) round($progressTotal / $progressCount) : 0;
 
     $templates = fg_load_template_options();
     $template_select = '';
@@ -82,6 +145,73 @@ function fg_render_feed(array $viewer): string
     $html .= '<button type="submit">Publish</button>';
     $html .= '</form></section>';
     $html .= '<section class="panel preview-panel" id="composer-preview" data-preview-output hidden><h2>Live preview</h2><div class="preview-body" data-preview-body><div class="preview-placeholder">Start writing to see your live preview, embeds, and statistics.</div></div><div class="preview-embeds" data-preview-embeds hidden></div><dl class="preview-statistics" data-preview-stats hidden></dl><ul class="preview-attachments" data-upload-list hidden></ul></section>';
+
+    if (!empty($roadmapEntries)) {
+        $html .= '<section class="panel roadmap-feed-panel">';
+        $html .= '<h2>Roadmap</h2>';
+        $html .= '<p class="roadmap-panel-intro">A quick look at what is built, underway, and planned across Filegate.</p>';
+        $html .= '<div class="roadmap-summary">';
+        foreach ($statusLabels as $statusKey => $label) {
+            $count = (int) ($statusCounts[$statusKey] ?? 0);
+            $html .= '<article class="roadmap-chip roadmap-status-' . htmlspecialchars($statusKey) . '">';
+            $html .= '<h3>' . htmlspecialchars($label) . '</h3>';
+            $html .= '<p class="roadmap-total">' . $count . ' ' . ($count === 1 ? 'item' : 'items') . '</p>';
+            $html .= '</article>';
+        }
+        $html .= '<article class="roadmap-chip roadmap-progress">';
+        $html .= '<h3>Average progress</h3>';
+        $html .= '<p class="roadmap-total">' . $averageProgress . '%</p>';
+        $html .= '</article>';
+        $html .= '</div>';
+
+        $html .= '<ul class="roadmap-feed-list">';
+        $maxEntries = min(count($roadmapEntries), 5);
+        for ($i = 0; $i < $maxEntries; $i++) {
+            $entry = $roadmapEntries[$i];
+            $title = trim((string) ($entry['title'] ?? 'Untitled milestone'));
+            $summary = trim((string) ($entry['summary'] ?? ''));
+            $state = (string) ($entry['status'] ?? 'planned');
+            $statusLabel = $statusLabels[$state] ?? ucwords(str_replace('_', ' ', $state));
+            $progress = (int) ($entry['progress'] ?? 0);
+            if ($progress < 0) {
+                $progress = 0;
+            }
+            if ($progress > 100) {
+                $progress = 100;
+            }
+            $category = trim((string) ($entry['category'] ?? ''));
+            $milestone = trim((string) ($entry['milestone'] ?? ''));
+            $updatedAt = (string) ($entry['updated_at'] ?? $entry['created_at'] ?? '');
+            $updatedLabel = '';
+            if ($updatedAt !== '') {
+                $timestamp = strtotime($updatedAt);
+                if ($timestamp) {
+                    $updatedLabel = 'Updated ' . date('M j, Y', $timestamp);
+                }
+            }
+
+            $html .= '<li>';
+            $html .= '<div class="roadmap-feed-title"><strong>' . htmlspecialchars($title) . '</strong><span class="roadmap-feed-status roadmap-feed-status-' . htmlspecialchars($state) . '">' . htmlspecialchars($statusLabel) . '</span></div>';
+            if ($summary !== '') {
+                $html .= '<p>' . htmlspecialchars($summary) . '</p>';
+            }
+            $metaParts = [];
+            $metaParts[] = 'Progress ' . $progress . '%';
+            if ($category !== '') {
+                $metaParts[] = 'Category: ' . $category;
+            }
+            if ($milestone !== '') {
+                $metaParts[] = 'Milestone: ' . $milestone;
+            }
+            if ($updatedLabel !== '') {
+                $metaParts[] = $updatedLabel;
+            }
+            $html .= '<p class="roadmap-feed-meta">' . htmlspecialchars(implode(' · ', $metaParts)) . '</p>';
+            $html .= '</li>';
+        }
+        $html .= '</ul>';
+        $html .= '</section>';
+    }
 
     $latestHeading = fg_translate('feed.latest_activity.heading', ['user' => $viewer, 'default' => 'Latest activity']);
     $html .= '<section class="panel"><h2>' . htmlspecialchars($latestHeading) . '</h2>';

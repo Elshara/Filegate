@@ -18,6 +18,9 @@ require_once __DIR__ . '/default_themes_dataset.php';
 require_once __DIR__ . '/load_pages.php';
 require_once __DIR__ . '/save_pages.php';
 require_once __DIR__ . '/default_pages_dataset.php';
+require_once __DIR__ . '/load_project_status.php';
+require_once __DIR__ . '/save_project_status.php';
+require_once __DIR__ . '/default_project_status_dataset.php';
 require_once __DIR__ . '/load_asset_snapshots.php';
 require_once __DIR__ . '/save_asset_snapshots.php';
 require_once __DIR__ . '/default_asset_snapshots_dataset.php';
@@ -46,6 +49,12 @@ function fg_seed_defaults(): void
     if (!isset($pages['records']) || !is_array($pages['records'])) {
         $pages = fg_default_pages_dataset();
         fg_save_pages($pages);
+    }
+
+    $projectStatus = fg_load_project_status();
+    if (!isset($projectStatus['records']) || !is_array($projectStatus['records'])) {
+        $projectStatus = fg_default_project_status_dataset();
+        fg_save_project_status($projectStatus, 'Seed project status dataset', ['trigger' => 'seed_defaults']);
     }
 
     $uploads = fg_load_uploads();

@@ -114,5 +114,11 @@
         "format": "xml",
         "file": "notification_templates",
         "expose_via_api": false
+    },
+    "project_status": {
+        "label": "Roadmap Tracker",
+        "description": "Progress records describing what is built, underway, or planned across Filegate.",
+        "nature": "dynamic",
+        "expose_via_api": false
     }
 }
