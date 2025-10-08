@@ -143,6 +143,17 @@ Filegate seeds `assets/json/dynamic/project_status.json` with representative mil
 
 Every save updates the flat-file dataset, records an activity event, and keeps the roadmap in sync with asset permissions. Members see a condensed roadmap summary on the feed—complete with status counts, average progress, and the latest items—so teams can track what is shipping at a glance.
 
+## Changelog management
+
+Releases, fixes, and operational changes live in `assets/json/dynamic/changelog.json`. Administrators can open **Setup → Changelog** to:
+
+- publish entries with titles, summaries, long-form bodies, and highlight toggles so important updates stand out on the feed,
+- categorise each change as a release, improvement, fix, announcement, or breaking change, and control whether it is visible to everyone, signed-in members, or administrators,
+- attach related roadmap entry IDs, comma-separated tags, and supporting links to connect the update with context across datasets, and
+- schedule entries with a specific published timestamp or keep them unpublished until they are ready.
+
+The setup dashboard lists existing entries with edit and delete controls, while the feed renders the most recent updates—respecting visibility, publication dates, and highlight states—without leaving the application or calling remote APIs.
+
 ## Activity log
 
 Every dataset mutation, snapshot operation, and setup action is written to the flat-file `activity_log` dataset. The **Activity log** section on `/setup.php` lets administrators:

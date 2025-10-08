@@ -120,5 +120,11 @@
         "description": "Progress records describing what is built, underway, or planned across Filegate.",
         "nature": "dynamic",
         "expose_via_api": false
+    },
+    "changelog": {
+        "label": "Changelog",
+        "description": "Release notes and highlights that communicate what changed across Filegate.",
+        "nature": "dynamic",
+        "expose_via_api": false
     }
 }

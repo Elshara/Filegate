@@ -37,6 +37,11 @@ require_once __DIR__ . '/../global/default_project_status_dataset.php';
 require_once __DIR__ . '/../global/add_project_status.php';
 require_once __DIR__ . '/../global/update_project_status.php';
 require_once __DIR__ . '/../global/delete_project_status.php';
+require_once __DIR__ . '/../global/load_changelog.php';
+require_once __DIR__ . '/../global/default_changelog_dataset.php';
+require_once __DIR__ . '/../global/add_changelog_entry.php';
+require_once __DIR__ . '/../global/update_changelog_entry.php';
+require_once __DIR__ . '/../global/delete_changelog_entry.php';
 require_once __DIR__ . '/../pages/render_setup.php';
 require_once __DIR__ . '/../global/guard_asset.php';
 require_once __DIR__ . '/../global/load_asset_snapshots.php';
@@ -69,6 +74,7 @@ function fg_public_setup_controller(): void
             'roles' => (fg_load_settings()['role_definitions'] ?? []),
             'users' => (fg_load_users()['records'] ?? []),
             'project_status' => fg_default_project_status_dataset(),
+            'changelog' => fg_default_changelog_dataset(),
         ]);
         return;
     }
@@ -86,6 +92,16 @@ function fg_public_setup_controller(): void
     } catch (Throwable $exception) {
         $errors[] = 'Unable to load project status dataset: ' . $exception->getMessage();
         $projectStatus = fg_default_project_status_dataset();
+    }
+
+    try {
+        $changelog = fg_load_changelog();
+        if (!isset($changelog['records']) || !is_array($changelog['records'])) {
+            $changelog = fg_default_changelog_dataset();
+        }
+    } catch (Throwable $exception) {
+        $errors[] = 'Unable to load changelog dataset: ' . $exception->getMessage();
+        $changelog = fg_default_changelog_dataset();
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -730,6 +746,73 @@ function fg_public_setup_controller(): void
             }
 
             $projectStatus = fg_load_project_status();
+        } elseif (in_array($action, ['create_changelog_entry', 'update_changelog_entry', 'delete_changelog_entry'], true)) {
+            try {
+                $changelog = fg_load_changelog();
+                if (!isset($changelog['records']) || !is_array($changelog['records'])) {
+                    $changelog = fg_default_changelog_dataset();
+                }
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to load changelog dataset: ' . $exception->getMessage();
+                $changelog = fg_default_changelog_dataset();
+            }
+
+            if ($action === 'create_changelog_entry') {
+                try {
+                    fg_add_changelog_entry([
+                        'title' => $_POST['title'] ?? '',
+                        'summary' => $_POST['summary'] ?? '',
+                        'type' => $_POST['type'] ?? 'announcement',
+                        'visibility' => $_POST['visibility'] ?? 'public',
+                        'highlight' => isset($_POST['highlight']),
+                        'body' => $_POST['body'] ?? '',
+                        'tags' => $_POST['tags'] ?? '',
+                        'links' => $_POST['links'] ?? '',
+                        'related_project_status_ids' => $_POST['related_project_status_ids'] ?? '',
+                        'published_at' => $_POST['published_at'] ?? '',
+                    ]);
+                    $message = 'Changelog entry created successfully.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            } elseif ($action === 'update_changelog_entry') {
+                $entryId = (int) ($_POST['changelog_id'] ?? 0);
+                if ($entryId <= 0) {
+                    $errors[] = 'Invalid changelog entry specified for update.';
+                } else {
+                    try {
+                        fg_update_changelog_entry($entryId, [
+                            'title' => $_POST['title'] ?? '',
+                            'summary' => $_POST['summary'] ?? '',
+                            'type' => $_POST['type'] ?? 'announcement',
+                            'visibility' => $_POST['visibility'] ?? 'public',
+                            'highlight' => isset($_POST['highlight']),
+                            'body' => $_POST['body'] ?? '',
+                            'tags' => $_POST['tags'] ?? '',
+                            'links' => $_POST['links'] ?? '',
+                            'related_project_status_ids' => $_POST['related_project_status_ids'] ?? '',
+                            'published_at' => $_POST['published_at'] ?? '',
+                        ]);
+                        $message = 'Changelog entry updated successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'delete_changelog_entry') {
+                $entryId = (int) ($_POST['changelog_id'] ?? 0);
+                if ($entryId <= 0) {
+                    $errors[] = 'Invalid changelog entry specified for deletion.';
+                } else {
+                    try {
+                        fg_delete_changelog_entry($entryId);
+                        $message = 'Changelog entry deleted successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            }
+
+            $changelog = fg_load_changelog();
         } else {
             $asset = $_POST['asset'] ?? '';
             $configurations = fg_load_asset_configurations();
@@ -1084,6 +1167,7 @@ function fg_public_setup_controller(): void
         'theme_policy' => $themePolicy,
         'translations' => $translations,
         'project_status' => $projectStatus,
+        'changelog' => $changelog,
         'locale_policy' => fg_get_setting('locale_personalisation_policy', 'enabled'),
         'default_locale' => fg_get_setting('default_locale', $translations['fallback_locale'] ?? 'en'),
         'pages' => fg_load_pages(),

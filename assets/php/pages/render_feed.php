@@ -9,6 +9,7 @@ require_once __DIR__ . '/../global/load_editor_options.php';
 require_once __DIR__ . '/../global/load_notification_channels.php';
 require_once __DIR__ . '/../global/translate.php';
 require_once __DIR__ . '/../global/load_project_status.php';
+require_once __DIR__ . '/../global/load_changelog.php';
 
 function fg_render_feed(array $viewer): string
 {
@@ -79,6 +80,64 @@ function fg_render_feed(array $viewer): string
     }
 
     $averageProgress = $progressCount > 0 ? (int) round($progressTotal / $progressCount) : 0;
+
+    $changelogDataset = fg_load_changelog();
+    $changelogRecords = $changelogDataset['records'] ?? [];
+    $changelogEntries = [];
+    $viewerRole = strtolower((string) ($viewer['role'] ?? ''));
+    $isMember = !empty($viewer);
+    $canViewPrivate = in_array($viewerRole, ['admin', 'moderator'], true);
+    $nowTs = time();
+
+    if (is_array($changelogRecords)) {
+        foreach ($changelogRecords as $record) {
+            if (!is_array($record)) {
+                continue;
+            }
+            $visibility = strtolower((string) ($record['visibility'] ?? 'public'));
+            if ($visibility === 'private' && !$canViewPrivate) {
+                continue;
+            }
+            if ($visibility === 'members' && !$isMember) {
+                continue;
+            }
+
+            $publishedAtRaw = $record['published_at'] ?? null;
+            $publishedTimestamp = null;
+            if ($publishedAtRaw !== null && $publishedAtRaw !== '') {
+                $parsed = strtotime((string) $publishedAtRaw);
+                if ($parsed !== false) {
+                    $publishedTimestamp = $parsed;
+                }
+            }
+
+            $isDraft = $publishedTimestamp === null;
+            if ($isDraft && !$canViewPrivate) {
+                continue;
+            }
+            if (!$isDraft && $publishedTimestamp !== null && $publishedTimestamp > $nowTs && !$canViewPrivate) {
+                continue;
+            }
+
+            if ($isDraft) {
+                $createdTs = strtotime((string) ($record['created_at'] ?? 'now'));
+                if ($createdTs === false) {
+                    $createdTs = $nowTs;
+                }
+                $publishedTimestamp = $createdTs;
+            }
+
+            $record['published_timestamp'] = $publishedTimestamp ?? $nowTs;
+            $record['is_draft'] = $isDraft;
+            $changelogEntries[] = $record;
+        }
+    }
+
+    if (!empty($changelogEntries)) {
+        usort($changelogEntries, static function (array $a, array $b) {
+            return ($b['published_timestamp'] ?? 0) <=> ($a['published_timestamp'] ?? 0);
+        });
+    }
 
     $templates = fg_load_template_options();
     $template_select = '';
@@ -207,6 +266,71 @@ function fg_render_feed(array $viewer): string
                 $metaParts[] = $updatedLabel;
             }
             $html .= '<p class="roadmap-feed-meta">' . htmlspecialchars(implode(' · ', $metaParts)) . '</p>';
+            $html .= '</li>';
+        }
+        $html .= '</ul>';
+        $html .= '</section>';
+    }
+
+    if (!empty($changelogEntries)) {
+        $html .= '<section class="panel changelog-feed-panel">';
+        $html .= '<h2>Changelog</h2>';
+        $html .= '<p class="changelog-panel-intro">Recent releases and improvements published across profiles and datasets.</p>';
+        $html .= '<ul class="changelog-feed-list">';
+        $maxChangelog = min(count($changelogEntries), 6);
+        for ($i = 0; $i < $maxChangelog; $i++) {
+            $entry = $changelogEntries[$i];
+            $title = trim((string) ($entry['title'] ?? 'Untitled update'));
+            $summary = trim((string) ($entry['summary'] ?? ''));
+            $type = strtolower((string) ($entry['type'] ?? 'announcement'));
+            $typeLabel = ucwords(str_replace('_', ' ', $type));
+            $tags = $entry['tags'] ?? [];
+            if (!is_array($tags)) {
+                $tags = [];
+            }
+            $highlight = !empty($entry['highlight']);
+            $publishedTimestamp = $entry['published_timestamp'] ?? null;
+            $isDraft = !empty($entry['is_draft']);
+            $publishedLabel = '';
+            if ($isDraft) {
+                $publishedLabel = 'Draft';
+            } elseif ($publishedTimestamp) {
+                if ($publishedTimestamp > $nowTs) {
+                    $publishedLabel = 'Scheduled ' . date('M j, Y', (int) $publishedTimestamp);
+                } else {
+                    $publishedLabel = date('M j, Y', (int) $publishedTimestamp);
+                }
+            }
+
+            $html .= '<li class="changelog-feed-item' . ($highlight ? ' changelog-feed-highlight' : '') . '">';
+            $html .= '<div class="changelog-feed-header">';
+            $html .= '<span class="changelog-feed-type">' . htmlspecialchars($typeLabel) . '</span>';
+            if ($publishedLabel !== '') {
+                $html .= '<span class="changelog-feed-date">' . htmlspecialchars($publishedLabel) . '</span>';
+            }
+            $html .= '</div>';
+            $html .= '<h3>' . htmlspecialchars($title) . '</h3>';
+            if ($summary !== '') {
+                $html .= '<p>' . htmlspecialchars($summary) . '</p>';
+            }
+            if (!empty($tags)) {
+                $html .= '<ul class="changelog-feed-tags">';
+                foreach ($tags as $tag) {
+                    $html .= '<li>' . htmlspecialchars((string) $tag) . '</li>';
+                }
+                $html .= '</ul>';
+            }
+            if (!empty($entry['links']) && is_array($entry['links'])) {
+                $html .= '<ul class="changelog-feed-links">';
+                foreach ($entry['links'] as $link) {
+                    $url = (string) $link;
+                    if ($url === '') {
+                        continue;
+                    }
+                    $html .= '<li><a href="' . htmlspecialchars($url) . '">' . htmlspecialchars($url) . '</a></li>';
+                }
+                $html .= '</ul>';
+            }
             $html .= '</li>';
         }
         $html .= '</ul>';

@@ -29,6 +29,11 @@ function fg_render_setup_page(array $data = []): void
         $projectStatusDataset['records'] = [];
     }
     $projectStatusRecords = $projectStatusDataset['records'];
+    $changelogDataset = $data['changelog'] ?? ['records' => [], 'next_id' => 1];
+    if (!isset($changelogDataset['records']) || !is_array($changelogDataset['records'])) {
+        $changelogDataset['records'] = [];
+    }
+    $changelogRecords = $changelogDataset['records'];
     $message = $data['message'] ?? '';
     $errors = $data['errors'] ?? [];
     $activityRecords = $data['activity_records'] ?? [];
@@ -690,6 +695,204 @@ function fg_render_setup_page(array $data = []): void
 
     $body .= '<div class="action-row">';
     $body .= '<button type="submit" class="button primary">Create roadmap entry</button>';
+    $body .= '</div>';
+    $body .= '</form>';
+    $body .= '</article>';
+
+    $body .= '</section>';
+
+    $changelogList = [];
+    $changelogTypeCounts = [];
+    $highlightCount = 0;
+    foreach ($changelogRecords as $record) {
+        if (!is_array($record)) {
+            continue;
+        }
+
+        $typeKey = strtolower((string) ($record['type'] ?? 'announcement'));
+        $changelogTypeCounts[$typeKey] = ($changelogTypeCounts[$typeKey] ?? 0) + 1;
+        if (!empty($record['highlight'])) {
+            $highlightCount++;
+        }
+
+        $tags = $record['tags'] ?? [];
+        if (!is_array($tags)) {
+            $tags = [];
+        }
+        $links = $record['links'] ?? [];
+        if (!is_array($links)) {
+            $links = [];
+        }
+        $related = $record['related_project_status_ids'] ?? [];
+        if (!is_array($related)) {
+            $related = [];
+        }
+
+        $publishedAt = $record['published_at'] ?? '';
+        $publishedTimestamp = null;
+        if ($publishedAt !== '') {
+            $parsed = strtotime((string) $publishedAt);
+            if ($parsed !== false) {
+                $publishedTimestamp = $parsed;
+            }
+        }
+        $publishedDisplay = $publishedTimestamp ? date('M j, Y H:i', $publishedTimestamp) : 'Not published';
+        $publishedInput = $publishedTimestamp ? date('Y-m-d\TH:i', $publishedTimestamp) : '';
+
+        $changelogList[] = [
+            'raw' => $record,
+            'id' => (int) ($record['id'] ?? 0),
+            'title' => trim((string) ($record['title'] ?? 'Untitled update')),
+            'summary' => trim((string) ($record['summary'] ?? '')),
+            'type' => $typeKey,
+            'visibility' => strtolower((string) ($record['visibility'] ?? 'public')),
+            'highlight' => !empty($record['highlight']),
+            'body' => trim((string) ($record['body'] ?? '')),
+            'tags' => $tags,
+            'links' => $links,
+            'related' => $related,
+            'published_display' => $publishedDisplay,
+            'published_input' => $publishedInput,
+            'created_at' => $record['created_at'] ?? '',
+            'updated_at' => $record['updated_at'] ?? '',
+            'published_timestamp' => $publishedTimestamp ?? 0,
+        ];
+    }
+
+    if (!empty($changelogList)) {
+        usort($changelogList, static function (array $a, array $b) {
+            return ($b['published_timestamp'] ?? 0) <=> ($a['published_timestamp'] ?? 0);
+        });
+    }
+
+    $typeLabels = [
+        'release' => 'Release',
+        'improvement' => 'Improvement',
+        'fix' => 'Fix',
+        'announcement' => 'Announcement',
+        'breaking' => 'Breaking change',
+    ];
+    $visibilityLabels = [
+        'public' => 'Public',
+        'members' => 'Members',
+        'private' => 'Administrators',
+    ];
+
+    $body .= '<section class="changelog-manager">';
+    $body .= '<h2>Changelog</h2>';
+    $body .= '<p>Publish release notes, template updates, and dataset changes without editing files. Highlight key updates and control visibility per entry.</p>';
+
+    if (empty($changelogList)) {
+        $body .= '<p class="notice muted">No changelog entries recorded yet. Start logging releases so profiles can follow what changed.</p>';
+    } else {
+        $body .= '<div class="changelog-summary">';
+        foreach ($changelogTypeCounts as $typeKey => $count) {
+            $label = $typeLabels[$typeKey] ?? ucwords(str_replace('_', ' ', $typeKey));
+            $body .= '<article class="changelog-chip">';
+            $body .= '<h3>' . htmlspecialchars($label) . '</h3>';
+            $body .= '<p class="changelog-total">' . (int) $count . ' ' . ($count === 1 ? 'entry' : 'entries') . '</p>';
+            $body .= '</article>';
+        }
+        $body .= '<article class="changelog-chip">';
+        $body .= '<h3>Highlights</h3>';
+        $body .= '<p class="changelog-total">' . (int) $highlightCount . '</p>';
+        $body .= '</article>';
+        $body .= '</div>';
+    }
+
+    foreach ($changelogList as $entry) {
+        $record = $entry['raw'];
+        $tagsValue = implode(', ', $entry['tags']);
+        $linksValue = implode("\n", $entry['links']);
+        $relatedValue = implode(', ', array_map(static function ($value) {
+            return (string) $value;
+        }, $entry['related']));
+
+        $body .= '<article class="changelog-card">';
+        $body .= '<header>';
+        $body .= '<h3>' . htmlspecialchars($entry['title']) . '</h3>';
+        $body .= '<p class="changelog-meta">Type: ' . htmlspecialchars($typeLabels[$entry['type']] ?? ucfirst($entry['type'])) . ' · Visibility: ' . htmlspecialchars($visibilityLabels[$entry['visibility']] ?? ucfirst($entry['visibility'])) . ' · Published: ' . htmlspecialchars($entry['published_display']) . '</p>';
+        if (!empty($entry['updated_at'])) {
+            $updatedTimestamp = strtotime((string) $entry['updated_at']);
+            if ($updatedTimestamp) {
+                $body .= '<p class="changelog-updated">Last updated ' . htmlspecialchars(date('M j, Y H:i', $updatedTimestamp)) . '</p>';
+            }
+        }
+        $body .= '</header>';
+
+        $body .= '<form method="post" action="/setup.php" class="changelog-form">';
+        $body .= '<input type="hidden" name="action" value="update_changelog_entry">';
+        $body .= '<input type="hidden" name="changelog_id" value="' . (int) $entry['id'] . '">';
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value="' . htmlspecialchars($entry['title']) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Type</span><span class="field-control"><select name="type">';
+        foreach ($typeLabels as $value => $label) {
+            $selected = $entry['type'] === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+        foreach ($visibilityLabels as $value => $label) {
+            $selected = $entry['visibility'] === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '</div>';
+
+        $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><textarea name="summary" rows="3">' . htmlspecialchars($entry['summary']) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Details</span><span class="field-control"><textarea name="body" rows="4" placeholder="Extended notes and embeds supported by the composer.">' . htmlspecialchars($entry['body']) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Tags</span><span class="field-control"><input type="text" name="tags" value="' . htmlspecialchars($tagsValue) . '" placeholder="release, accessibility"></span><span class="field-description">Comma-separated keywords used by the feed and notifications.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Links</span><span class="field-control"><textarea name="links" rows="3" placeholder="One link per line">' . htmlspecialchars($linksValue) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Related roadmap IDs</span><span class="field-control"><input type="text" name="related_project_status_ids" value="' . htmlspecialchars($relatedValue) . '" placeholder="1, 2"></span><span class="field-description">Reference roadmap entries that shipped with this change.</span></label>';
+
+        $checked = $entry['highlight'] ? ' checked' : '';
+        $body .= '<label class="field checkbox-field"><span class="field-control"><input type="checkbox" name="highlight" value="1"' . $checked . '> Highlight this entry</span><span class="field-description">Highlighted entries surface prominently in the feed.</span></label>';
+
+        $body .= '<label class="field"><span class="field-label">Published at</span><span class="field-control"><input type="datetime-local" name="published_at" value="' . htmlspecialchars($entry['published_input']) . '"></span><span class="field-description">Leave blank to keep unpublished or set a new timestamp.</span></label>';
+
+        $body .= '<div class="action-row">';
+        $body .= '<button type="submit" class="button primary">Save changelog entry</button>';
+        $body .= '</div>';
+        $body .= '</form>';
+
+        $body .= '<form method="post" action="/setup.php" class="changelog-delete-form" onsubmit="return confirm(\'Delete this changelog entry?\');">';
+        $body .= '<input type="hidden" name="action" value="delete_changelog_entry">';
+        $body .= '<input type="hidden" name="changelog_id" value="' . (int) $entry['id'] . '">';
+        $body .= '<button type="submit" class="button danger">Delete entry</button>';
+        $body .= '</form>';
+
+        $body .= '</article>';
+    }
+
+    $body .= '<article class="changelog-card create">';
+    $body .= '<header><h3>Create changelog entry</h3><p>Announce a release, fix, or configuration update with full visibility and highlight controls.</p></header>';
+    $body .= '<form method="post" action="/setup.php" class="changelog-form">';
+    $body .= '<input type="hidden" name="action" value="create_changelog_entry">';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value=""></span></label>';
+    $body .= '<label class="field"><span class="field-label">Type</span><span class="field-control"><select name="type">';
+    foreach ($typeLabels as $value => $label) {
+        $selected = $value === 'release' ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+    foreach ($visibilityLabels as $value => $label) {
+        $body .= '<option value="' . htmlspecialchars($value) . '">' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '</div>';
+
+    $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><textarea name="summary" rows="3" placeholder="Short description shown in the feed."></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Details</span><span class="field-control"><textarea name="body" rows="4" placeholder="Full body content. Supports HTML5 embeds and upload previews."></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Tags</span><span class="field-control"><input type="text" name="tags" placeholder="release, performance"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Links</span><span class="field-control"><textarea name="links" rows="3" placeholder="One link per line"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Related roadmap IDs</span><span class="field-control"><input type="text" name="related_project_status_ids" placeholder="1, 2"></span></label>';
+    $body .= '<label class="field checkbox-field"><span class="field-control"><input type="checkbox" name="highlight" value="1"> Highlight this entry</span></label>';
+    $body .= '<label class="field"><span class="field-label">Published at</span><span class="field-control"><input type="datetime-local" name="published_at"></span></label>';
+
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Create changelog entry</button>';
     $body .= '</div>';
     $body .= '</form>';
     $body .= '</article>';

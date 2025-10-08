@@ -828,6 +828,234 @@ input[type="submit"]:hover {
   gap: 0.4rem;
 }
 
+.changelog-feed-panel {
+  margin-top: 1.5rem;
+}
+
+.changelog-panel-intro {
+  margin: 0;
+  color: rgba(28, 37, 48, 0.7);
+  line-height: 1.6;
+}
+
+.changelog-feed-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.changelog-feed-item {
+  background: rgba(15, 23, 42, 0.04);
+  border-radius: 0.9rem;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.changelog-feed-item:hover {
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.changelog-feed-highlight {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.changelog-feed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.changelog-feed-type {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: rgba(15, 23, 42, 0.08);
+  color: rgba(28, 37, 48, 0.75);
+  letter-spacing: 0.05em;
+}
+
+.changelog-feed-date {
+  font-size: 0.8rem;
+  color: rgba(28, 37, 48, 0.6);
+}
+
+.changelog-feed-tags,
+.changelog-feed-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.changelog-feed-tags li {
+  background: rgba(15, 23, 42, 0.08);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: rgba(28, 37, 48, 0.75);
+}
+
+.changelog-feed-links li a {
+  color: #4f46e5;
+  text-decoration: none;
+  font-size: 0.85rem;
+  word-break: break-word;
+}
+
+.changelog-manager {
+  margin-top: 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.changelog-summary {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.changelog-chip {
+  background: rgba(15, 23, 42, 0.05);
+  padding: 1rem 1.25rem;
+  border-radius: 0.9rem;
+  min-width: 180px;
+}
+
+.changelog-chip h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  color: rgba(28, 37, 48, 0.9);
+}
+
+.changelog-total {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(28, 37, 48, 0.75);
+}
+
+.changelog-card {
+  background: #fff;
+  border-radius: 1.25rem;
+  padding: 1.4rem 1.6rem;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.changelog-card header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.changelog-meta,
+.changelog-updated {
+  margin: 0.25rem 0 0;
+  color: rgba(28, 37, 48, 0.6);
+  font-size: 0.85rem;
+}
+
+.changelog-form .field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.changelog-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.changelog-form .field-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: rgba(28, 37, 48, 0.75);
+}
+
+.changelog-form .field-control input,
+.changelog-form .field-control textarea,
+.changelog-form .field-control select {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  font: inherit;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.changelog-form textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.changelog-form .field-description {
+  font-size: 0.78rem;
+  color: rgba(28, 37, 48, 0.55);
+}
+
+.changelog-form .checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.changelog-form .checkbox-field .field-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.changelog-form .action-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.changelog-delete-form {
+  margin-top: -0.25rem;
+}
+
+.changelog-delete-form .button {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.changelog-delete-form .button:hover {
+  background: #c0392b;
+}
+
+.changelog-card.create {
+  border-style: dashed;
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.changelog-card.create header p {
+  margin: 0.25rem 0 0;
+  color: rgba(28, 37, 48, 0.6);
+}
+
 .roadmap-feed-title {
   display: flex;
   align-items: center;
