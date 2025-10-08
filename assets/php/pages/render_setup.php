@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../global/render_layout.php';
+require_once __DIR__ . '/../global/default_translations_dataset.php';
 
 function fg_render_setup_page(array $data = []): void
 {
@@ -13,6 +14,14 @@ function fg_render_setup_page(array $data = []): void
     $themeTokens = $data['theme_tokens']['tokens'] ?? [];
     $defaultTheme = $data['default_theme'] ?? '';
     $themePolicy = $data['theme_policy'] ?? 'enabled';
+    $translations = $data['translations'] ?? [];
+    $translationTokens = $translations['tokens'] ?? [];
+    $translationLocales = $translations['locales'] ?? [];
+    $fallbackLocale = $translations['fallback_locale'] ?? 'en';
+    $defaultTranslations = fg_default_translations_dataset();
+    $defaultTranslationTokens = $defaultTranslations['tokens'] ?? [];
+    $localePolicy = $data['locale_policy'] ?? 'enabled';
+    $defaultLocaleSetting = $data['default_locale'] ?? $fallbackLocale;
     $pagesDataset = $data['pages'] ?? ['records' => [], 'next_id' => 1];
     $pageRecords = $pagesDataset['records'] ?? [];
     $message = $data['message'] ?? '';
@@ -874,6 +883,185 @@ function fg_render_setup_page(array $data = []): void
         $body .= '</div>';
         $body .= '</form>';
         $body .= '</details>';
+
+        $body .= '</section>';
+    }
+
+    if (!empty($translationLocales) || !empty($translationTokens)) {
+        $body .= '<section class="translations-manager">';
+        $localeCount = count($translationLocales);
+        $tokenCount = count($translationTokens);
+        $body .= '<h2>Locale management</h2>';
+        $body .= '<p>Adjust interface strings per locale and control which language acts as the fallback. Delegated settings govern the default locale presented to new accounts.</p>';
+        $body .= '<p class="notice muted">Fallback locale: <strong>' . htmlspecialchars((string) $fallbackLocale) . '</strong> · Default locale setting: <strong>' . htmlspecialchars((string) $defaultLocaleSetting) . '</strong> · Policy: <strong>' . htmlspecialchars((string) $localePolicy) . '</strong> · Tokens: <strong>' . htmlspecialchars((string) $tokenCount) . '</strong> · Locales: <strong>' . htmlspecialchars((string) $localeCount) . '</strong></p>';
+
+        $body .= '<div class="translation-token-collection">';
+        $body .= '<h3>Translation tokens</h3>';
+        $body .= '<p class="translation-summary">Define the reusable strings referenced across the interface. Tokens let you grow Filegate with new modules without touching PHP by pairing each feature with its own phrase.</p>';
+        $body .= '<details class="translation-create translation-token-create">';
+        $body .= '<summary>Create translation token</summary>';
+        $body .= '<form method="post" action="/setup.php" class="translation-form create">';
+        $body .= '<input type="hidden" name="action" value="translation_create_token">';
+        $body .= '<label class="field"><span class="field-label">Token key</span><span class="field-control"><input type="text" name="token_key" pattern="[a-z0-9._-]+" required></span><span class="field-description">Use dot-separated namespaces (for example, <code>composer.publish.cta</code>).</span></label>';
+        $body .= '<label class="field"><span class="field-label">Display label</span><span class="field-control"><input type="text" name="token_label" placeholder="Composer · Publish CTA"></span><span class="field-description">Shown to administrators and translators.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="token_description" rows="2" placeholder="Explain where this string appears."></textarea></span></label>';
+        $body .= '<div class="action-row"><button type="submit" class="button primary">Create token</button></div>';
+        $body .= '</form>';
+        $body .= '</details>';
+
+        if (!empty($translationTokens)) {
+            foreach ($translationTokens as $tokenKey => $tokenMeta) {
+                $label = $tokenMeta['label'] ?? $tokenKey;
+                $description = $tokenMeta['description'] ?? '';
+                $coverageTotal = max(1, $localeCount);
+                $coverageDefined = 0;
+                $missingLocales = [];
+                foreach ($translationLocales as $localeKey => $definition) {
+                    $value = $definition['strings'][$tokenKey] ?? '';
+                    if ((string) $value !== '') {
+                        $coverageDefined++;
+                    } else {
+                        $missingLocales[] = $definition['label'] ?? $localeKey;
+                    }
+                }
+                $isSeededToken = isset($defaultTranslationTokens[$tokenKey]);
+                $body .= '<article class="translation-token-card" data-token="' . htmlspecialchars((string) $tokenKey) . '">';
+                $body .= '<header><h4>' . htmlspecialchars((string) $label) . '</h4>';
+                $badges = [];
+                $badges[] = $coverageDefined . ' / ' . $coverageTotal . ' locales';
+                $badges[] = $isSeededToken ? 'Seeded' : 'Custom';
+                if (!empty($badges)) {
+                    $body .= '<span class="translation-badges">';
+                    foreach ($badges as $badge) {
+                        $body .= '<span class="translation-badge">' . htmlspecialchars((string) $badge) . '</span>';
+                    }
+                    $body .= '</span>';
+                }
+                $body .= '</header>';
+                $body .= '<p class="translation-token-key"><code>' . htmlspecialchars((string) $tokenKey) . '</code></p>';
+                if ($description !== '') {
+                    $body .= '<p class="translation-token-description">' . htmlspecialchars((string) $description) . '</p>';
+                }
+                if (!empty($missingLocales)) {
+                    $body .= '<p class="translation-token-missing">Missing strings: ' . htmlspecialchars(implode(', ', array_map('strval', $missingLocales))) . '</p>';
+                } else {
+                    $body .= '<p class="translation-token-covered">Defined for every locale.</p>';
+                }
+                $body .= '<form method="post" action="/setup.php" class="translation-token-form">';
+                $body .= '<input type="hidden" name="action" value="translation_update_token">';
+                $body .= '<input type="hidden" name="token_key" value="' . htmlspecialchars((string) $tokenKey) . '">';
+                $body .= '<label class="field"><span class="field-label">Display label</span><span class="field-control"><input type="text" name="token_label" value="' . htmlspecialchars((string) $label) . '"></span></label>';
+                $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="token_description" rows="2">' . htmlspecialchars((string) $description) . '</textarea></span><span class="field-description">Help translators understand how the token is used.</span></label>';
+                $body .= '<label class="field"><span class="field-label">Fill value</span><span class="field-control"><textarea name="fill_value" rows="2" placeholder="Optional string to cascade to locales"></textarea></span><span class="field-description">Use with the fill mode below to auto-populate locale strings when saving.</span></label>';
+                $body .= '<label class="field"><span class="field-label">Fill mode</span><span class="field-control"><select name="fill_mode">';
+                $body .= '<option value="">Do not apply fill value</option>';
+                $body .= '<option value="missing">Fill missing locale strings only</option>';
+                $body .= '<option value="all">Replace every locale string</option>';
+                $body .= '</select></span></label>';
+                $body .= '<div class="action-row"><button type="submit" class="button primary">Save token</button></div>';
+                $body .= '</form>';
+                $body .= '<div class="translation-token-actions">';
+                if ($isSeededToken) {
+                    $body .= '<p class="translation-token-note">Seeded tokens remain available to guarantee baseline navigation. Override their strings per locale to customise Filegate.</p>';
+                } else {
+                    $body .= '<form method="post" action="/setup.php" class="inline-form">';
+                    $body .= '<input type="hidden" name="action" value="translation_delete_token">';
+                    $body .= '<input type="hidden" name="token_key" value="' . htmlspecialchars((string) $tokenKey) . '">';
+                    $body .= '<button type="submit" class="button danger">Delete token</button>';
+                    $body .= '</form>';
+                }
+                $body .= '</div>';
+                $body .= '</article>';
+            }
+        } else {
+            $body .= '<p class="notice muted">No translation tokens are registered yet. Create one to begin localising new interface areas.</p>';
+        }
+        $body .= '</div>';
+
+        if (!empty($translationLocales)) {
+            $body .= '<h3>Locales</h3>';
+            $body .= '<details class="translation-create">';
+            $body .= '<summary>Create locale</summary>';
+            $body .= '<form method="post" action="/setup.php" class="translation-form create">';
+            $body .= '<input type="hidden" name="action" value="translation_create_locale">';
+            $body .= '<label class="field"><span class="field-label">Locale key</span><span class="field-control"><input type="text" name="locale_key" pattern="[a-z0-9_-]+" required></span><span class="field-description">Use lowercase letters, numbers, hyphens, or underscores.</span></label>';
+            $body .= '<label class="field"><span class="field-label">Display label</span><span class="field-control"><input type="text" name="locale_label" placeholder="English (Canada)"></span></label>';
+            $body .= '<label class="field"><span class="field-label">Copy strings from</span><span class="field-control"><select name="copy_from">';
+            foreach ($translationLocales as $key => $definition) {
+                $label = $definition['label'] ?? $key;
+                $body .= '<option value="' . htmlspecialchars((string) $key) . '">' . htmlspecialchars((string) $label) . '</option>';
+            }
+            $body .= '</select></span></label>';
+            $body .= '<div class="action-row"><button type="submit" class="button primary">Create locale</button></div>';
+            $body .= '</form>';
+            $body .= '</details>';
+
+            foreach ($translationLocales as $localeKey => $definition) {
+                $label = $definition['label'] ?? $localeKey;
+                $strings = $definition['strings'] ?? [];
+                $isFallback = ($localeKey === $fallbackLocale);
+                $isDefault = ((string) $defaultLocaleSetting === (string) $localeKey);
+
+                $body .= '<article class="translation-card" data-locale="' . htmlspecialchars((string) $localeKey) . '">';
+                $body .= '<header><h3>' . htmlspecialchars((string) $label) . '</h3>';
+                $badges = [];
+                if ($isFallback) {
+                    $badges[] = 'Fallback';
+                }
+                if ($isDefault) {
+                    $badges[] = 'Default setting';
+                }
+                if (!empty($badges)) {
+                    $body .= '<span class="translation-badges">';
+                    foreach ($badges as $badge) {
+                        $body .= '<span class="translation-badge">' . htmlspecialchars($badge) . '</span>';
+                    }
+                    $body .= '</span>';
+                }
+                $body .= '</header>';
+
+                $body .= '<form method="post" action="/setup.php" class="translation-form">';
+                $body .= '<input type="hidden" name="action" value="translation_save_locale">';
+                $body .= '<input type="hidden" name="locale" value="' . htmlspecialchars((string) $localeKey) . '">';
+                $body .= '<label class="field"><span class="field-label">Display label</span><span class="field-control"><input type="text" name="locale_label" value="' . htmlspecialchars((string) $label) . '"></span></label>';
+                $body .= '<div class="translation-token-grid">';
+                foreach ($translationTokens as $tokenKey => $tokenMeta) {
+                    $tokenLabel = $tokenMeta['label'] ?? $tokenKey;
+                    $tokenDescription = $tokenMeta['description'] ?? '';
+                    $value = $strings[$tokenKey] ?? '';
+                    $body .= '<label class="field" data-token="' . htmlspecialchars((string) $tokenKey) . '">';
+                    $body .= '<span class="field-label">' . htmlspecialchars((string) $tokenLabel) . '</span>';
+                    $body .= '<span class="field-control"><textarea name="strings[' . htmlspecialchars((string) $tokenKey) . ']" rows="2">' . htmlspecialchars((string) $value) . '</textarea></span>';
+                    if ($tokenDescription !== '') {
+                        $body .= '<span class="field-description">' . htmlspecialchars((string) $tokenDescription) . '</span>';
+                    }
+                    $body .= '</label>';
+                }
+                $body .= '</div>';
+                $body .= '<div class="action-row"><button type="submit" class="button primary">Save translations</button></div>';
+                $body .= '</form>';
+
+                $body .= '<div class="translation-secondary-actions">';
+                if (!$isFallback) {
+                    $body .= '<form method="post" action="/setup.php" class="inline-form">';
+                    $body .= '<input type="hidden" name="action" value="translation_set_fallback">';
+                    $body .= '<input type="hidden" name="locale" value="' . htmlspecialchars((string) $localeKey) . '">';
+                    $body .= '<button type="submit" class="button">Set as fallback</button>';
+                    $body .= '</form>';
+                }
+                if (count($translationLocales) > 1) {
+                    $disabled = $isFallback ? ' disabled' : '';
+                    $body .= '<form method="post" action="/setup.php" class="inline-form">';
+                    $body .= '<input type="hidden" name="action" value="translation_delete_locale">';
+                    $body .= '<input type="hidden" name="locale" value="' . htmlspecialchars((string) $localeKey) . '">';
+                    $body .= '<button type="submit" class="button danger"' . $disabled . '>Delete locale</button>';
+                    $body .= '</form>';
+                }
+                $body .= '</div>';
+
+                $body .= '</article>';
+            }
+        }
 
         $body .= '</section>';
     }

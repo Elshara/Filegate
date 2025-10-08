@@ -10,6 +10,7 @@ require_once __DIR__ . '/../global/update_asset_permissions.php';
 require_once __DIR__ . '/../global/update_asset_override.php';
 require_once __DIR__ . '/../global/clear_asset_override.php';
 require_once __DIR__ . '/../global/load_settings.php';
+require_once __DIR__ . '/../global/get_setting.php';
 require_once __DIR__ . '/../global/load_users.php';
 require_once __DIR__ . '/../global/load_dataset_manifest.php';
 require_once __DIR__ . '/../global/dataset_format.php';
@@ -39,6 +40,10 @@ require_once __DIR__ . '/../global/list_dataset_snapshots.php';
 require_once __DIR__ . '/../global/restore_dataset_snapshot.php';
 require_once __DIR__ . '/../global/delete_dataset_snapshot.php';
 require_once __DIR__ . '/../global/load_activity_log.php';
+require_once __DIR__ . '/../global/load_translations.php';
+require_once __DIR__ . '/../global/save_translations.php';
+require_once __DIR__ . '/../global/normalize_translation_token_key.php';
+require_once __DIR__ . '/../global/default_translations_dataset.php';
 
 function fg_public_setup_controller(): void
 {
@@ -66,6 +71,7 @@ function fg_public_setup_controller(): void
     $errors = [];
     fg_ensure_data_directory();
     $manifest = fg_load_dataset_manifest();
+    $translations = fg_load_translations();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action_override'] ?? ($_POST['action'] ?? '');
@@ -192,6 +198,239 @@ function fg_public_setup_controller(): void
                         } catch (Throwable $exception) {
                             $errors[] = $exception->getMessage();
                         }
+                    }
+                }
+                if ($dataset === 'translations') {
+                    $translations = fg_load_translations();
+                }
+            }
+        } elseif (in_array($action, [
+            'translation_create_locale',
+            'translation_save_locale',
+            'translation_delete_locale',
+            'translation_set_fallback',
+            'translation_create_token',
+            'translation_update_token',
+            'translation_delete_token',
+        ], true)) {
+            $translations = fg_load_translations();
+            $locales = $translations['locales'] ?? [];
+            $tokens = $translations['tokens'] ?? [];
+            $fallbackLocale = $translations['fallback_locale'] ?? 'en';
+            $defaultTokens = fg_default_translations_dataset()['tokens'] ?? [];
+
+            if ($action === 'translation_create_locale') {
+                $keyRaw = (string) ($_POST['locale_key'] ?? '');
+                $key = strtolower(preg_replace('/[^a-z0-9_-]/', '', $keyRaw));
+                if ($key === '') {
+                    $errors[] = 'Locale key is required.';
+                } elseif (isset($locales[$key])) {
+                    $errors[] = 'Locale already exists.';
+                } else {
+                    $label = trim((string) ($_POST['locale_label'] ?? ''));
+                    if ($label === '') {
+                        $label = strtoupper($key);
+                    }
+                    $sourceKey = (string) ($_POST['copy_from'] ?? $fallbackLocale);
+                    if (!isset($locales[$sourceKey])) {
+                        $sourceKey = $fallbackLocale;
+                    }
+                    $sourceStrings = $locales[$sourceKey]['strings'] ?? [];
+                    $strings = [];
+                    foreach ($tokens as $tokenKey => $definition) {
+                        $strings[$tokenKey] = $sourceStrings[$tokenKey] ?? '';
+                    }
+                    $translations['locales'][$key] = [
+                        'label' => $label,
+                        'strings' => $strings,
+                    ];
+                    try {
+                        fg_save_translations($translations, 'Create locale', [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_dashboard',
+                        ]);
+                        $translations = fg_load_translations();
+                        $message = 'Locale ' . $key . ' created.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'translation_save_locale') {
+                $localeKey = (string) ($_POST['locale'] ?? '');
+                if (!isset($locales[$localeKey])) {
+                    $errors[] = 'Locale not found.';
+                } else {
+                    $label = trim((string) ($_POST['locale_label'] ?? ''));
+                    if ($label === '') {
+                        $label = $locales[$localeKey]['label'] ?? strtoupper($localeKey);
+                    }
+                    $stringsInput = $_POST['strings'] ?? [];
+                    if (!is_array($stringsInput)) {
+                        $stringsInput = [];
+                    }
+                    $strings = [];
+                    foreach ($tokens as $tokenKey => $definition) {
+                        $value = $stringsInput[$tokenKey] ?? ($locales[$localeKey]['strings'][$tokenKey] ?? '');
+                        $strings[$tokenKey] = (string) $value;
+                    }
+                    $translations['locales'][$localeKey]['label'] = $label;
+                    $translations['locales'][$localeKey]['strings'] = $strings;
+                    try {
+                        fg_save_translations($translations, 'Update locale', [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_dashboard',
+                            'locale' => $localeKey,
+                        ]);
+                        $translations = fg_load_translations();
+                        $message = 'Locale ' . $localeKey . ' updated.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'translation_delete_locale') {
+                $localeKey = (string) ($_POST['locale'] ?? '');
+                if (!isset($locales[$localeKey])) {
+                    $errors[] = 'Locale not found.';
+                } elseif (count($locales) <= 1) {
+                    $errors[] = 'At least one locale must remain registered.';
+                } else {
+                    unset($translations['locales'][$localeKey]);
+                    if (($translations['fallback_locale'] ?? '') === $localeKey) {
+                        $translations['fallback_locale'] = array_key_first($translations['locales']);
+                    }
+                    try {
+                        fg_save_translations($translations, 'Delete locale', [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_dashboard',
+                            'locale' => $localeKey,
+                        ]);
+                        $translations = fg_load_translations();
+                        $message = 'Locale ' . $localeKey . ' removed.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'translation_set_fallback') {
+                $localeKey = (string) ($_POST['locale'] ?? '');
+                if (!isset($locales[$localeKey])) {
+                    $errors[] = 'Locale not found.';
+                } else {
+                    $translations['fallback_locale'] = $localeKey;
+                    try {
+                        fg_save_translations($translations, 'Set fallback locale', [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_dashboard',
+                        ]);
+                        $translations = fg_load_translations();
+                        $message = 'Fallback locale updated.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'translation_create_token') {
+                $tokenKeyRaw = (string) ($_POST['token_key'] ?? '');
+                $tokenKey = fg_normalize_translation_token_key($tokenKeyRaw);
+                if ($tokenKey === '') {
+                    $errors[] = 'Token key is required.';
+                } elseif (isset($tokens[$tokenKey])) {
+                    $errors[] = 'Token already exists.';
+                } else {
+                    $label = trim((string) ($_POST['token_label'] ?? ''));
+                    if ($label === '') {
+                        $label = ucwords(str_replace(['.', '_', '-'], ' ', $tokenKey));
+                    }
+                    $description = trim((string) ($_POST['token_description'] ?? ''));
+                    $tokens[$tokenKey] = [
+                        'label' => $label,
+                        'description' => $description,
+                    ];
+                    $translations['tokens'] = $tokens;
+                    foreach ($locales as $localeKey => $definition) {
+                        if (!isset($translations['locales'][$localeKey]['strings']) || !is_array($translations['locales'][$localeKey]['strings'])) {
+                            $translations['locales'][$localeKey]['strings'] = [];
+                        }
+                        if (!array_key_exists($tokenKey, $translations['locales'][$localeKey]['strings'])) {
+                            $translations['locales'][$localeKey]['strings'][$tokenKey] = '';
+                        }
+                    }
+                    ksort($translations['tokens']);
+                    try {
+                        fg_save_translations($translations, 'Create translation token', [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_dashboard',
+                            'token' => $tokenKey,
+                        ]);
+                        $translations = fg_load_translations();
+                        $message = 'Translation token ' . $tokenKey . ' created.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'translation_update_token') {
+                $tokenKey = (string) ($_POST['token_key'] ?? '');
+                if (!isset($tokens[$tokenKey])) {
+                    $errors[] = 'Token not found.';
+                } else {
+                    $label = trim((string) ($_POST['token_label'] ?? ''));
+                    if ($label === '') {
+                        $label = $tokens[$tokenKey]['label'] ?? ucwords(str_replace(['.', '_', '-'], ' ', $tokenKey));
+                    }
+                    $description = trim((string) ($_POST['token_description'] ?? ''));
+                    $tokens[$tokenKey]['label'] = $label;
+                    $tokens[$tokenKey]['description'] = $description;
+                    $translations['tokens'] = $tokens;
+
+                    $fillValue = (string) ($_POST['fill_value'] ?? '');
+                    $fillMode = (string) ($_POST['fill_mode'] ?? '');
+                    if ($fillMode === 'missing' || $fillMode === 'all') {
+                        foreach ($locales as $localeKey => $definition) {
+                            $existing = $translations['locales'][$localeKey]['strings'][$tokenKey] ?? '';
+                            $shouldUpdate = ($fillMode === 'all') || ($existing === '');
+                            if ($shouldUpdate) {
+                                $translations['locales'][$localeKey]['strings'][$tokenKey] = $fillValue;
+                            }
+                        }
+                    }
+                    ksort($translations['tokens']);
+
+                    try {
+                        fg_save_translations($translations, 'Update translation token', [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_dashboard',
+                            'token' => $tokenKey,
+                            'fill_mode' => $fillMode,
+                        ]);
+                        $translations = fg_load_translations();
+                        $message = 'Translation token ' . $tokenKey . ' updated.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'translation_delete_token') {
+                $tokenKey = (string) ($_POST['token_key'] ?? '');
+                if (!isset($tokens[$tokenKey])) {
+                    $errors[] = 'Token not found.';
+                } elseif (isset($defaultTokens[$tokenKey])) {
+                    $errors[] = 'Seeded translation tokens cannot be deleted.';
+                } else {
+                    unset($tokens[$tokenKey]);
+                    $translations['tokens'] = $tokens;
+                    foreach ($locales as $localeKey => $definition) {
+                        if (isset($translations['locales'][$localeKey]['strings'][$tokenKey])) {
+                            unset($translations['locales'][$localeKey]['strings'][$tokenKey]);
+                        }
+                    }
+                    ksort($translations['tokens']);
+                    try {
+                        fg_save_translations($translations, 'Delete translation token', [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_dashboard',
+                            'token' => $tokenKey,
+                        ]);
+                        $translations = fg_load_translations();
+                        $message = 'Translation token ' . $tokenKey . ' removed.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
                     }
                 }
             }
@@ -743,6 +982,9 @@ function fg_public_setup_controller(): void
         'theme_tokens' => $themeTokens,
         'default_theme' => $defaultThemeSetting,
         'theme_policy' => $themePolicy,
+        'translations' => $translations,
+        'locale_policy' => fg_get_setting('locale_personalisation_policy', 'enabled'),
+        'default_locale' => fg_get_setting('default_locale', $translations['fallback_locale'] ?? 'en'),
         'pages' => fg_load_pages(),
         'activity_records' => $activityRecords,
         'activity_filters' => $activityFilters,

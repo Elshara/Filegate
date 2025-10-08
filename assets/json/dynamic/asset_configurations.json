@@ -5486,8 +5486,128 @@
                 }
             }
         },
+        "assets/php/global/default_translations_dataset.php": {
+            "label": "Global Default Translations Dataset",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
         "assets/php/global/load_theme_tokens.php": {
             "label": "Global Load Theme Tokens",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/load_translations.php": {
+            "label": "Global Load Translations",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/normalize_translation_token_key.php": {
+            "label": "Global Normalize Translation Token Key",
             "scope": "global",
             "extension": "php",
             "allow_user_override": false,
@@ -5646,6 +5766,86 @@
                 }
             }
         },
+        "assets/php/global/save_translations.php": {
+            "label": "Global Save Translations",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/resolve_locale.php": {
+            "label": "Global Resolve Locale",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
         "assets/php/global/theme_inline_style.php": {
             "label": "Global Theme Inline Style",
             "scope": "global",
@@ -5686,8 +5886,88 @@
                 }
             }
         },
+        "assets/php/global/translate.php": {
+            "label": "Global Translate",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
         "assets/php/global/update_user_theme.php": {
             "label": "Global Update User Theme",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/update_user_locale.php": {
+            "label": "Global Update User Locale",
             "scope": "global",
             "extension": "php",
             "allow_user_override": false,

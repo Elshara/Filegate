@@ -16,6 +16,9 @@ require_once __DIR__ . '/../global/load_asset_overrides.php';
 require_once __DIR__ . '/../global/get_asset_parameter_value.php';
 require_once __DIR__ . '/../global/asset_label.php';
 require_once __DIR__ . '/../global/resolve_theme_tokens.php';
+require_once __DIR__ . '/../global/resolve_locale.php';
+require_once __DIR__ . '/../global/load_translations.php';
+require_once __DIR__ . '/../global/translate.php';
 
 function fg_render_settings_page(array $user, array $context = []): void
 {
@@ -24,8 +27,16 @@ function fg_render_settings_page(array $user, array $context = []): void
     $message = $context['message'] ?? '';
     $error = $context['error'] ?? '';
 
+    $localeInfo = fg_resolve_locale($user);
+    $heading = fg_translate('settings.heading', [
+        'user' => $user,
+        'locale' => $localeInfo['locale'],
+        'fallback_locale' => $localeInfo['fallback_locale'],
+        'default' => 'Settings',
+    ]);
+
     $body = '<section class="panel settings-grid">';
-    $body .= '<h1>Settings</h1>';
+    $body .= '<h1>' . htmlspecialchars($heading) . '</h1>';
     if ($message !== '') {
         $body .= '<p class="success">' . htmlspecialchars($message) . '</p>';
     }
@@ -288,6 +299,49 @@ function fg_render_settings_page(array $user, array $context = []): void
                 $body .= '<input type="hidden" name="action" value="clear-theme-preferences">';
                 $body .= '<button type="submit" class="button danger">Revert to delegated theme</button>';
                 $body .= '</form>';
+            }
+        }
+
+        $body .= '</section>';
+    }
+
+    $localePolicy = fg_get_setting('locale_personalisation_policy', 'enabled');
+    $translations = fg_load_translations();
+    $availableLocales = $translations['locales'] ?? [];
+    $activeLocaleKey = $user['locale'] ?? $localeInfo['locale'];
+    $activeLocaleLabel = $availableLocales[$activeLocaleKey]['label'] ?? $activeLocaleKey;
+
+    if (!empty($availableLocales)) {
+        $body .= '<section class="panel locale-panel">';
+        $body .= '<h2>Locale</h2>';
+        $body .= '<p class="notice muted">Active locale: <strong>' . htmlspecialchars((string) $activeLocaleLabel) . '</strong></p>';
+
+        if ($localePolicy === 'disabled') {
+            $body .= '<p class="notice">Locale personalisation is disabled. Administrators can adjust the policy from the setup dashboard.</p>';
+        } else {
+            $allowed = $localePolicy === 'enabled' || ($localePolicy === 'admins-only' && ($user['role'] ?? 'member') === 'admin');
+            if ($allowed) {
+                $body .= '<form method="post" action="/settings.php" class="locale-form">';
+                $body .= '<input type="hidden" name="action" value="update-locale">';
+                $body .= '<label class="field">';
+                $body .= '<span class="field-label">Preferred locale</span>';
+                $body .= '<span class="field-control"><select name="locale">';
+                foreach ($availableLocales as $key => $definition) {
+                    $label = $definition['label'] ?? $key;
+                    $selected = ((string) $activeLocaleKey === (string) $key) ? ' selected' : '';
+                    $body .= '<option value="' . htmlspecialchars((string) $key) . '"' . $selected . '>' . htmlspecialchars((string) $label) . '</option>';
+                }
+                $body .= '</select></span>';
+                $body .= '<span class="field-description">Choose the interface language used throughout Filegate.</span>';
+                $body .= '</label>';
+                $body .= '<button type="submit" class="button primary">Save locale</button>';
+                $body .= '</form>';
+                $body .= '<form method="post" action="/settings.php" class="locale-reset">';
+                $body .= '<input type="hidden" name="action" value="clear-locale">';
+                $body .= '<button type="submit" class="button">Revert to delegated default</button>';
+                $body .= '</form>';
+            } else {
+                $body .= '<p class="notice">Only administrators may change locale preferences while the current policy is active.</p>';
             }
         }
 

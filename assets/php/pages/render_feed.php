@@ -7,6 +7,7 @@ require_once __DIR__ . '/../global/render_post_body.php';
 require_once __DIR__ . '/../global/load_template_options.php';
 require_once __DIR__ . '/../global/load_editor_options.php';
 require_once __DIR__ . '/../global/load_notification_channels.php';
+require_once __DIR__ . '/../global/translate.php';
 
 function fg_render_feed(array $viewer): string
 {
@@ -45,7 +46,8 @@ function fg_render_feed(array $viewer): string
 
     $max_uploads = (int) fg_get_setting('upload_limits', 5);
 
-    $html = '<section class="panel"><h1>Share something</h1>';
+    $composerHeading = fg_translate('feed.composer.heading', ['user' => $viewer, 'default' => 'Share something']);
+    $html = '<section class="panel"><h1>' . htmlspecialchars($composerHeading) . '</h1>';
     $html .= '<form method="post" action="/post.php" enctype="multipart/form-data" class="post-composer" data-preview-target="#composer-preview" data-dataset-target="#composer-elements">';
     $html .= '<label>Content<textarea name="content" required data-preview-source></textarea></label>';
     $html .= '<label>Summary<textarea name="summary" placeholder="Short overview for notifications and cards"></textarea></label>';
@@ -81,7 +83,8 @@ function fg_render_feed(array $viewer): string
     $html .= '</form></section>';
     $html .= '<section class="panel preview-panel" id="composer-preview" data-preview-output hidden><h2>Live preview</h2><div class="preview-body" data-preview-body><div class="preview-placeholder">Start writing to see your live preview, embeds, and statistics.</div></div><div class="preview-embeds" data-preview-embeds hidden></div><dl class="preview-statistics" data-preview-stats hidden></dl><ul class="preview-attachments" data-upload-list hidden></ul></section>';
 
-    $html .= '<section class="panel"><h2>Latest activity</h2>';
+    $latestHeading = fg_translate('feed.latest_activity.heading', ['user' => $viewer, 'default' => 'Latest activity']);
+    $html .= '<section class="panel"><h2>' . htmlspecialchars($latestHeading) . '</h2>';
 
     if (empty($records)) {
         $html .= '<p>No posts yet. Be the first to share something.</p>';

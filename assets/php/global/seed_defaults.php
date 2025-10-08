@@ -24,6 +24,9 @@ require_once __DIR__ . '/default_asset_snapshots_dataset.php';
 require_once __DIR__ . '/load_activity_log.php';
 require_once __DIR__ . '/save_activity_log.php';
 require_once __DIR__ . '/default_activity_log_dataset.php';
+require_once __DIR__ . '/load_translations.php';
+require_once __DIR__ . '/save_translations.php';
+require_once __DIR__ . '/default_translations_dataset.php';
 
 function fg_seed_defaults(): void
 {
@@ -83,6 +86,12 @@ function fg_seed_defaults(): void
     if (!isset($activityLog['records']) || !is_array($activityLog['records'])) {
         $activityLog = fg_default_activity_log_dataset();
         fg_save_activity_log($activityLog);
+    }
+
+    $translations = fg_load_translations();
+    if (!isset($translations['locales']) || !is_array($translations['locales']) || empty($translations['locales'])) {
+        $translations = fg_default_translations_dataset();
+        fg_save_translations($translations, 'Seed translations', ['trigger' => 'seed_defaults']);
     }
 }
 

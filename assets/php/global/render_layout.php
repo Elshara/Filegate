@@ -7,6 +7,8 @@ require_once __DIR__ . '/is_admin.php';
 require_once __DIR__ . '/resolve_theme_tokens.php';
 require_once __DIR__ . '/theme_inline_style.php';
 require_once __DIR__ . '/pages_for_navigation.php';
+require_once __DIR__ . '/resolve_locale.php';
+require_once __DIR__ . '/translate.php';
 
 function fg_render_layout(string $title, string $body, array $options = []): void
 {
@@ -20,6 +22,9 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
         'role' => $current['role'] ?? null,
         'user_id' => $current['id'] ?? null,
     ];
+    $localeResolution = fg_resolve_locale($current);
+    $localeCode = $localeResolution['locale'];
+    $fallbackLocale = $localeResolution['fallback_locale'];
     $layoutEnabled = fg_get_asset_parameter_value('assets/php/global/render_layout.php', 'enabled', $context);
     $layoutMode = fg_get_asset_parameter_value('assets/php/global/render_layout.php', 'mode', $context);
     $layoutVariant = fg_get_asset_parameter_value('assets/php/global/render_layout.php', 'variant', $context);
@@ -40,7 +45,7 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
     $bodyClass = htmlspecialchars(implode(' ', $classFragments));
 
     echo '<!DOCTYPE html>';
-    echo '<html lang="en">';
+    echo '<html lang="' . htmlspecialchars($localeCode) . '">';
     echo '<head>';
     echo '<meta charset="utf-8">';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
@@ -79,24 +84,26 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
     if ($nav) {
         echo '<nav class="app-nav">';
         if ($current) {
-            echo '<a href="/index.php">Feed</a>';
-            echo '<a href="/profile.php?user=' . urlencode($current['username']) . '">My Profile</a>';
-            echo '<a href="/settings.php">Settings</a>';
+            $navContext = ['locale' => $localeCode, 'fallback_locale' => $fallbackLocale, 'user' => $current];
+            echo '<a href="/index.php">' . htmlspecialchars(fg_translate('nav.feed', $navContext + ['default' => 'Feed'])) . '</a>';
+            echo '<a href="/profile.php?user=' . urlencode($current['username']) . '">' . htmlspecialchars(fg_translate('nav.profile', $navContext + ['default' => 'My Profile'])) . '</a>';
+            echo '<a href="/settings.php">' . htmlspecialchars(fg_translate('nav.settings', $navContext + ['default' => 'Settings'])) . '</a>';
             if (fg_is_admin($current)) {
-                echo '<a href="/setup.php">Setup</a>';
+                echo '<a href="/setup.php">' . htmlspecialchars(fg_translate('nav.setup', $navContext + ['default' => 'Setup'])) . '</a>';
             }
-            echo '<a href="/page.php">Pages</a>';
+            echo '<a href="/page.php">' . htmlspecialchars(fg_translate('nav.pages', $navContext + ['default' => 'Pages'])) . '</a>';
             foreach ($navPages as $navPage) {
                 if (empty($navPage['slug'])) {
                     continue;
                 }
                 echo '<a href="/page.php?slug=' . urlencode((string) $navPage['slug']) . '">' . htmlspecialchars($navPage['title']) . '</a>';
             }
-            echo '<form method="post" action="/logout.php" class="logout-form"><button type="submit">Sign out</button></form>';
+            echo '<form method="post" action="/logout.php" class="logout-form"><button type="submit">' . htmlspecialchars(fg_translate('nav.sign_out', $navContext + ['default' => 'Sign out'])) . '</button></form>';
         } else {
-            echo '<a href="/login.php">Sign in</a>';
-            echo '<a href="/register.php">Create account</a>';
-            echo '<a href="/page.php">Pages</a>';
+            $navContext = ['locale' => $localeCode, 'fallback_locale' => $fallbackLocale];
+            echo '<a href="/login.php">' . htmlspecialchars(fg_translate('nav.sign_in', $navContext + ['default' => 'Sign in'])) . '</a>';
+            echo '<a href="/register.php">' . htmlspecialchars(fg_translate('nav.register', $navContext + ['default' => 'Create account'])) . '</a>';
+            echo '<a href="/page.php">' . htmlspecialchars(fg_translate('nav.pages', $navContext + ['default' => 'Pages'])) . '</a>';
             foreach ($navPages as $navPage) {
                 if (empty($navPage['slug'])) {
                     continue;

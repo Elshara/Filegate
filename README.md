@@ -187,3 +187,16 @@ find . -maxdepth 1 -name '*.php' -print0 | xargs -0 -n1 php -l
 ## License
 
 MIT
+
+### Locale management
+
+Filegate ships with a `translations` dataset that stores interface strings for each supported locale. Administrators can open **Setup → Locale management** to:
+
+- register new translation tokens, document where they are used, and cascade default values across locales,
+- add new locales from an existing baseline,
+- edit strings for each registered token with labelled text areas,
+- switch the fallback locale used when translations are missing, and
+- retire locales that are no longer required.
+
+The default locale applied to new members is governed by the `default_locale` setting, while the `locale_personalisation_policy` setting determines whether members may choose their own language from the Settings page. Members and visitors can also pick a locale during registration whenever the policy allows personalisation.
+

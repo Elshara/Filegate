@@ -41,6 +41,12 @@
         "nature": "dynamic",
         "expose_via_api": false
     },
+    "translations": {
+        "label": "Translations",
+        "description": "Locale definitions, translation tokens, and interface strings for Filegate.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
     "asset_configurations": {
         "label": "Asset Configuration Defaults",
         "description": "Metadata describing configurable parameters for each asset in the application.",

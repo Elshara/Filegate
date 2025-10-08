@@ -16,6 +16,7 @@ require_once __DIR__ . '/../global/clear_asset_override.php';
 require_once __DIR__ . '/../global/guard_asset.php';
 require_once __DIR__ . '/../global/update_user_theme.php';
 require_once __DIR__ . '/../global/clear_user_theme.php';
+require_once __DIR__ . '/../global/update_user_locale.php';
 require_once __DIR__ . '/../pages/render_settings.php';
 
 function fg_public_settings_controller(): void
@@ -128,6 +129,24 @@ function fg_public_settings_controller(): void
                     $message = 'Asset preferences reverted.';
                 }
             }
+        } elseif ($action === 'update-locale') {
+            $policy = fg_get_setting('locale_personalisation_policy', 'enabled');
+            $role = $user['role'] ?? 'member';
+            $allowed = ($policy === 'enabled') || ($policy === 'admins-only' && $role === 'admin');
+            if (!$allowed) {
+                $error = 'Locale personalisation is currently disabled.';
+            } else {
+                $locale = (string) ($_POST['locale'] ?? '');
+                try {
+                    $user = fg_update_user_locale($user, $locale);
+                    $message = 'Locale preference saved.';
+                } catch (RuntimeException $exception) {
+                    $error = $exception->getMessage();
+                }
+            }
+        } elseif ($action === 'clear-locale') {
+            $user = fg_update_user_locale($user, '');
+            $message = 'Locale preference reverted to default.';
         } elseif ($action === 'update-theme-preferences') {
             $policy = fg_get_setting('theme_personalisation_policy', 'enabled');
             if ($policy === 'disabled') {

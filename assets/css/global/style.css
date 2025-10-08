@@ -1243,3 +1243,157 @@ input[type="submit"]:hover {
   background: #e53e3e;
   color: #ffffff;
 }
+
+.translations-manager {
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.translations-manager .translation-summary {
+    font-size: 0.95rem;
+}
+
+.translation-create {
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+}
+
+.translation-create[open] > summary {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.translation-form.create {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.translation-card {
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.translation-card header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.translation-badges {
+    display: inline-flex;
+    gap: 0.5rem;
+}
+
+.translation-badge {
+    padding: 0.25rem 0.75rem;
+    background: rgba(99, 102, 241, 0.2);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.translation-form { 
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.translation-token-collection {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.translation-token-card {
+    background: rgba(30, 64, 175, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.translation-token-card header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.translation-token-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.translation-token-key {
+    margin: 0;
+    font-family: 'Fira Code', 'Menlo', monospace;
+    font-size: 0.85rem;
+    color: rgba(15, 23, 42, 0.75);
+}
+
+.translation-token-description,
+.translation-token-missing,
+.translation-token-covered,
+.translation-token-note {
+    margin: 0;
+    font-size: 0.9rem;
+    color: rgba(15, 23, 42, 0.75);
+}
+
+.translation-token-covered {
+    color: rgba(16, 185, 129, 0.9);
+    font-weight: 600;
+}
+
+.translation-token-missing {
+    color: rgba(249, 115, 22, 0.95);
+    font-weight: 600;
+}
+
+.translation-token-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.translation-token-actions .inline-form {
+    display: inline-flex;
+}
+
+.translation-token-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.translation-token-grid textarea {
+    min-height: 3.5rem;
+}
+
+.translation-secondary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.translation-secondary-actions .inline-form {
+    display: inline-flex;
+}
+
