@@ -27,6 +27,12 @@ require_once __DIR__ . '/default_changelog_dataset.php';
 require_once __DIR__ . '/load_feature_requests.php';
 require_once __DIR__ . '/save_feature_requests.php';
 require_once __DIR__ . '/default_feature_requests_dataset.php';
+require_once __DIR__ . '/load_knowledge_base.php';
+require_once __DIR__ . '/save_knowledge_base.php';
+require_once __DIR__ . '/default_knowledge_base_dataset.php';
+require_once __DIR__ . '/load_knowledge_categories.php';
+require_once __DIR__ . '/save_knowledge_categories.php';
+require_once __DIR__ . '/default_knowledge_categories_dataset.php';
 require_once __DIR__ . '/load_asset_snapshots.php';
 require_once __DIR__ . '/save_asset_snapshots.php';
 require_once __DIR__ . '/default_asset_snapshots_dataset.php';
@@ -73,6 +79,18 @@ function fg_seed_defaults(): void
     if (!isset($featureRequests['records']) || !is_array($featureRequests['records'])) {
         $featureRequests = fg_default_feature_requests_dataset();
         fg_save_feature_requests($featureRequests, 'Seed feature request dataset', ['trigger' => 'seed_defaults']);
+    }
+
+    $knowledgeBase = fg_load_knowledge_base();
+    if (!isset($knowledgeBase['records']) || !is_array($knowledgeBase['records'])) {
+        $knowledgeBase = fg_default_knowledge_base_dataset();
+        fg_save_knowledge_base($knowledgeBase, 'Seed knowledge base dataset', ['trigger' => 'seed_defaults']);
+    }
+
+    $knowledgeCategories = fg_load_knowledge_categories();
+    if (!isset($knowledgeCategories['records']) || !is_array($knowledgeCategories['records'])) {
+        $knowledgeCategories = fg_default_knowledge_categories_dataset();
+        fg_save_knowledge_categories($knowledgeCategories, 'Seed knowledge category dataset', ['trigger' => 'seed_defaults']);
     }
 
     $uploads = fg_load_uploads();

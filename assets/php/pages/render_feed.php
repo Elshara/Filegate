@@ -11,6 +11,9 @@ require_once __DIR__ . '/../global/translate.php';
 require_once __DIR__ . '/../global/load_project_status.php';
 require_once __DIR__ . '/../global/load_changelog.php';
 require_once __DIR__ . '/../global/load_feature_requests.php';
+require_once __DIR__ . '/../global/filter_knowledge_articles.php';
+require_once __DIR__ . '/../global/list_knowledge_categories.php';
+require_once __DIR__ . '/../global/get_asset_parameter_value.php';
 
 function fg_render_feed(array $viewer): string
 {
@@ -735,6 +738,108 @@ function fg_render_feed(array $viewer): string
             $html .= '</li>';
         }
         $html .= '</ul>';
+        $html .= '</section>';
+    }
+
+    $knowledgeContext = [
+        'role' => $viewer['role'] ?? null,
+        'user_id' => $viewer['id'] ?? null,
+    ];
+    $knowledgeEnabled = fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'enabled', $knowledgeContext);
+    $knowledgeArticles = [];
+    $knowledgeCategories = [];
+    if ($knowledgeEnabled) {
+        $knowledgeCategories = fg_list_knowledge_categories($viewer);
+        $categoryIndex = [];
+        foreach ($knowledgeCategories as $category) {
+            $categoryIndex[(int) ($category['id'] ?? 0)] = $category;
+        }
+
+        $knowledgeArticles = fg_filter_knowledge_articles($viewer);
+        $defaultKnowledgeTag = trim((string) fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'default_tag', $knowledgeContext));
+        if ($defaultKnowledgeTag !== '') {
+            $filterTag = strtolower($defaultKnowledgeTag);
+            $knowledgeArticles = array_values(array_filter($knowledgeArticles, static function (array $article) use ($filterTag) {
+                $tags = $article['tags'] ?? [];
+                if (!is_array($tags)) {
+                    return false;
+                }
+                return in_array($filterTag, array_map('strtolower', $tags), true);
+            }));
+        }
+
+        $knowledgeLimitSetting = (int) fg_get_setting('knowledge_base_listing_limit', 5);
+        $knowledgeOverrideLimit = (int) fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'listing_limit', $knowledgeContext);
+        $appliedLimit = $knowledgeOverrideLimit > 0 ? $knowledgeOverrideLimit : $knowledgeLimitSetting;
+        if ($appliedLimit > 0) {
+            $knowledgeArticles = array_slice($knowledgeArticles, 0, $appliedLimit);
+        }
+        $knowledgeCategoryIndex = $categoryIndex;
+    } else {
+        $knowledgeCategoryIndex = [];
+    }
+
+    if (!empty($knowledgeArticles)) {
+        $knowledgeHeading = fg_translate('feed.knowledge.heading', ['user' => $viewer, 'default' => 'Knowledge base']);
+        $html .= '<section class="panel knowledge-feed-panel">';
+        $html .= '<h2>' . htmlspecialchars($knowledgeHeading) . '</h2>';
+        $html .= '<p class="knowledge-panel-intro">Curated guides and reference articles served locally without relying on remote APIs.</p>';
+        $html .= '<ul class="knowledge-feed-list">';
+        foreach ($knowledgeArticles as $article) {
+            $title = trim((string) ($article['title'] ?? 'Untitled article'));
+            $summary = trim((string) ($article['summary'] ?? ''));
+            $status = strtolower((string) ($article['status'] ?? 'published'));
+            $visibility = strtolower((string) ($article['visibility'] ?? 'public'));
+            $tags = $article['tags'] ?? [];
+            if (!is_array($tags)) {
+                $tags = [];
+            }
+            $updatedAt = (string) ($article['updated_at'] ?? $article['created_at'] ?? '');
+            $updatedLabel = '';
+            if ($updatedAt !== '') {
+                $timestamp = strtotime($updatedAt);
+                if ($timestamp) {
+                    $updatedLabel = date('M j, Y', $timestamp);
+                }
+            }
+
+            $html .= '<li class="knowledge-feed-item">';
+            $html .= '<h3><a href="/knowledge.php?slug=' . urlencode((string) ($article['slug'] ?? '')) . '">' . htmlspecialchars($title) . '</a></h3>';
+            $articleCategoryId = (int) ($article['category_id'] ?? 0);
+            if ($articleCategoryId > 0 && isset($knowledgeCategoryIndex[$articleCategoryId])) {
+                $category = $knowledgeCategoryIndex[$articleCategoryId];
+                $categorySlug = strtolower((string) ($category['slug'] ?? ''));
+                $categoryName = (string) ($category['name'] ?? '');
+                if ($categoryName !== '') {
+                    $html .= '<p class="knowledge-feed-category"><a href="/knowledge.php?category=' . urlencode($categorySlug) . '">' . htmlspecialchars($categoryName) . '</a></p>';
+                }
+            }
+            if ($summary !== '') {
+                $html .= '<p>' . htmlspecialchars($summary) . '</p>';
+            }
+            $metaParts = [];
+            if ($updatedLabel !== '') {
+                $metaParts[] = 'Updated ' . $updatedLabel;
+            }
+            if ($canModerate) {
+                $metaParts[] = 'Status: ' . ucwords(str_replace('_', ' ', $status));
+                $metaParts[] = 'Visibility: ' . ucfirst($visibility);
+            }
+            if (!empty($metaParts)) {
+                $html .= '<p class="knowledge-feed-meta">' . htmlspecialchars(implode(' · ', $metaParts)) . '</p>';
+            }
+            if (!empty($tags)) {
+                $html .= '<ul class="knowledge-feed-tags">';
+                foreach ($tags as $tag) {
+                    $tagSlug = strtolower((string) $tag);
+                    $html .= '<li><a href="/knowledge.php?tag=' . urlencode($tagSlug) . '">' . htmlspecialchars((string) $tag) . '</a></li>';
+                }
+                $html .= '</ul>';
+            }
+            $html .= '</li>';
+        }
+        $html .= '</ul>';
+        $html .= '<footer class="knowledge-feed-footer"><a class="button secondary" href="/knowledge.php">Open knowledge base</a></footer>';
         $html .= '</section>';
     }
 

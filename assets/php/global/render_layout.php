@@ -92,6 +92,7 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
                 echo '<a href="/setup.php">' . htmlspecialchars(fg_translate('nav.setup', $navContext + ['default' => 'Setup'])) . '</a>';
             }
             echo '<a href="/page.php">' . htmlspecialchars(fg_translate('nav.pages', $navContext + ['default' => 'Pages'])) . '</a>';
+            echo '<a href="/knowledge.php">' . htmlspecialchars(fg_translate('nav.knowledge', $navContext + ['default' => 'Knowledge base'])) . '</a>';
             foreach ($navPages as $navPage) {
                 if (empty($navPage['slug'])) {
                     continue;
@@ -104,6 +105,7 @@ function fg_render_layout(string $title, string $body, array $options = []): voi
             echo '<a href="/login.php">' . htmlspecialchars(fg_translate('nav.sign_in', $navContext + ['default' => 'Sign in'])) . '</a>';
             echo '<a href="/register.php">' . htmlspecialchars(fg_translate('nav.register', $navContext + ['default' => 'Create account'])) . '</a>';
             echo '<a href="/page.php">' . htmlspecialchars(fg_translate('nav.pages', $navContext + ['default' => 'Pages'])) . '</a>';
+            echo '<a href="/knowledge.php">' . htmlspecialchars(fg_translate('nav.knowledge', $navContext + ['default' => 'Knowledge base'])) . '</a>';
             foreach ($navPages as $navPage) {
                 if (empty($navPage['slug'])) {
                     continue;

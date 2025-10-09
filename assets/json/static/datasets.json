@@ -127,6 +127,18 @@
         "nature": "dynamic",
         "expose_via_api": false
     },
+    "knowledge_categories": {
+        "label": "Knowledge Categories",
+        "description": "Category definitions that organise knowledge base articles for browsing and filtering.",
+        "nature": "dynamic",
+        "expose_via_api": true
+    },
+    "knowledge_base": {
+        "label": "Knowledge Base",
+        "description": "Locally stored guides, how-tos, and reference articles for members and guests.",
+        "nature": "dynamic",
+        "expose_via_api": true
+    },
     "changelog": {
         "label": "Changelog",
         "description": "Release notes and highlights that communicate what changed across Filegate.",

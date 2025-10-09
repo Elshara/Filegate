@@ -186,6 +186,48 @@
                 "moderator"
             ],
             "category": "content"
+        },
+        "knowledge_base_visibility_policy": {
+            "label": "Knowledge Base Visibility Policy",
+            "description": "Controls whether knowledge base articles are public, member-only, or private by default.",
+            "value": "public",
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "knowledge"
+        },
+        "knowledge_base_default_status": {
+            "label": "Knowledge Base Default Status",
+            "description": "Status applied to new articles created through the setup dashboard.",
+            "value": "published",
+            "managed_by": "custom",
+            "allowed_roles": [
+                "admin",
+                "moderator"
+            ],
+            "category": "knowledge"
+        },
+        "knowledge_base_listing_limit": {
+            "label": "Knowledge Base Listing Limit",
+            "description": "Number of knowledge base entries surfaced on the feed overview.",
+            "value": 5,
+            "managed_by": "custom",
+            "allowed_roles": [
+                "admin",
+                "moderator"
+            ],
+            "category": "knowledge"
+        },
+        "knowledge_base_default_category": {
+            "label": "Knowledge Base Default Category",
+            "description": "Category automatically assigned to new knowledge base articles when no selection is provided.",
+            "value": 1,
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "knowledge"
         }
     },
     "role_definitions": {

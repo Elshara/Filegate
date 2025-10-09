@@ -39,6 +39,27 @@ function fg_render_setup_page(array $data = []): void
         $featureRequestDataset['records'] = [];
     }
     $featureRequestRecords = $featureRequestDataset['records'];
+    $knowledgeDataset = $data['knowledge_base'] ?? ['records' => [], 'next_id' => 1];
+    if (!isset($knowledgeDataset['records']) || !is_array($knowledgeDataset['records'])) {
+        $knowledgeDataset['records'] = [];
+    }
+    $knowledgeRecords = $knowledgeDataset['records'];
+    $knowledgeCategoryDataset = $data['knowledge_categories'] ?? ['records' => [], 'next_id' => 1];
+    if (!isset($knowledgeCategoryDataset['records']) || !is_array($knowledgeCategoryDataset['records'])) {
+        $knowledgeCategoryDataset['records'] = [];
+    }
+    $knowledgeCategoryRecords = $knowledgeCategoryDataset['records'];
+    $knowledgeCategoriesSorted = $knowledgeCategoryRecords;
+    if (!empty($knowledgeCategoriesSorted)) {
+        usort($knowledgeCategoriesSorted, static function ($a, $b) {
+            $orderA = (int) ($a['ordering'] ?? 0);
+            $orderB = (int) ($b['ordering'] ?? 0);
+            if ($orderA === $orderB) {
+                return strcmp(strtolower((string) ($a['name'] ?? '')), strtolower((string) ($b['name'] ?? '')));
+            }
+            return $orderA <=> $orderB;
+        });
+    }
     $featureRequestStatusOptions = $data['feature_request_statuses'] ?? ['open', 'researching', 'planned', 'in_progress', 'completed', 'declined'];
     if (!is_array($featureRequestStatusOptions) || empty($featureRequestStatusOptions)) {
         $featureRequestStatusOptions = ['open'];
@@ -63,6 +84,21 @@ function fg_render_setup_page(array $data = []): void
     $featureRequestDefaultVisibility = strtolower((string) ($data['feature_request_default_visibility'] ?? 'members'));
     if (!in_array($featureRequestDefaultVisibility, ['public', 'members', 'private'], true)) {
         $featureRequestDefaultVisibility = 'members';
+    }
+    $knowledgeDefaultStatus = strtolower((string) ($data['knowledge_default_status'] ?? 'published'));
+    if (!in_array($knowledgeDefaultStatus, ['draft', 'scheduled', 'published', 'archived'], true)) {
+        $knowledgeDefaultStatus = 'published';
+    }
+    $knowledgeDefaultVisibility = strtolower((string) ($data['knowledge_default_visibility'] ?? 'public'));
+    if (!in_array($knowledgeDefaultVisibility, ['public', 'members', 'private'], true)) {
+        $knowledgeDefaultVisibility = 'public';
+    }
+    $knowledgeDefaultCategory = $data['knowledge_default_category'] ?? null;
+    if ($knowledgeDefaultCategory !== null) {
+        $knowledgeDefaultCategory = (int) $knowledgeDefaultCategory;
+        if ($knowledgeDefaultCategory <= 0) {
+            $knowledgeDefaultCategory = null;
+        }
     }
     $message = $data['message'] ?? '';
     $errors = $data['errors'] ?? [];
@@ -725,6 +761,413 @@ function fg_render_setup_page(array $data = []): void
 
     $body .= '<div class="action-row">';
     $body .= '<button type="submit" class="button primary">Create roadmap entry</button>';
+    $body .= '</div>';
+    $body .= '</form>';
+    $body .= '</article>';
+
+    $body .= '</section>';
+
+    $knowledgeStatusLabels = [
+        'published' => 'Published',
+        'scheduled' => 'Scheduled',
+        'draft' => 'Draft',
+        'archived' => 'Archived',
+    ];
+    $knowledgeVisibilityOptions = ['public' => 'Public', 'members' => 'Members', 'private' => 'Private'];
+    $knowledgeStatusCounts = [];
+    foreach ($knowledgeStatusLabels as $key => $label) {
+        $knowledgeStatusCounts[$key] = 0;
+    }
+    $knowledgeStatusRank = ['published' => 0, 'scheduled' => 1, 'draft' => 2, 'archived' => 3];
+    $knowledgeEntries = [];
+    $knowledgeTagTotals = [];
+    $knowledgeCategoryIndex = [];
+    foreach ($knowledgeCategoryRecords as $category) {
+        if (!is_array($category)) {
+            continue;
+        }
+        $categoryId = (int) ($category['id'] ?? 0);
+        if ($categoryId <= 0) {
+            continue;
+        }
+        $knowledgeCategoryIndex[$categoryId] = $category;
+    }
+    $knowledgeCategoryTotals = [];
+    foreach ($knowledgeRecords as $article) {
+        if (!is_array($article)) {
+            continue;
+        }
+
+        $status = strtolower((string) ($article['status'] ?? $knowledgeDefaultStatus));
+        if (!isset($knowledgeStatusLabels[$status])) {
+            $knowledgeStatusLabels[$status] = ucwords(str_replace('_', ' ', $status));
+            $knowledgeStatusCounts[$status] = 0;
+            $knowledgeStatusRank[$status] = count($knowledgeStatusRank);
+        }
+        $knowledgeStatusCounts[$status] = ($knowledgeStatusCounts[$status] ?? 0) + 1;
+
+        $visibility = strtolower((string) ($article['visibility'] ?? $knowledgeDefaultVisibility));
+        if (!in_array($visibility, ['public', 'members', 'private'], true)) {
+            $visibility = $knowledgeDefaultVisibility;
+        }
+
+        $tags = $article['tags'] ?? [];
+        if (!is_array($tags)) {
+            $tags = [];
+        }
+        $normalizedTags = [];
+        foreach ($tags as $tag) {
+            $normalized = strtolower(trim((string) $tag));
+            if ($normalized === '') {
+                continue;
+            }
+            $normalizedTags[] = $normalized;
+            $knowledgeTagTotals[$normalized] = ($knowledgeTagTotals[$normalized] ?? 0) + 1;
+        }
+
+        $attachmentsValue = '';
+        if (!empty($article['attachments']) && is_array($article['attachments'])) {
+            $attachmentsValue = implode("\n", array_map('strval', $article['attachments']));
+        }
+
+        $tagsValue = '';
+        if (!empty($normalizedTags)) {
+            $tagsValue = implode(', ', $normalizedTags);
+        }
+
+        $categoryId = (int) ($article['category_id'] ?? 0);
+        $categoryName = '';
+        $categorySlug = '';
+        if ($categoryId > 0 && isset($knowledgeCategoryIndex[$categoryId])) {
+            $categoryRecord = $knowledgeCategoryIndex[$categoryId];
+            $categoryName = (string) ($categoryRecord['name'] ?? '');
+            $categorySlug = strtolower((string) ($categoryRecord['slug'] ?? ''));
+            $knowledgeCategoryTotals[$categoryId] = ($knowledgeCategoryTotals[$categoryId] ?? 0) + 1;
+        }
+
+        $knowledgeEntries[] = array_merge($article, [
+            'status' => $status,
+            'visibility' => $visibility,
+            'tags_value' => $tagsValue,
+            'attachments_value' => $attachmentsValue,
+            'normalized_tags' => $normalizedTags,
+            'category_id' => $categoryId,
+            'category_name' => $categoryName,
+            'category_slug' => $categorySlug,
+        ]);
+    }
+
+    if (!empty($knowledgeEntries)) {
+        usort($knowledgeEntries, static function (array $a, array $b) use ($knowledgeStatusRank) {
+            $rankA = $knowledgeStatusRank[$a['status'] ?? ''] ?? PHP_INT_MAX;
+            $rankB = $knowledgeStatusRank[$b['status'] ?? ''] ?? PHP_INT_MAX;
+            if ($rankA !== $rankB) {
+                return $rankA <=> $rankB;
+            }
+
+            $timeA = strtotime((string) ($a['updated_at'] ?? $a['created_at'] ?? 'now'));
+            $timeB = strtotime((string) ($b['updated_at'] ?? $b['created_at'] ?? 'now'));
+            return $timeB <=> $timeA;
+        });
+    }
+
+    arsort($knowledgeTagTotals);
+    $showTagCloud = true;
+
+    $body .= '<section class="knowledge-manager">';
+    $body .= '<h2>Knowledge base</h2>';
+    $body .= '<p>Draft, publish, and curate reference material so members can self-serve answers without leaving Filegate.</p>';
+
+    if (!empty($knowledgeEntries)) {
+        $body .= '<div class="knowledge-summary">';
+        foreach ($knowledgeStatusLabels as $statusKey => $label) {
+            $count = (int) ($knowledgeStatusCounts[$statusKey] ?? 0);
+            $body .= '<article class="knowledge-chip knowledge-status-' . htmlspecialchars($statusKey) . '">';
+            $body .= '<h3>' . htmlspecialchars($label) . '</h3>';
+            $body .= '<p class="knowledge-total">' . $count . ' ' . ($count === 1 ? 'article' : 'articles') . '</p>';
+            $body .= '</article>';
+        }
+        if ($showTagCloud && !empty($knowledgeTagTotals)) {
+            $body .= '<article class="knowledge-chip knowledge-tags">';
+            $body .= '<h3>Top tags</h3>';
+            $tagBadges = [];
+            $limit = 0;
+            foreach ($knowledgeTagTotals as $tag => $total) {
+                $tagBadges[] = htmlspecialchars((string) $tag) . ' <span>' . (int) $total . '</span>';
+                $limit++;
+                if ($limit >= 6) {
+                    break;
+                }
+            }
+            $body .= '<p class="knowledge-total">' . implode(' · ', $tagBadges) . '</p>';
+            $body .= '</article>';
+        }
+        if (!empty($knowledgeCategoryIndex)) {
+            $body .= '<article class="knowledge-chip knowledge-categories">';
+            $body .= '<h3>Categories</h3>';
+            $categoryBadges = [];
+            foreach ($knowledgeCategoriesSorted as $category) {
+                $categoryId = (int) ($category['id'] ?? 0);
+                if ($categoryId <= 0) {
+                    continue;
+                }
+                $count = (int) ($knowledgeCategoryTotals[$categoryId] ?? 0);
+                $categoryBadges[] = htmlspecialchars((string) ($category['name'] ?? '')) . ' <span>' . $count . '</span>';
+            }
+            if (!empty($categoryBadges)) {
+                $body .= '<p class="knowledge-total">' . implode(' · ', $categoryBadges) . '</p>';
+            } else {
+                $body .= '<p class="knowledge-total">Configured but unused. Add articles to populate categories.</p>';
+            }
+            $body .= '</article>';
+        }
+        $body .= '</div>';
+    } else {
+        $body .= '<p class="notice muted">No knowledge base entries yet. Use the form below to capture your first guide.</p>';
+    }
+
+    if (!empty($knowledgeCategoriesSorted)) {
+        $body .= '<section class="knowledge-category-manager">';
+        $body .= '<h3>Manage categories</h3>';
+        $body .= '<p>Organise articles into focused collections. Visibility determines who can filter by the category.</p>';
+        foreach ($knowledgeCategoriesSorted as $category) {
+            if (!is_array($category)) {
+                continue;
+            }
+            $categoryId = (int) ($category['id'] ?? 0);
+            if ($categoryId <= 0) {
+                continue;
+            }
+            $categoryName = (string) ($category['name'] ?? 'Untitled category');
+            $categorySlug = (string) ($category['slug'] ?? '');
+            $categoryDescription = (string) ($category['description'] ?? '');
+            $categoryVisibility = strtolower((string) ($category['visibility'] ?? 'public'));
+            if (!in_array($categoryVisibility, ['public', 'members', 'private'], true)) {
+                $categoryVisibility = 'public';
+            }
+            $categoryOrdering = (int) ($category['ordering'] ?? 0);
+            $count = (int) ($knowledgeCategoryTotals[$categoryId] ?? 0);
+
+            $body .= '<article class="knowledge-category-card">';
+            $body .= '<header><h4>' . htmlspecialchars($categoryName) . '</h4><p class="knowledge-category-meta">Slug: ' . htmlspecialchars($categorySlug) . ' · Articles: ' . $count . '</p></header>';
+            $body .= '<form method="post" action="/setup.php" class="knowledge-category-form">';
+            $body .= '<input type="hidden" name="action" value="update_knowledge_category">';
+            $body .= '<input type="hidden" name="knowledge_category_id" value="' . $categoryId . '">';
+            $body .= '<label class="field"><span class="field-label">Name</span><span class="field-control"><input type="text" name="name" value="' . htmlspecialchars($categoryName) . '"></span></label>';
+            $body .= '<label class="field"><span class="field-label">Slug</span><span class="field-control"><input type="text" name="slug" value="' . htmlspecialchars($categorySlug) . '"></span></label>';
+            $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="2">' . htmlspecialchars($categoryDescription) . '</textarea></span></label>';
+            $body .= '<div class="field-grid">';
+            $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+            foreach ($knowledgeVisibilityOptions as $value => $label) {
+                $selected = $value === $categoryVisibility ? ' selected' : '';
+                $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+            }
+            $body .= '</select></span></label>';
+            $body .= '<label class="field"><span class="field-label">Ordering</span><span class="field-control"><input type="number" name="ordering" value="' . $categoryOrdering . '" min="0"></span></label>';
+            $body .= '</div>';
+            $body .= '<div class="action-row">';
+            $body .= '<button type="submit" class="button primary">Save category</button>';
+            $body .= '</div>';
+            $body .= '</form>';
+
+            $body .= '<form method="post" action="/setup.php" class="knowledge-category-delete" onsubmit="return confirm(\'Delete this category? Articles will be left uncategorised.\');">';
+            $body .= '<input type="hidden" name="action" value="delete_knowledge_category">';
+            $body .= '<input type="hidden" name="knowledge_category_id" value="' . $categoryId . '">';
+            $body .= '<button type="submit" class="button danger">Delete category</button>';
+            $body .= '</form>';
+            $body .= '</article>';
+        }
+        $body .= '</section>';
+    }
+
+    $body .= '<section class="knowledge-category-create">';
+    $body .= '<h3>Create category</h3>';
+    $body .= '<p>Add another collection to group similar knowledge base articles.</p>';
+    $body .= '<form method="post" action="/setup.php" class="knowledge-category-form">';
+    $body .= '<input type="hidden" name="action" value="create_knowledge_category">';
+    $body .= '<label class="field"><span class="field-label">Name</span><span class="field-control"><input type="text" name="name" required></span></label>';
+    $body .= '<label class="field"><span class="field-label">Slug</span><span class="field-control"><input type="text" name="slug" placeholder="support"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="2" placeholder="Explain how this category should be used."></textarea></span></label>';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+    foreach ($knowledgeVisibilityOptions as $value => $label) {
+        $body .= '<option value="' . htmlspecialchars($value) . '">' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Ordering</span><span class="field-control"><input type="number" name="ordering" value="' . ($knowledgeCategoryRecords ? count($knowledgeCategoryRecords) + 1 : 1) . '" min="0"></span></label>';
+    $body .= '</div>';
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Add category</button>';
+    $body .= '</div>';
+    $body .= '</form>';
+    $body .= '</section>';
+
+    foreach ($knowledgeEntries as $article) {
+        $articleId = (int) ($article['id'] ?? 0);
+        $title = trim((string) ($article['title'] ?? 'Untitled article'));
+        $slug = trim((string) ($article['slug'] ?? ''));
+        $summary = trim((string) ($article['summary'] ?? ''));
+        $content = (string) ($article['content'] ?? '');
+        $status = (string) ($article['status'] ?? $knowledgeDefaultStatus);
+        $visibility = (string) ($article['visibility'] ?? $knowledgeDefaultVisibility);
+        $template = trim((string) ($article['template'] ?? 'article'));
+        $tagsValue = (string) ($article['tags_value'] ?? '');
+        $attachmentsValue = (string) ($article['attachments_value'] ?? '');
+        $authorUserId = (int) ($article['author_user_id'] ?? 0);
+        $articleCategoryId = (int) ($article['category_id'] ?? 0);
+        $articleCategoryName = (string) ($article['category_name'] ?? '');
+        $articleCategorySlug = (string) ($article['category_slug'] ?? '');
+        $updatedAt = (string) ($article['updated_at'] ?? $article['created_at'] ?? '');
+        $updatedLabel = '';
+        if ($updatedAt !== '') {
+            $timestamp = strtotime($updatedAt);
+            if ($timestamp) {
+                $updatedLabel = date('M j, Y', $timestamp);
+            }
+        }
+
+        $body .= '<article class="knowledge-admin-card">';
+        $body .= '<header class="knowledge-admin-header">';
+        $body .= '<h3>' . htmlspecialchars($title) . '</h3>';
+        $metaParts = [];
+        $metaParts[] = 'Status: ' . htmlspecialchars($knowledgeStatusLabels[$status] ?? ucwords(str_replace('_', ' ', $status)));
+        $metaParts[] = 'Visibility: ' . htmlspecialchars($knowledgeVisibilityOptions[$visibility] ?? ucfirst($visibility));
+        if ($articleCategoryName !== '') {
+            $categoryDisplay = $articleCategorySlug !== ''
+                ? '<a href="/knowledge.php?category=' . urlencode(strtolower($articleCategorySlug)) . '">' . htmlspecialchars($articleCategoryName) . '</a>'
+                : htmlspecialchars($articleCategoryName);
+            $metaParts[] = 'Category: ' . $categoryDisplay;
+        }
+        if ($updatedLabel !== '') {
+            $metaParts[] = 'Updated ' . $updatedLabel;
+        }
+        $body .= '<p class="knowledge-admin-meta">' . implode(' · ', $metaParts) . '</p>';
+        $body .= '</header>';
+
+        $body .= '<form method="post" action="/setup.php" class="knowledge-form">';
+        $body .= '<input type="hidden" name="action" value="update_knowledge_article">';
+        $body .= '<input type="hidden" name="knowledge_article_id" value="' . $articleId . '">';
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value="' . htmlspecialchars($title) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Slug</span><span class="field-control"><input type="text" name="slug" value="' . htmlspecialchars($slug) . '"></span><span class="field-description">Used for the knowledge base URL.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Template</span><span class="field-control"><input type="text" name="template" value="' . htmlspecialchars($template) . '"></span><span class="field-description">Match template keywords with front-end layouts.</span></label>';
+        if (!empty($knowledgeCategoryIndex)) {
+            $body .= '<label class="field"><span class="field-label">Category</span><span class="field-control"><select name="category_id">';
+            $body .= '<option value="">Unassigned</option>';
+            foreach ($knowledgeCategoriesSorted as $category) {
+                $categoryId = (int) ($category['id'] ?? 0);
+                if ($categoryId <= 0) {
+                    continue;
+                }
+                $selected = $articleCategoryId === $categoryId ? ' selected' : '';
+                $body .= '<option value="' . $categoryId . '"' . $selected . '>' . htmlspecialchars((string) ($category['name'] ?? '')) . '</option>';
+            }
+            $body .= '</select></span><span class="field-description">Organise this article within a knowledge category.</span></label>';
+        }
+        $body .= '</div>';
+
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+        foreach ($knowledgeStatusLabels as $value => $label) {
+            $selected = $value === $status ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+        foreach ($knowledgeVisibilityOptions as $value => $label) {
+            $selected = $value === $visibility ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Author</span><span class="field-control"><select name="author_user_id">';
+        $body .= '<option value="">No author</option>';
+        foreach ($users as $user) {
+            $userId = (int) ($user['id'] ?? 0);
+            if ($userId <= 0) {
+                continue;
+            }
+            $username = $user['username'] ?? ('User #' . $userId);
+            $selected = $userId === $authorUserId ? ' selected' : '';
+            $body .= '<option value="' . $userId . '"' . $selected . '>' . htmlspecialchars($username) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '</div>';
+
+        $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><textarea name="summary" rows="2">' . htmlspecialchars($summary) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Content</span><span class="field-control"><textarea name="content" rows="6">' . htmlspecialchars($content) . '</textarea></span><span class="field-description">Supports HTML, XHTML, and inline embeds.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Tags</span><span class="field-control"><input type="text" name="tags" value="' . htmlspecialchars($tagsValue) . '"></span><span class="field-description">Comma-separated keywords for filtering.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Attachments</span><span class="field-control"><textarea name="attachments" rows="3" placeholder="Local paths or upload references, one per line">' . htmlspecialchars($attachmentsValue) . '</textarea></span></label>';
+
+        $body .= '<div class="action-row">';
+        $body .= '<button type="submit" class="button primary">Save article</button>';
+        $body .= '</div>';
+        $body .= '</form>';
+
+        $body .= '<form method="post" action="/setup.php" class="knowledge-delete-form" onsubmit="return confirm(\'Delete this article?\');">';
+        $body .= '<input type="hidden" name="action" value="delete_knowledge_article">';
+        $body .= '<input type="hidden" name="knowledge_article_id" value="' . $articleId . '">';
+        $body .= '<button type="submit" class="button danger">Delete article</button>';
+        $body .= '</form>';
+
+        $body .= '</article>';
+    }
+
+    $body .= '<article class="knowledge-admin-card knowledge-create">';
+    $body .= '<header><h3>Create knowledge base article</h3><p>Document guidance, best practices, or onboarding steps for members.</p></header>';
+    $body .= '<form method="post" action="/setup.php" class="knowledge-form">';
+    $body .= '<input type="hidden" name="action" value="create_knowledge_article">';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value=""></span></label>';
+    $body .= '<label class="field"><span class="field-label">Slug</span><span class="field-control"><input type="text" name="slug" placeholder="getting-started"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Template</span><span class="field-control"><input type="text" name="template" value="article"></span></label>';
+    if (!empty($knowledgeCategoryIndex)) {
+        $body .= '<label class="field"><span class="field-label">Category</span><span class="field-control"><select name="category_id">';
+        $body .= '<option value="">Unassigned</option>';
+        foreach ($knowledgeCategoriesSorted as $category) {
+            $categoryId = (int) ($category['id'] ?? 0);
+            if ($categoryId <= 0) {
+                continue;
+            }
+            $selected = $knowledgeDefaultCategory !== null && $knowledgeDefaultCategory === $categoryId ? ' selected' : '';
+            $body .= '<option value="' . $categoryId . '"' . $selected . '>' . htmlspecialchars((string) ($category['name'] ?? '')) . '</option>';
+        }
+        $body .= '</select></span><span class="field-description">Default category applied to new articles.</span></label>';
+    }
+    $body .= '</div>';
+
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+    foreach ($knowledgeStatusLabels as $value => $label) {
+        $selected = $value === $knowledgeDefaultStatus ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+    foreach ($knowledgeVisibilityOptions as $value => $label) {
+        $selected = $value === $knowledgeDefaultVisibility ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Author</span><span class="field-control"><select name="author_user_id">';
+    $body .= '<option value="">No author</option>';
+    foreach ($users as $user) {
+        $userId = (int) ($user['id'] ?? 0);
+        if ($userId <= 0) {
+            continue;
+        }
+        $username = $user['username'] ?? ('User #' . $userId);
+        $body .= '<option value="' . $userId . '">' . htmlspecialchars($username) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '</div>';
+
+    $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><textarea name="summary" rows="2" placeholder="Short overview"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Content</span><span class="field-control"><textarea name="content" rows="6" placeholder="Describe the steps, references, or templates."></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Tags</span><span class="field-control"><input type="text" name="tags" placeholder="onboarding, policies"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Attachments</span><span class="field-control"><textarea name="attachments" rows="3" placeholder="Local links or uploads"></textarea></span></label>';
+
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Add article</button>';
     $body .= '</div>';
     $body .= '</form>';
     $body .= '</article>';

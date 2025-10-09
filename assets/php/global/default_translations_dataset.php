@@ -24,6 +24,10 @@ function fg_default_translations_dataset(): array
                 'label' => 'Navigation · Pages',
                 'description' => 'Link to the pages directory.'
             ],
+            'nav.knowledge' => [
+                'label' => 'Navigation · Knowledge base',
+                'description' => 'Link to the knowledge base directory.'
+            ],
             'nav.sign_out' => [
                 'label' => 'Navigation · Sign out',
                 'description' => 'Sign-out button label.'
@@ -43,6 +47,10 @@ function fg_default_translations_dataset(): array
             'feed.latest_activity.heading' => [
                 'label' => 'Feed · Latest activity heading',
                 'description' => 'Heading above the recent posts list.'
+            ],
+            'feed.knowledge.heading' => [
+                'label' => 'Feed · Knowledge base heading',
+                'description' => 'Heading above the knowledge base summary panel.'
             ],
             'register.heading' => [
                 'label' => 'Register · Heading',
@@ -66,11 +74,13 @@ function fg_default_translations_dataset(): array
                     'nav.settings' => 'Settings',
                     'nav.setup' => 'Setup',
                     'nav.pages' => 'Pages',
+                    'nav.knowledge' => 'Knowledge base',
                     'nav.sign_out' => 'Sign out',
                     'nav.sign_in' => 'Sign in',
                     'nav.register' => 'Create account',
                     'feed.composer.heading' => 'Share something',
                     'feed.latest_activity.heading' => 'Latest activity',
+                    'feed.knowledge.heading' => 'Knowledge base',
                     'register.heading' => 'Create your profile',
                     'register.submit' => 'Create profile',
                     'settings.heading' => 'Settings'

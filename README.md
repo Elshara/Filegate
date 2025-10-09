@@ -14,6 +14,7 @@ Filegate is a profile-centred social application designed for shared hosting. Ev
 - **Rich notifications** – Post activity queues email, browser, cookie, and file-cache notifications driven by JSON and XML templates with admin-controlled channels.
 - **Themeable interface** – Palette presets live in flat files so administrators and members can rebrand Filegate from the browser without touching CSS.
 - **Roadmap transparency** – A dedicated roadmap dataset tracks built, in-progress, and planned initiatives with browser-based management and feed summaries.
+- **Self-hosted knowledge base** – Publish onboarding guides and reference articles locally so members can search, filter, and read without leaving Filegate.
 
 ## Directory layout
 
@@ -142,6 +143,21 @@ Filegate seeds `assets/json/dynamic/project_status.json` with representative mil
 - review live status chips and audit trails before creating, updating, or deleting entries.
 
 Every save updates the flat-file dataset, records an activity event, and keeps the roadmap in sync with asset permissions. Members see a condensed roadmap summary on the feed—complete with status counts, average progress, and the latest items—so teams can track what is shipping at a glance.
+
+## Knowledge base
+
+Knowledge articles live in `assets/json/dynamic/knowledge_base.json`. Each record stores a slug, title, summary, HTML/XHTML body, visibility, status, template keyword, optional attachments, and an optional `category_id`. Categories are managed separately in `assets/json/dynamic/knowledge_categories.json`, allowing you to organise guides into browsable collections without editing PHP.
+
+Administrators curate entries from **Setup → Knowledge base**, where they can:
+
+- review status totals, top tags, category usage, and article metadata from a single dashboard;
+- edit titles, content, visibility, templates, categories, and attachments through browser forms;
+- assign authors, adjust tags, archive articles, or move them between categories without touching JSON; and
+- create new guides with sensible defaults seeded from `assets/php/global/default_knowledge_base_dataset.php` and `assets/php/global/default_knowledge_categories_dataset.php`.
+
+The same setup screen also exposes category management cards so admins can add, reorder, hide, or delete categories—complete with audit logging and automatic detachment from affected articles.
+
+Members and guests can browse `/knowledge.php`, filter by tag or category, run keyword searches, and open individual articles rendered by `assets/php/pages/render_knowledge_base.php`. The feed surfaces a summary panel that honours visibility rules, while admins can tune behaviour (default tag, default category, tag cloud visibility, category filter availability, listing limits) via asset configuration overrides.
 
 ## Feature request board
 

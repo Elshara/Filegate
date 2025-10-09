@@ -6967,6 +6967,775 @@
                     "baseline_allow_user_override": true
                 }
             }
+        },
+        "assets/php/global/default_knowledge_base_dataset.php": {
+            "label": "Assets Php Global Default knowledge base dataset Php",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                }
+            }
+        },
+        "assets/php/global/load_knowledge_base.php": {
+            "label": "Assets Php Global Load knowledge base Php",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                }
+            }
+        },
+        "assets/php/global/save_knowledge_base.php": {
+            "label": "Assets Php Global Save knowledge base Php",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                }
+            }
+        },
+        "assets/php/global/normalize_knowledge_slug.php": {
+            "label": "Assets Php Global Normalize knowledge slug Php",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                }
+            }
+        },
+        "assets/php/global/filter_knowledge_articles.php": {
+            "label": "Assets Php Global Filter knowledge articles Php",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                }
+            }
+        },
+        "assets/php/global/add_knowledge_article.php": {
+            "label": "Assets Php Global Add knowledge article Php",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                }
+            }
+        },
+        "assets/php/global/update_knowledge_article.php": {
+            "label": "Assets Php Global Update knowledge article Php",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                }
+            }
+        },
+        "assets/php/global/delete_knowledge_article.php": {
+            "label": "Assets Php Global Delete knowledge article Php",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                }
+            }
+        },
+        "assets/php/public/knowledge_controller.php": {
+            "label": "Assets Php Public Knowledge controller Php",
+            "scope": "public",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                }
+            }
+        },
+        "assets/php/pages/render_knowledge_base.php": {
+            "label": "Assets Php Pages Render knowledge base Php",
+            "scope": "local",
+            "extension": "php",
+            "allow_user_override": true,
+            "allowed_roles": [
+                "admin",
+                "moderator"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                },
+                "default_tag": {
+                    "label": "Default Tag Filter",
+                    "type": "text",
+                    "default": "",
+                    "description": "Apply a tag filter when the knowledge directory loads.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                },
+                "show_tag_cloud": {
+                    "label": "Display Tag Cloud",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle the summary tag cloud on the knowledge base.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                },
+                "listing_limit": {
+                    "label": "Listing Limit Override",
+                    "type": "number",
+                    "default": 0,
+                    "description": "Override the number of articles shown (0 respects global setting).",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                },
+                "default_category": {
+                    "label": "Default Category Slug",
+                    "type": "text",
+                    "default": "",
+                    "description": "Apply a category filter when no manual selection is provided.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                },
+                "enable_search": {
+                    "label": "Enable Search",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle the keyword search field on the knowledge directory.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                },
+                "enable_category_filter": {
+                    "label": "Enable Category Filter",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Allow visitors to filter knowledge articles by category.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/add_knowledge_category.php": {
+            "label": "Php Global Add Knowledge Category",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/update_knowledge_category.php": {
+            "label": "Php Global Update Knowledge Category",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/delete_knowledge_category.php": {
+            "label": "Php Global Delete Knowledge Category",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/list_knowledge_categories.php": {
+            "label": "Php Global List Knowledge Categories",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/load_knowledge_categories.php": {
+            "label": "Php Global Load Knowledge Categories",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/save_knowledge_categories.php": {
+            "label": "Php Global Save Knowledge Categories",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/default_knowledge_categories_dataset.php": {
+            "label": "Php Global Default Knowledge Categories Dataset",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/global/normalize_knowledge_category_slug.php": {
+            "label": "Php Global Normalize Knowledge Category Slug",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
         }
     }
 }

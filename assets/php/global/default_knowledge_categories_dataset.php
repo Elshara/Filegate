@@ -1,0 +1,26 @@
+<?php
+
+function fg_default_knowledge_categories_dataset(): array
+{
+    return [
+        'records' => [
+            [
+                'id' => 1,
+                'slug' => 'getting-started',
+                'name' => 'Getting Started',
+                'description' => 'Onboarding guides that introduce core Filegate features and workflows.',
+                'visibility' => 'public',
+                'ordering' => 1,
+            ],
+            [
+                'id' => 2,
+                'slug' => 'operations',
+                'name' => 'Operations',
+                'description' => 'Runbooks and operational reference for administrators and moderators.',
+                'visibility' => 'members',
+                'ordering' => 2,
+            ],
+        ],
+        'next_id' => 3,
+    ];
+}

@@ -47,6 +47,17 @@ require_once __DIR__ . '/../global/default_feature_requests_dataset.php';
 require_once __DIR__ . '/../global/add_feature_request.php';
 require_once __DIR__ . '/../global/update_feature_request.php';
 require_once __DIR__ . '/../global/delete_feature_request.php';
+require_once __DIR__ . '/../global/load_knowledge_base.php';
+require_once __DIR__ . '/../global/default_knowledge_base_dataset.php';
+require_once __DIR__ . '/../global/add_knowledge_article.php';
+require_once __DIR__ . '/../global/update_knowledge_article.php';
+require_once __DIR__ . '/../global/delete_knowledge_article.php';
+require_once __DIR__ . '/../global/load_knowledge_categories.php';
+require_once __DIR__ . '/../global/default_knowledge_categories_dataset.php';
+require_once __DIR__ . '/../global/add_knowledge_category.php';
+require_once __DIR__ . '/../global/update_knowledge_category.php';
+require_once __DIR__ . '/../global/delete_knowledge_category.php';
+require_once __DIR__ . '/../global/list_knowledge_categories.php';
 require_once __DIR__ . '/../pages/render_setup.php';
 require_once __DIR__ . '/../global/guard_asset.php';
 require_once __DIR__ . '/../global/load_asset_snapshots.php';
@@ -119,6 +130,26 @@ function fg_public_setup_controller(): void
         $featureRequests = fg_default_feature_requests_dataset();
     }
 
+    try {
+        $knowledgeBase = fg_load_knowledge_base();
+        if (!isset($knowledgeBase['records']) || !is_array($knowledgeBase['records'])) {
+            $knowledgeBase = fg_default_knowledge_base_dataset();
+        }
+    } catch (Throwable $exception) {
+        $errors[] = 'Unable to load knowledge base dataset: ' . $exception->getMessage();
+        $knowledgeBase = fg_default_knowledge_base_dataset();
+    }
+
+    try {
+        $knowledgeCategories = fg_load_knowledge_categories();
+        if (!isset($knowledgeCategories['records']) || !is_array($knowledgeCategories['records'])) {
+            $knowledgeCategories = fg_default_knowledge_categories_dataset();
+        }
+    } catch (Throwable $exception) {
+        $errors[] = 'Unable to load knowledge category dataset: ' . $exception->getMessage();
+        $knowledgeCategories = fg_default_knowledge_categories_dataset();
+    }
+
     $featureRequestStatusOptions = fg_get_setting('feature_request_statuses', ['open', 'researching', 'planned', 'in_progress', 'completed', 'declined']);
     if (!is_array($featureRequestStatusOptions) || empty($featureRequestStatusOptions)) {
         $featureRequestStatusOptions = ['open'];
@@ -149,6 +180,21 @@ function fg_public_setup_controller(): void
     $featureRequestPolicy = strtolower((string) fg_get_setting('feature_request_policy', 'members'));
     if ($featureRequestPolicy === 'enabled') {
         $featureRequestPolicy = 'members';
+    }
+
+    $knowledgeDefaultStatus = strtolower((string) fg_get_setting('knowledge_base_default_status', 'published'));
+    if (!in_array($knowledgeDefaultStatus, ['draft', 'scheduled', 'published', 'archived'], true)) {
+        $knowledgeDefaultStatus = 'published';
+    }
+
+    $knowledgeDefaultVisibility = strtolower((string) fg_get_setting('knowledge_base_visibility_policy', 'public'));
+    if (!in_array($knowledgeDefaultVisibility, ['public', 'members', 'private'], true)) {
+        $knowledgeDefaultVisibility = 'public';
+    }
+
+    $knowledgeDefaultCategoryId = (int) fg_get_setting('knowledge_base_default_category', 0);
+    if ($knowledgeDefaultCategoryId <= 0) {
+        $knowledgeDefaultCategoryId = null;
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -944,6 +990,157 @@ function fg_public_setup_controller(): void
             }
 
             $featureRequests = fg_load_feature_requests();
+        } elseif (in_array($action, ['create_knowledge_article', 'update_knowledge_article', 'delete_knowledge_article'], true)) {
+            try {
+                $knowledgeBase = fg_load_knowledge_base();
+                if (!isset($knowledgeBase['records']) || !is_array($knowledgeBase['records'])) {
+                    $knowledgeBase = fg_default_knowledge_base_dataset();
+                }
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to load knowledge base dataset: ' . $exception->getMessage();
+                $knowledgeBase = fg_default_knowledge_base_dataset();
+            }
+
+            if ($action === 'create_knowledge_article') {
+                try {
+                    fg_add_knowledge_article([
+                        'title' => $_POST['title'] ?? '',
+                        'summary' => $_POST['summary'] ?? '',
+                        'content' => $_POST['content'] ?? '',
+                        'slug' => $_POST['slug'] ?? '',
+                        'status' => $_POST['status'] ?? $knowledgeDefaultStatus,
+                        'visibility' => $_POST['visibility'] ?? $knowledgeDefaultVisibility,
+                        'template' => $_POST['template'] ?? 'article',
+                        'tags' => $_POST['tags'] ?? '',
+                        'attachments' => $_POST['attachments'] ?? '',
+                        'author_user_id' => $_POST['author_user_id'] ?? null,
+                        'category_id' => $_POST['category_id'] ?? null,
+                    ], [
+                        'performed_by' => $current['id'] ?? null,
+                        'trigger' => 'setup_ui',
+                        'default_category_id' => $knowledgeDefaultCategoryId,
+                    ]);
+                    $message = 'Knowledge base article created successfully.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            } elseif ($action === 'update_knowledge_article') {
+                $articleId = (int) ($_POST['knowledge_article_id'] ?? 0);
+                if ($articleId <= 0) {
+                    $errors[] = 'Unknown knowledge base article specified for update.';
+                } else {
+                    try {
+                        fg_update_knowledge_article($articleId, [
+                            'title' => $_POST['title'] ?? '',
+                            'summary' => $_POST['summary'] ?? '',
+                            'content' => $_POST['content'] ?? '',
+                            'slug' => $_POST['slug'] ?? '',
+                            'status' => $_POST['status'] ?? $knowledgeDefaultStatus,
+                            'visibility' => $_POST['visibility'] ?? $knowledgeDefaultVisibility,
+                            'template' => $_POST['template'] ?? 'article',
+                            'tags' => $_POST['tags'] ?? '',
+                            'attachments' => $_POST['attachments'] ?? '',
+                            'author_user_id' => $_POST['author_user_id'] ?? null,
+                            'category_id' => $_POST['category_id'] ?? null,
+                        ], [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_ui',
+                        ]);
+                        $message = 'Knowledge base article updated successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'delete_knowledge_article') {
+                $articleId = (int) ($_POST['knowledge_article_id'] ?? 0);
+                if ($articleId <= 0) {
+                    $errors[] = 'Unknown knowledge base article specified for deletion.';
+                } else {
+                    try {
+                        if (!fg_delete_knowledge_article($articleId, [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_ui',
+                        ])) {
+                            $errors[] = 'The requested knowledge base entry could not be removed.';
+                        } else {
+                            $message = 'Knowledge base article deleted successfully.';
+                        }
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            }
+
+            $knowledgeBase = fg_load_knowledge_base();
+        } elseif (in_array($action, ['create_knowledge_category', 'update_knowledge_category', 'delete_knowledge_category'], true)) {
+            try {
+                $knowledgeCategories = fg_load_knowledge_categories();
+                if (!isset($knowledgeCategories['records']) || !is_array($knowledgeCategories['records'])) {
+                    $knowledgeCategories = fg_default_knowledge_categories_dataset();
+                }
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to load knowledge category dataset: ' . $exception->getMessage();
+                $knowledgeCategories = fg_default_knowledge_categories_dataset();
+            }
+
+            if ($action === 'create_knowledge_category') {
+                try {
+                    fg_add_knowledge_category([
+                        'name' => $_POST['name'] ?? '',
+                        'slug' => $_POST['slug'] ?? '',
+                        'description' => $_POST['description'] ?? '',
+                        'visibility' => $_POST['visibility'] ?? 'public',
+                        'ordering' => $_POST['ordering'] ?? 0,
+                    ], [
+                        'performed_by' => $current['id'] ?? null,
+                        'trigger' => 'setup_ui',
+                    ]);
+                    $message = 'Knowledge base category created successfully.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            } elseif ($action === 'update_knowledge_category') {
+                $categoryId = (int) ($_POST['knowledge_category_id'] ?? 0);
+                if ($categoryId <= 0) {
+                    $errors[] = 'Unknown knowledge base category specified for update.';
+                } else {
+                    try {
+                        fg_update_knowledge_category($categoryId, [
+                            'name' => $_POST['name'] ?? '',
+                            'slug' => $_POST['slug'] ?? '',
+                            'description' => $_POST['description'] ?? '',
+                            'visibility' => $_POST['visibility'] ?? 'public',
+                            'ordering' => $_POST['ordering'] ?? 0,
+                        ], [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_ui',
+                        ]);
+                        $message = 'Knowledge base category updated successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'delete_knowledge_category') {
+                $categoryId = (int) ($_POST['knowledge_category_id'] ?? 0);
+                if ($categoryId <= 0) {
+                    $errors[] = 'Unknown knowledge base category specified for deletion.';
+                } else {
+                    try {
+                        if (!fg_delete_knowledge_category($categoryId, [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_ui',
+                        ])) {
+                            $errors[] = 'The requested category could not be removed.';
+                        } else {
+                            $message = 'Knowledge base category deleted successfully.';
+                        }
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            }
+
+            $knowledgeCategories = fg_load_knowledge_categories();
         } else {
             $asset = $_POST['asset'] ?? '';
             $configurations = fg_load_asset_configurations();
@@ -1300,6 +1497,11 @@ function fg_public_setup_controller(): void
         'project_status' => $projectStatus,
         'changelog' => $changelog,
         'feature_requests' => $featureRequests,
+        'knowledge_base' => $knowledgeBase,
+        'knowledge_categories' => $knowledgeCategories,
+        'knowledge_default_status' => $knowledgeDefaultStatus,
+        'knowledge_default_visibility' => $knowledgeDefaultVisibility,
+        'knowledge_default_category' => $knowledgeDefaultCategoryId,
         'feature_request_statuses' => $featureRequestStatusOptions,
         'feature_request_priorities' => $featureRequestPriorityOptions,
         'feature_request_policy' => $featureRequestPolicy,
