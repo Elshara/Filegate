@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<css>
+<style>
+<context>Default CSS Browser Styles</context>
+</style>
+<defaults>
+<default>a:link
+color: (internal value);
+  text-decoration: underline;
+  cursor: auto;</default>
+<default>a:visited
+color: (internal value);
+  text-decoration: underline;
+cursor: auto;</default>
+<default>a:link:active
+color: (internal value);</default>
+<default>a:visited:active
+color: (internal value);</default>
+<default>abbr
+display: block;</default>
+<default>address
+display: block;
+  font-style: italic;</default>
+<default>area
+display: none;</default>
+<default>article
+display: block; </default>
+<default>aside
+display: block; </default>
+<default>audio
+display: block;</default>
+<default>b
+font-weight: bold;</default>
+<default>base
+display: block;</default>
+<default>bdi
+display: block;</default>
+<default>bdo
+unicode-bidi: bidi-override;</default>
+<default>blockquote
+display: block;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  margin-left: 40px;
+  margin-right: 40px;</default>
+<default>body
+display: block;
+  margin: 8px;
+body:focus
+outline: none;</default>
+<default>br
+display: block;</default>
+<default>button
+display: block;</default>
+<default>canvas
+display: block;</default>
+<default>caption
+display: table-caption;
+  text-align: center;</default>
+<default>cite
+font-style: italic;</default>
+<default>code
+font-family: monospace;</default>
+<default>col
+display: table-column;</default>
+<default>colgroup
+display: table-column-group</default>
+<default>datalist
+display: none;</default>
+<default>dd
+display: block;
+  margin-left: 40px;</default>
+<default>del
+text-decoration: line-through;</default>
+<default>details
+display: block;</default>
+<default>dfn
+font-style: italic;</default>
+<default>dialog
+display: block;</default>
+<default>div
+display: block;</default>
+<default>dl
+display: block;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  margin-left: 0;
+  margin-right: 0;</default>
+<default>dt
+display: block;</default>
+<default>em
+font-style: italic;</default>
+<default>embed:focus
+outline: none;</default>
+<default>fieldset
+display: block;
+  margin-left: 2px;
+  margin-right: 2px;
+  padding-top: 0.35em;
+  padding-bottom: 0.625em;
+  padding-left: 0.75em;
+  padding-right: 0.75em;
+  border: 2px groove (internal value);</default>
+<default>figcaption
+display: block;</default>
+<default>figure
+display: block;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  margin-left: 40px;
+  margin-right: 40px;</default>
+<default>footer
+display: block;</default>
+<default>form
+display: block;
+  margin-top: 0em;</default>
+<default>h1
+display: block;
+  font-size: 2em;
+  margin-top: 0.67em;
+margin-bottom: 0.67em;
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: bold;</default>
+<default>h2
+display: block;
+  font-size: 1.5em;
+  margin-top: 0.83em;
+  margin-bottom: 0.83em;
+margin-left: 0;
+  margin-right: 0;
+  font-weight: bold;</default>
+<default>h3
+display: block;
+  font-size: 1.17em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  margin-left: 0;
+margin-right: 0;
+  font-weight: bold;</default>
+<default>h4
+display: block;
+  margin-top: 1.33em;
+  margin-bottom: 1.33em;
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: bold;</default>
+<default>h5
+display: block;
+  font-size: .83em;
+  margin-top: 1.67em;
+  margin-bottom: 1.67em;
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: bold;</default>
+<default>h6
+display: block;
+  font-size: .67em;
+  margin-top: 2.33em;
+  margin-bottom: 2.33em;
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: bold;</default>
+<default>head
+display: none;</default>
+<default>header
+display: block;</default>
+<default>hr
+display: block;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  margin-left: auto;
+margin-right: auto;
+  border-style: inset;
+  border-width: 1px;</default>
+<default>html
+display: block;</default>
+<default>html:focus
+outline: none;</default>
+<default>i
+font-style: italic;</default>
+<default>iframe:focus
+outline: none;</default>
+<default>iframe[seamless]
+display: block;</default>
+<default>img
+display: inline-block;</default>
+<default>input
+display: block;</default>
+<default>ins
+text-decoration: underline;</default>
+<default>kbd
+font-family: monospace;</default>
+<default>label
+cursor: default;</default>
+<default>legend
+display: block;
+  padding-left: 2px;
+  padding-right: 2px;
+  border: none;</default>
+<default>li
+display: list-item;</default>
+<default>link
+display: none;</default>
+<default>main
+display: block;</default>
+<default>map
+display: inline;</default>
+<default>mark
+background-color: yellow;
+  color: black;</default>
+<default>menu
+display: block;
+list-style-type: disc;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 40px;</default>
+<default>menuitem
+display: block;</default>
+<default>meta
+display: block;</default>
+<default>meter
+display: block;</default>
+<default>nav
+display: block;</default>
+<default>noscript
+display: none;</default>
+<default>object:focus
+outline: none;</default>
+<default>ol
+display: block;
+  list-style-type: decimal;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  margin-left: 0;
+margin-right: 0;
+  padding-left: 40px;</default>
+<default>optgroup
+display: block;</default>
+<default>option
+display: block;</default>
+<default>output
+display: inline;</default>
+<default>p
+display: block;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  margin-left: 0;
+  margin-right: 0;</default>
+<default>param
+display: none;</default>
+<default>picture
+display: block;</default>
+<default>pre
+display: block;
+  font-family: monospace;
+  white-space: pre;
+  margin: 1em 0;</default>
+<default>progress
+display: block;</default>
+<default>q
+display: inline;</default>
+<default>q::before
+content: open-quote;</default>
+<default>q::after
+content: close-quote;</default>
+<default>rp
+display: block;</default>
+<default>rt
+line-height: normal;</default>
+<default>ruby
+display: block;</default>
+<default>s
+text-decoration: line-through;</default>
+<default>samp
+font-family: monospace;</default>
+<default>script
+display: none;</default>
+<default>section
+display: block;</default>
+<default>select
+display: block;</default>
+<default>small
+font-size: smaller;</default>
+<default>source
+display: block;</default>
+<default>span
+display: block;</default>
+<default>strike
+text-decoration: line-through;</default>
+<default>strong
+font-weight: bold;</default>
+<default>style
+display: none;</default>
+<default>sub
+vertical-align: sub;
+  font-size: smaller;</default>
+<default>summary
+display: block;</default>
+<default>sup
+vertical-align: super;
+  font-size: smaller;</default>
+<default>table
+display: table;
+  border-collapse: separate;
+  border-spacing: 2px;
+  border-color: gray;</default>
+<default>tbody
+display: table-row-group;
+  vertical-align: middle;
+  border-color: inherit;</default>
+<default>td
+display: table-cell;
+  vertical-align: inherit;</default>
+<default>template
+display: block;</default>
+<default>textarea
+display: block;</default>
+<default>tfoot
+display: table-footer-group;
+  vertical-align: middle;
+  border-color: inherit;</default>
+<default>th
+display: table-cell;
+  vertical-align: inherit;
+  font-weight: bold;
+text-align: center;</default>
+<default>thead
+display: table-header-group;
+  vertical-align: middle;
+  border-color: inherit;</default>
+<default>time
+display: block;</default>
+<default>title
+display: none;</default>
+<default>tr
+display: table-row;
+  vertical-align: inherit;
+  border-color: inherit;</default>
+<default>track
+display: block;</default>
+<default>u
+text-decoration: underline;</default>
+<default>ul
+display: block;
+  list-style-type: disc;
+  margin-top: 1em;
+  margin-bottom: 1 em;
+  margin-left: 0;
+margin-right: 0;
+  padding-left: 40px;</default>
+<default>var
+font-style: italic;</default>
+<default>video
+display: block;</default>
+<default>wbr
+display: block;</default>
+</defaults>
+</css>
