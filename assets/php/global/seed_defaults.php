@@ -27,6 +27,9 @@ require_once __DIR__ . '/default_changelog_dataset.php';
 require_once __DIR__ . '/load_feature_requests.php';
 require_once __DIR__ . '/save_feature_requests.php';
 require_once __DIR__ . '/default_feature_requests_dataset.php';
+require_once __DIR__ . '/load_polls.php';
+require_once __DIR__ . '/save_polls.php';
+require_once __DIR__ . '/default_polls_dataset.php';
 require_once __DIR__ . '/load_knowledge_base.php';
 require_once __DIR__ . '/save_knowledge_base.php';
 require_once __DIR__ . '/default_knowledge_base_dataset.php';
@@ -79,6 +82,12 @@ function fg_seed_defaults(): void
     if (!isset($featureRequests['records']) || !is_array($featureRequests['records'])) {
         $featureRequests = fg_default_feature_requests_dataset();
         fg_save_feature_requests($featureRequests, 'Seed feature request dataset', ['trigger' => 'seed_defaults']);
+    }
+
+    $polls = fg_load_polls();
+    if (!isset($polls['records']) || !is_array($polls['records'])) {
+        $polls = fg_default_polls_dataset();
+        fg_save_polls($polls, 'Seed poll dataset', ['trigger' => 'seed_defaults']);
     }
 
     $knowledgeBase = fg_load_knowledge_base();

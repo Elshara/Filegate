@@ -5,6 +5,10 @@ require_once __DIR__ . '/get_asset_parameter_value.php';
 function fg_guard_asset(string $asset, array $context = []): void
 {
     $enabled = fg_get_asset_parameter_value($asset, 'enabled', $context);
+    if ($enabled === null) {
+        $enabled = true;
+    }
+
     if ($enabled) {
         return;
     }

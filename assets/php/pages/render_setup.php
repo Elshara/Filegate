@@ -39,6 +39,11 @@ function fg_render_setup_page(array $data = []): void
         $featureRequestDataset['records'] = [];
     }
     $featureRequestRecords = $featureRequestDataset['records'];
+    $pollDataset = $data['polls'] ?? ['records' => [], 'next_id' => 1];
+    if (!isset($pollDataset['records']) || !is_array($pollDataset['records'])) {
+        $pollDataset['records'] = [];
+    }
+    $pollRecords = $pollDataset['records'];
     $knowledgeDataset = $data['knowledge_base'] ?? ['records' => [], 'next_id' => 1];
     if (!isset($knowledgeDataset['records']) || !is_array($knowledgeDataset['records'])) {
         $knowledgeDataset['records'] = [];
@@ -85,6 +90,110 @@ function fg_render_setup_page(array $data = []): void
     if (!in_array($featureRequestDefaultVisibility, ['public', 'members', 'private'], true)) {
         $featureRequestDefaultVisibility = 'members';
     }
+
+    $pollStatusOptions = $data['poll_statuses'] ?? ['draft', 'open', 'closed'];
+    if (!is_array($pollStatusOptions) || empty($pollStatusOptions)) {
+        $pollStatusOptions = ['draft', 'open', 'closed'];
+    }
+    $pollStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $pollStatusOptions)));
+    if (empty($pollStatusOptions)) {
+        $pollStatusOptions = ['draft', 'open', 'closed'];
+    }
+
+    $pollStatusLabels = [];
+    $pollStatusCounts = [];
+    foreach ($pollStatusOptions as $statusOption) {
+        $pollStatusLabels[$statusOption] = ucwords(str_replace('_', ' ', $statusOption));
+        $pollStatusCounts[$statusOption] = 0;
+    }
+
+    $pollPolicySetting = (string) ($data['poll_policy'] ?? 'moderators');
+    $pollDefaultVisibility = strtolower((string) ($data['poll_default_visibility'] ?? 'members'));
+    if (!in_array($pollDefaultVisibility, ['public', 'members', 'private'], true)) {
+        $pollDefaultVisibility = 'members';
+    }
+    $pollAllowMultipleDefault = !empty($data['poll_allow_multiple_default']);
+
+    $pollEntries = [];
+    $pollTotalResponses = 0;
+    foreach ($pollRecords as $pollRecord) {
+        if (!is_array($pollRecord)) {
+            continue;
+        }
+        $status = strtolower((string) ($pollRecord['status'] ?? $pollStatusOptions[0]));
+        if (!isset($pollStatusLabels[$status])) {
+            $pollStatusLabels[$status] = ucwords(str_replace('_', ' ', $status));
+            $pollStatusCounts[$status] = 0;
+        }
+        $pollStatusCounts[$status] = ($pollStatusCounts[$status] ?? 0) + 1;
+
+        $options = $pollRecord['options'] ?? [];
+        if (!is_array($options)) {
+            $options = [];
+        }
+        $normalizedOptions = [];
+        foreach ($options as $option) {
+            if (!is_array($option)) {
+                continue;
+            }
+            $label = trim((string) ($option['label'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+            $voteCount = (int) ($option['vote_count'] ?? 0);
+            if ($voteCount < 0) {
+                $voteCount = 0;
+            }
+            $supporters = $option['supporters'] ?? [];
+            if (!is_array($supporters)) {
+                $supporters = [];
+            }
+            $supporters = array_values(array_unique(array_filter(array_map('intval', $supporters), static function ($value) {
+                return $value > 0;
+            })));
+            $normalizedOptions[] = [
+                'id' => (int) ($option['id'] ?? 0),
+                'label' => $label,
+                'vote_count' => $voteCount,
+                'supporters' => $supporters,
+                'supporter_count' => count($supporters),
+            ];
+        }
+        if (!empty($normalizedOptions)) {
+            usort($normalizedOptions, static function (array $a, array $b) {
+                return ($b['vote_count'] ?? 0) <=> ($a['vote_count'] ?? 0);
+            });
+        }
+        $totalResponses = (int) ($pollRecord['total_responses'] ?? 0);
+        if ($totalResponses < 0) {
+            $totalResponses = 0;
+        }
+        $totalVotes = (int) ($pollRecord['total_votes'] ?? 0);
+        if ($totalVotes < 0) {
+            $totalVotes = 0;
+        }
+        $pollTotalResponses += $totalResponses;
+
+        $entry = $pollRecord;
+        $entry['status'] = $status;
+        $entry['options'] = $normalizedOptions;
+        $entry['total_responses'] = $totalResponses;
+        $entry['total_votes'] = $totalVotes;
+        $entry['allow_multiple'] = !empty($pollRecord['allow_multiple']);
+        $entry['max_selections'] = (int) ($pollRecord['max_selections'] ?? ($entry['allow_multiple'] ? 0 : 1));
+        $pollEntries[] = $entry;
+    }
+
+    if (!empty($pollEntries)) {
+        usort($pollEntries, static function (array $a, array $b) {
+            $timeA = strtotime((string) ($a['updated_at'] ?? $a['created_at'] ?? 'now'));
+            $timeB = strtotime((string) ($b['updated_at'] ?? $b['created_at'] ?? 'now'));
+            return $timeB <=> $timeA;
+        });
+    }
+
     $knowledgeDefaultStatus = strtolower((string) ($data['knowledge_default_status'] ?? 'published'));
     if (!in_array($knowledgeDefaultStatus, ['draft', 'scheduled', 'published', 'archived'], true)) {
         $knowledgeDefaultStatus = 'published';
@@ -1487,6 +1596,198 @@ function fg_render_setup_page(array $data = []): void
     $body .= '</form>';
     $body .= '</article>';
 
+    $body .= '</section>';
+
+    $body .= '<section class="poll-manager">';
+    $body .= '<h2>Poll catalogue</h2>';
+    $body .= '<p>Create and moderate community polls without touching JSON files. Options, votes, and visibility are all stored locally.</p>';
+
+    if ($pollPolicySetting === 'disabled') {
+        $body .= '<p class="notice muted">Poll creation is disabled for members. Administrators can still seed and update polls here.</p>';
+    } elseif ($pollPolicySetting === 'admins') {
+        $body .= '<p class="notice muted">Only administrators can create new polls while this policy is active.</p>';
+    } elseif ($pollPolicySetting === 'moderators') {
+        $body .= '<p class="notice muted">Administrators and moderators can create polls. Members can only participate.</p>';
+    }
+
+    if (!empty($pollEntries)) {
+        $body .= '<div class="poll-summary">';
+        foreach ($pollStatusLabels as $statusKey => $label) {
+            $count = (int) ($pollStatusCounts[$statusKey] ?? 0);
+            $body .= '<article class="poll-chip poll-status-' . htmlspecialchars($statusKey) . '">';
+            $body .= '<h3>' . htmlspecialchars($label) . '</h3>';
+            $body .= '<p class="poll-total">' . $count . ' ' . ($count === 1 ? 'poll' : 'polls') . '</p>';
+            $body .= '</article>';
+        }
+        $body .= '<article class="poll-chip poll-responses">';
+        $body .= '<h3>Total responses</h3>';
+        $body .= '<p class="poll-total">' . $pollTotalResponses . '</p>';
+        $body .= '</article>';
+        $body .= '</div>';
+    } else {
+        $body .= '<p class="notice muted">No polls recorded yet. Use the form below to create the first one.</p>';
+    }
+
+    foreach ($pollEntries as $poll) {
+        $pollId = (int) ($poll['id'] ?? 0);
+        $question = trim((string) ($poll['question'] ?? 'Untitled poll'));
+        $description = trim((string) ($poll['description'] ?? ''));
+        $status = strtolower((string) ($poll['status'] ?? ($pollStatusOptions[0] ?? 'draft')));
+        $visibility = strtolower((string) ($poll['visibility'] ?? $pollDefaultVisibility));
+        if (!isset($visibilityOptions[$visibility])) {
+            $visibility = $pollDefaultVisibility;
+        }
+        $allowMultiple = !empty($poll['allow_multiple']);
+        $maxSelections = (int) ($poll['max_selections'] ?? ($allowMultiple ? 0 : 1));
+        if ($maxSelections < 0) {
+            $maxSelections = 0;
+        }
+        $totalResponses = (int) ($poll['total_responses'] ?? 0);
+        if ($totalResponses < 0) {
+            $totalResponses = 0;
+        }
+        $totalVotes = (int) ($poll['total_votes'] ?? 0);
+        if ($totalVotes < 0) {
+            $totalVotes = 0;
+        }
+        $options = $poll['options'] ?? [];
+        $optionsTextarea = [];
+        foreach ($options as $option) {
+            $optionsTextarea[] = $option['label'] ?? '';
+        }
+        $optionsTextareaValue = trim(implode("\n", $optionsTextarea));
+        $expiresAt = trim((string) ($poll['expires_at'] ?? ''));
+        $expiresAtValue = '';
+        $expiresAtLabel = '';
+        if ($expiresAt !== '') {
+            $timestamp = strtotime($expiresAt);
+            if ($timestamp !== false) {
+                $expiresAtValue = date('Y-m-d\TH:i', $timestamp);
+                $expiresAtLabel = date('M j, Y H:i', $timestamp);
+            }
+        }
+        $updatedAt = trim((string) ($poll['updated_at'] ?? $poll['created_at'] ?? ''));
+        $updatedAtLabel = '';
+        if ($updatedAt !== '') {
+            $updatedTimestamp = strtotime($updatedAt);
+            if ($updatedTimestamp !== false) {
+                $updatedAtLabel = date('M j, Y H:i', $updatedTimestamp);
+            }
+        }
+        $ownerRole = trim((string) ($poll['owner_role'] ?? ''));
+        $ownerUserId = $poll['owner_user_id'] ?? null;
+
+        $body .= '<article class="poll-admin-card" id="poll-' . $pollId . '">';
+        $body .= '<header class="poll-admin-header">';
+        $body .= '<h3>' . htmlspecialchars($question) . '</h3>';
+        $metaParts = [];
+        $metaParts[] = 'Status: ' . htmlspecialchars($pollStatusLabels[$status] ?? ucwords(str_replace('_', ' ', $status)));
+        $metaParts[] = 'Visibility: ' . htmlspecialchars($visibilityOptions[$visibility] ?? ucfirst($visibility));
+        $metaParts[] = $allowMultiple ? 'Multiple selections enabled' : 'Single selection';
+        $metaParts[] = 'Responses: ' . $totalResponses;
+        $metaParts[] = 'Votes: ' . $totalVotes;
+        $body .= '<p class="poll-meta">' . implode(' · ', $metaParts) . '</p>';
+        if ($expiresAtLabel !== '') {
+            $body .= '<p class="poll-meta-subtle">Closes ' . htmlspecialchars($expiresAtLabel) . '</p>';
+        }
+        if ($updatedAtLabel !== '') {
+            $body .= '<p class="poll-meta-subtle">Last updated ' . htmlspecialchars($updatedAtLabel) . '</p>';
+        }
+        $body .= '</header>';
+
+        if ($description !== '') {
+            $body .= '<p class="poll-description">' . htmlspecialchars($description) . '</p>';
+        }
+
+        if (!empty($options)) {
+            $body .= '<ul class="poll-option-list">';
+            foreach ($options as $option) {
+                $label = $option['label'] ?? '';
+                $voteCount = (int) ($option['vote_count'] ?? 0);
+                $supporterCount = (int) ($option['supporter_count'] ?? count($option['supporters'] ?? []));
+                $body .= '<li><span class="poll-option-label">' . htmlspecialchars($label) . '</span><span class="poll-option-count">' . $voteCount . ' ' . ($voteCount === 1 ? 'vote' : 'votes') . '</span>';
+                if ($supporterCount !== $voteCount) {
+                    $body .= '<span class="poll-option-supporters">' . $supporterCount . ' supporters</span>';
+                }
+                $body .= '</li>';
+            }
+            $body .= '</ul>';
+        }
+
+        $body .= '<form method="post" action="/setup.php" class="poll-form">';
+        $body .= '<input type="hidden" name="action" value="update_poll">';
+        $body .= '<input type="hidden" name="poll_id" value="' . $pollId . '">';
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Question</span><span class="field-control"><input type="text" name="question" value="' . htmlspecialchars($question) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+        foreach ($pollStatusLabels as $value => $label) {
+            $selected = $status === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+        foreach ($visibilityOptions as $value => $label) {
+            $selected = $visibility === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $checkedMultiple = $allowMultiple ? ' checked' : '';
+        $body .= '<label class="field checkbox-field"><input type="checkbox" name="allow_multiple" value="1"' . $checkedMultiple . '> Allow multiple selections</label>';
+        $body .= '<label class="field"><span class="field-label">Maximum selections</span><span class="field-control"><input type="number" name="max_selections" min="0" value="' . htmlspecialchars((string) $maxSelections) . '"></span><span class="field-description">Set to 0 for unlimited selections when multiple answers are allowed.</span></label>';
+        $body .= '</div>';
+        $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="2">' . htmlspecialchars($description) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Options</span><span class="field-control"><textarea name="options" rows="4" placeholder="One option per line">' . htmlspecialchars($optionsTextareaValue) . '</textarea></span></label>';
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Expires at</span><span class="field-control"><input type="datetime-local" name="expires_at" value="' . htmlspecialchars($expiresAtValue) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Owner role</span><span class="field-control"><input type="text" name="owner_role" value="' . htmlspecialchars($ownerRole) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Owner user ID</span><span class="field-control"><input type="number" name="owner_user_id" value="' . ($ownerUserId !== null ? (int) $ownerUserId : '') . '" min="0"></span></label>';
+        $body .= '</div>';
+        $body .= '<div class="action-row">';
+        $body .= '<button type="submit" class="button primary">Update poll</button>';
+        $body .= '</div>';
+        $body .= '</form>';
+        $body .= '<form method="post" action="/setup.php" class="inline-form poll-delete-form" onsubmit="return confirm(\'Delete this poll?\');">';
+        $body .= '<input type="hidden" name="action" value="delete_poll">';
+        $body .= '<input type="hidden" name="poll_id" value="' . $pollId . '">';
+        $body .= '<button type="submit" class="button danger">Delete poll</button>';
+        $body .= '</form>';
+        $body .= '</article>';
+    }
+
+    $body .= '<article class="poll-card poll-create">';
+    $body .= '<h3>Create poll</h3>';
+    $body .= '<form method="post" action="/setup.php" class="poll-form">';
+    $body .= '<input type="hidden" name="action" value="create_poll">';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Question</span><span class="field-control"><input type="text" name="question" required></span></label>';
+    $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+    foreach ($pollStatusLabels as $value => $label) {
+        $body .= '<option value="' . htmlspecialchars($value) . '">' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+    foreach ($visibilityOptions as $value => $label) {
+        $selected = $value === $pollDefaultVisibility ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $checkedDefaultMultiple = $pollAllowMultipleDefault ? ' checked' : '';
+    $body .= '<label class="field checkbox-field"><input type="checkbox" name="allow_multiple" value="1"' . $checkedDefaultMultiple . '> Allow multiple selections</label>';
+    $defaultMax = $pollAllowMultipleDefault ? 0 : 1;
+    $body .= '<label class="field"><span class="field-label">Maximum selections</span><span class="field-control"><input type="number" name="max_selections" min="0" value="' . $defaultMax . '"></span><span class="field-description">Set to 0 for unlimited selections when multiple answers are allowed.</span></label>';
+    $body .= '</div>';
+    $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="2"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Options</span><span class="field-control"><textarea name="options" rows="4" placeholder="First option\nSecond option"></textarea></span></label>';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Expires at</span><span class="field-control"><input type="datetime-local" name="expires_at"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Owner role</span><span class="field-control"><input type="text" name="owner_role" placeholder="admin"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Owner user ID</span><span class="field-control"><input type="number" name="owner_user_id" min="0"></span></label>';
+    $body .= '</div>';
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Create poll</button>';
+    $body .= '</div>';
+    $body .= '</form>';
+    $body .= '</article>';
     $body .= '</section>';
 
     $changelogList = [];

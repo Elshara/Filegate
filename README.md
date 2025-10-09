@@ -14,6 +14,7 @@ Filegate is a profile-centred social application designed for shared hosting. Ev
 - **Rich notifications** – Post activity queues email, browser, cookie, and file-cache notifications driven by JSON and XML templates with admin-controlled channels.
 - **Themeable interface** – Palette presets live in flat files so administrators and members can rebrand Filegate from the browser without touching CSS.
 - **Roadmap transparency** – A dedicated roadmap dataset tracks built, in-progress, and planned initiatives with browser-based management and feed summaries.
+- **Poll-driven engagement** – Community polls live in flat files with delegated creation policies, visibility defaults, and multi-select support that admins manage entirely from the setup dashboard.
 - **Self-hosted knowledge base** – Publish onboarding guides and reference articles locally so members can search, filter, and read without leaving Filegate.
 
 ## Directory layout
@@ -132,6 +133,19 @@ Snapshot storage honours the dataset manifest’s static/dynamic split and enfor
 The dataset manager works alongside the dataset viewer endpoint (`/dataset.php`), which still honours the manifest’s `expose_via_api` flag. Sensitive stores such as `users` remain blocked, while reference data (for example `html5_elements`) and operational metadata (`settings`) are available for quick inspection directly from the browser.
 
 The feed and composer use the same client runtime to fetch the HTML5 element reference on demand, provide live previews, and post likes asynchronously without full page reloads. All network calls terminate within the application—no remote APIs are required.
+
+## Polls
+
+Poll data lives in `assets/json/dynamic/polls.json`. Each record stores the question, description, status, visibility, whether multiple selections are allowed, a `max_selections` cap (with `0` representing unlimited picks for multi-select polls), option metadata (including supporter IDs and vote counts), owner role/user hints, timestamps, and optional expiry dates.
+
+Administrators manage polls from **Setup → Poll catalogue**, where they can:
+
+- inspect status totals, total response counts, and per-option vote/supporter breakdowns without touching JSON;
+- edit questions, descriptions, status, visibility, expiry, ownership, and selectable options directly in the browser;
+- toggle multi-select mode, enforce a maximum selection count, or close polls from the same form; and
+- delete or create polls through dedicated forms that automatically normalise option lists and seed IDs.
+
+Creation policies are delegated through the **Poll policy** setting (disabled, members, moderators, admins) alongside defaults for visibility and multi-select behaviour. Non-admins are blocked from accessing the setup dashboard, but the same flat-file dataset backs any future member-facing poll widgets. All saves are written via the poll helper functions in `assets/php/global`, so audit logging and dataset snapshots continue to track every change.
 
 ## Roadmap tracking
 

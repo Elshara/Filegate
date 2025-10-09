@@ -134,6 +134,62 @@
             ],
             "category": "feedback"
         },
+        "poll_policy": {
+            "label": "Poll Creation Policy",
+            "description": "Determines which roles can create new polls from the feed or composer.",
+            "value": "moderators",
+            "managed_by": "custom",
+            "allowed_roles": [
+                "admin",
+                "moderator"
+            ],
+            "category": "feedback"
+        },
+        "poll_default_visibility": {
+            "label": "Poll Default Visibility",
+            "description": "Sets the baseline visibility for new polls created through the interface.",
+            "value": "members",
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "feedback"
+        },
+        "poll_statuses": {
+            "label": "Poll Statuses",
+            "description": "Status options available when publishing or closing polls.",
+            "value": [
+                "draft",
+                "open",
+                "closed"
+            ],
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "feedback"
+        },
+        "poll_allow_multiple_default": {
+            "label": "Poll Multiple Selection Default",
+            "description": "Controls whether new polls allow multiple selections unless overridden.",
+            "value": false,
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "feedback"
+        },
+        "poll_feed_display_limit": {
+            "label": "Poll Feed Display Limit",
+            "description": "Maximum number of polls to surface on the home feed.",
+            "value": 3,
+            "managed_by": "custom",
+            "allowed_roles": [
+                "admin",
+                "moderator"
+            ],
+            "category": "feedback"
+        },
         "notification_channel_defaults": {
             "label": "Default Notification Channels",
             "description": "Channels queued when posts or settings trigger notifications.",

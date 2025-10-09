@@ -127,6 +127,12 @@
         "nature": "dynamic",
         "expose_via_api": false
     },
+    "polls": {
+        "label": "Polls",
+        "description": "Community polls with locally stored options, votes, and visibility rules.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
     "knowledge_categories": {
         "label": "Knowledge Categories",
         "description": "Category definitions that organise knowledge base articles for browsing and filtering.",

@@ -47,6 +47,11 @@ require_once __DIR__ . '/../global/default_feature_requests_dataset.php';
 require_once __DIR__ . '/../global/add_feature_request.php';
 require_once __DIR__ . '/../global/update_feature_request.php';
 require_once __DIR__ . '/../global/delete_feature_request.php';
+require_once __DIR__ . '/../global/load_polls.php';
+require_once __DIR__ . '/../global/default_polls_dataset.php';
+require_once __DIR__ . '/../global/add_poll.php';
+require_once __DIR__ . '/../global/update_poll.php';
+require_once __DIR__ . '/../global/delete_poll.php';
 require_once __DIR__ . '/../global/load_knowledge_base.php';
 require_once __DIR__ . '/../global/default_knowledge_base_dataset.php';
 require_once __DIR__ . '/../global/add_knowledge_article.php';
@@ -131,6 +136,16 @@ function fg_public_setup_controller(): void
     }
 
     try {
+        $polls = fg_load_polls();
+        if (!isset($polls['records']) || !is_array($polls['records'])) {
+            $polls = fg_default_polls_dataset();
+        }
+    } catch (Throwable $exception) {
+        $errors[] = 'Unable to load poll dataset: ' . $exception->getMessage();
+        $polls = fg_default_polls_dataset();
+    }
+
+    try {
         $knowledgeBase = fg_load_knowledge_base();
         if (!isset($knowledgeBase['records']) || !is_array($knowledgeBase['records'])) {
             $knowledgeBase = fg_default_knowledge_base_dataset();
@@ -181,6 +196,32 @@ function fg_public_setup_controller(): void
     if ($featureRequestPolicy === 'enabled') {
         $featureRequestPolicy = 'members';
     }
+
+    $pollStatusOptions = fg_get_setting('poll_statuses', ['draft', 'open', 'closed']);
+    if (!is_array($pollStatusOptions) || empty($pollStatusOptions)) {
+        $pollStatusOptions = ['draft', 'open', 'closed'];
+    }
+    $pollStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $pollStatusOptions)));
+    if (empty($pollStatusOptions)) {
+        $pollStatusOptions = ['draft', 'open', 'closed'];
+    }
+
+    $pollDefaultVisibility = strtolower((string) fg_get_setting('poll_default_visibility', 'members'));
+    if (!in_array($pollDefaultVisibility, ['public', 'members', 'private'], true)) {
+        $pollDefaultVisibility = 'members';
+    }
+
+    $pollPolicy = strtolower((string) fg_get_setting('poll_policy', 'moderators'));
+    if ($pollPolicy === 'enabled') {
+        $pollPolicy = 'members';
+    }
+    if (!in_array($pollPolicy, ['disabled', 'members', 'moderators', 'admins'], true)) {
+        $pollPolicy = 'moderators';
+    }
+
+    $pollAllowMultipleDefault = (bool) fg_get_setting('poll_allow_multiple_default', false);
 
     $knowledgeDefaultStatus = strtolower((string) fg_get_setting('knowledge_base_default_status', 'published'));
     if (!in_array($knowledgeDefaultStatus, ['draft', 'scheduled', 'published', 'archived'], true)) {
@@ -990,6 +1031,80 @@ function fg_public_setup_controller(): void
             }
 
             $featureRequests = fg_load_feature_requests();
+        } elseif (in_array($action, ['create_poll', 'update_poll', 'delete_poll'], true)) {
+            try {
+                $polls = fg_load_polls();
+                if (!isset($polls['records']) || !is_array($polls['records'])) {
+                    $polls = fg_default_polls_dataset();
+                }
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to load poll dataset: ' . $exception->getMessage();
+                $polls = fg_default_polls_dataset();
+            }
+
+            if ($action === 'create_poll') {
+                try {
+                    fg_add_poll([
+                        'question' => $_POST['question'] ?? '',
+                        'description' => $_POST['description'] ?? '',
+                        'status' => $_POST['status'] ?? ($pollStatusOptions[0] ?? 'draft'),
+                        'visibility' => $_POST['visibility'] ?? $pollDefaultVisibility,
+                        'allow_multiple' => isset($_POST['allow_multiple']),
+                        'max_selections' => $_POST['max_selections'] ?? ($pollAllowMultipleDefault ? 0 : 1),
+                        'options' => $_POST['options'] ?? '',
+                        'expires_at' => $_POST['expires_at'] ?? '',
+                        'owner_role' => $_POST['owner_role'] ?? '',
+                        'owner_user_id' => $_POST['owner_user_id'] ?? null,
+                        'performed_by' => $current['id'] ?? null,
+                        'trigger' => 'setup_ui',
+                    ]);
+                    $message = 'Poll created successfully.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            } elseif ($action === 'update_poll') {
+                $pollId = (int) ($_POST['poll_id'] ?? 0);
+                if ($pollId <= 0) {
+                    $errors[] = 'Unknown poll specified for update.';
+                } else {
+                    try {
+                        fg_update_poll($pollId, [
+                            'question' => $_POST['question'] ?? '',
+                            'description' => $_POST['description'] ?? '',
+                            'status' => $_POST['status'] ?? ($pollStatusOptions[0] ?? 'draft'),
+                            'visibility' => $_POST['visibility'] ?? $pollDefaultVisibility,
+                            'allow_multiple' => isset($_POST['allow_multiple']),
+                            'max_selections' => $_POST['max_selections'] ?? '',
+                            'options' => $_POST['options'] ?? '',
+                            'expires_at' => $_POST['expires_at'] ?? '',
+                            'owner_role' => $_POST['owner_role'] ?? '',
+                            'owner_user_id' => $_POST['owner_user_id'] ?? null,
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_ui',
+                        ]);
+                        $message = 'Poll updated successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'delete_poll') {
+                $pollId = (int) ($_POST['poll_id'] ?? 0);
+                if ($pollId <= 0) {
+                    $errors[] = 'Unknown poll specified for deletion.';
+                } else {
+                    try {
+                        fg_delete_poll($pollId, [
+                            'trigger' => 'setup_ui',
+                            'performed_by' => $current['id'] ?? null,
+                        ]);
+                        $message = 'Poll deleted successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            }
+
+            $polls = fg_load_polls();
         } elseif (in_array($action, ['create_knowledge_article', 'update_knowledge_article', 'delete_knowledge_article'], true)) {
             try {
                 $knowledgeBase = fg_load_knowledge_base();
@@ -1497,6 +1612,11 @@ function fg_public_setup_controller(): void
         'project_status' => $projectStatus,
         'changelog' => $changelog,
         'feature_requests' => $featureRequests,
+        'polls' => $polls,
+        'poll_statuses' => $pollStatusOptions,
+        'poll_policy' => $pollPolicy,
+        'poll_default_visibility' => $pollDefaultVisibility,
+        'poll_allow_multiple_default' => $pollAllowMultipleDefault,
         'knowledge_base' => $knowledgeBase,
         'knowledge_categories' => $knowledgeCategories,
         'knowledge_default_status' => $knowledgeDefaultStatus,
