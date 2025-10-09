@@ -302,7 +302,109 @@
             "critical"
         ],
         "bug_report_default_owner_role": "moderator",
-        "bug_report_feed_display_limit": 5
+        "bug_report_feed_display_limit": 5,
+        "automation_statuses": {
+            "label": "Automation Status Options",
+            "description": "Status values available when enabling or pausing automation rules.",
+            "value": [
+                "enabled",
+                "paused",
+                "disabled"
+            ],
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "automation"
+        },
+        "automation_default_status": {
+            "label": "Automation Default Status",
+            "description": "Status applied to new automation rules created through the interface.",
+            "value": "enabled",
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "automation"
+        },
+        "automation_triggers": {
+            "label": "Automation Triggers",
+            "description": "Event identifiers that automations can listen for.",
+            "value": [
+                "user_registered",
+                "post_published",
+                "feature_request_submitted",
+                "bug_report_created"
+            ],
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "automation"
+        },
+        "automation_action_types": {
+            "label": "Automation Action Types",
+            "description": "Allowed action handlers that run when an automation fires.",
+            "value": [
+                "enqueue_notification",
+                "record_activity",
+                "update_dataset"
+            ],
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "automation"
+        },
+        "automation_condition_types": {
+            "label": "Automation Condition Types",
+            "description": "Condition handlers that can filter when an automation executes.",
+            "value": [
+                "custom",
+                "role_equals",
+                "dataset_threshold",
+                "time_window"
+            ],
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "automation"
+        },
+        "automation_priority_options": {
+            "label": "Automation Priority Options",
+            "description": "Priority labels used when triaging automation rules.",
+            "value": [
+                "low",
+                "medium",
+                "high"
+            ],
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "automation"
+        },
+        "automation_default_owner_role": {
+            "label": "Automation Default Owner Role",
+            "description": "Role automatically assigned when no specific automation owner is provided.",
+            "value": "admin",
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "automation"
+        },
+        "automation_feed_display_limit": {
+            "label": "Automation Feed Display Limit",
+            "description": "Maximum number of automation rules to surface on the member feed.",
+            "value": 3,
+            "managed_by": "admins",
+            "allowed_roles": [
+                "admin"
+            ],
+            "category": "automation"
+        }
     },
     "role_definitions": {
         "admin": "Full access to all datasets and settings delegation.",

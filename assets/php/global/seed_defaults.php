@@ -10,6 +10,8 @@ require_once __DIR__ . '/load_uploads.php';
 require_once __DIR__ . '/save_uploads.php';
 require_once __DIR__ . '/load_notifications.php';
 require_once __DIR__ . '/save_notifications.php';
+require_once __DIR__ . '/load_automations.php';
+require_once __DIR__ . '/save_automations.php';
 require_once __DIR__ . '/load_themes.php';
 require_once __DIR__ . '/save_themes.php';
 require_once __DIR__ . '/dataset_path.php';
@@ -48,6 +50,7 @@ require_once __DIR__ . '/default_activity_log_dataset.php';
 require_once __DIR__ . '/load_translations.php';
 require_once __DIR__ . '/save_translations.php';
 require_once __DIR__ . '/default_translations_dataset.php';
+require_once __DIR__ . '/default_automations_dataset.php';
 
 function fg_seed_defaults(): void
 {
@@ -125,6 +128,19 @@ function fg_seed_defaults(): void
     }
     if (!file_exists(fg_dataset_path('notifications'))) {
         fg_save_notifications($notifications);
+    }
+
+    try {
+        $automations = fg_load_automations();
+        if (!isset($automations['records']) || !is_array($automations['records'])) {
+            $automations = fg_default_automations_dataset();
+        }
+    } catch (Throwable $exception) {
+        $automations = fg_default_automations_dataset();
+    }
+
+    if (!file_exists(fg_dataset_path('automations'))) {
+        fg_save_automations($automations, 'Seed automation dataset', ['trigger' => 'seed_defaults']);
     }
 
     $settings = fg_load_settings();

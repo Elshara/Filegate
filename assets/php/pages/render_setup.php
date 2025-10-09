@@ -49,6 +49,11 @@ function fg_render_setup_page(array $data = []): void
         $pollDataset['records'] = [];
     }
     $pollRecords = $pollDataset['records'];
+    $automationDataset = $data['automations'] ?? ['records' => [], 'next_id' => 1];
+    if (!isset($automationDataset['records']) || !is_array($automationDataset['records'])) {
+        $automationDataset['records'] = [];
+    }
+    $automationRecords = $automationDataset['records'];
     $knowledgeDataset = $data['knowledge_base'] ?? ['records' => [], 'next_id' => 1];
     if (!isset($knowledgeDataset['records']) || !is_array($knowledgeDataset['records'])) {
         $knowledgeDataset['records'] = [];
@@ -68,6 +73,220 @@ function fg_render_setup_page(array $data = []): void
                 return strcmp(strtolower((string) ($a['name'] ?? '')), strtolower((string) ($b['name'] ?? '')));
             }
             return $orderA <=> $orderB;
+        });
+    }
+    $automationStatusOptions = $data['automation_statuses'] ?? ['enabled', 'paused', 'disabled'];
+    if (!is_array($automationStatusOptions) || empty($automationStatusOptions)) {
+        $automationStatusOptions = ['enabled', 'paused', 'disabled'];
+    }
+    $automationStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationStatusOptions)));
+    if (empty($automationStatusOptions)) {
+        $automationStatusOptions = ['enabled'];
+    }
+    $automationDefaultStatus = strtolower((string) ($data['automation_default_status'] ?? $automationStatusOptions[0]));
+    if (!in_array($automationDefaultStatus, $automationStatusOptions, true)) {
+        $automationDefaultStatus = $automationStatusOptions[0];
+    }
+    $automationStatusLabels = [];
+    foreach ($automationStatusOptions as $statusValue) {
+        $automationStatusLabels[$statusValue] = ucwords(str_replace('_', ' ', $statusValue));
+    }
+
+    $automationTriggerOptions = $data['automation_triggers'] ?? ['user_registered', 'post_published', 'feature_request_submitted', 'bug_report_created'];
+    if (!is_array($automationTriggerOptions) || empty($automationTriggerOptions)) {
+        $automationTriggerOptions = ['user_registered'];
+    }
+    $automationTriggerOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationTriggerOptions)));
+    if (empty($automationTriggerOptions)) {
+        $automationTriggerOptions = ['user_registered'];
+    }
+    $automationTriggerLabels = [];
+    foreach ($automationTriggerOptions as $triggerValue) {
+        $automationTriggerLabels[$triggerValue] = ucwords(str_replace('_', ' ', $triggerValue));
+    }
+
+    $automationActionTypes = $data['automation_action_types'] ?? ['enqueue_notification', 'record_activity', 'update_dataset'];
+    if (!is_array($automationActionTypes) || empty($automationActionTypes)) {
+        $automationActionTypes = ['enqueue_notification'];
+    }
+    $automationActionTypes = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationActionTypes)));
+    if (empty($automationActionTypes)) {
+        $automationActionTypes = ['enqueue_notification'];
+    }
+
+    $automationConditionTypes = $data['automation_condition_types'] ?? ['custom', 'role_equals', 'dataset_threshold', 'time_window'];
+    if (!is_array($automationConditionTypes) || empty($automationConditionTypes)) {
+        $automationConditionTypes = ['custom'];
+    }
+    $automationConditionTypes = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationConditionTypes)));
+    if (empty($automationConditionTypes)) {
+        $automationConditionTypes = ['custom'];
+    }
+
+    $automationPriorityOptions = $data['automation_priority_options'] ?? ['low', 'medium', 'high'];
+    if (!is_array($automationPriorityOptions) || empty($automationPriorityOptions)) {
+        $automationPriorityOptions = ['low', 'medium', 'high'];
+    }
+    $automationPriorityOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationPriorityOptions)));
+    if (empty($automationPriorityOptions)) {
+        $automationPriorityOptions = ['medium'];
+    }
+    $automationPriorityLabels = [];
+    foreach ($automationPriorityOptions as $priorityValue) {
+        $automationPriorityLabels[$priorityValue] = ucwords(str_replace('_', ' ', $priorityValue));
+    }
+
+    $automationStatusClass = static function (string $value): string {
+        $slug = strtolower($value);
+        $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+        if ($slug === null) {
+            $slug = '';
+        }
+        $slug = trim($slug, '-');
+        return $slug === '' ? 'unknown' : $slug;
+    };
+
+    $automationDefaultOwnerRole = trim((string) ($data['automation_default_owner_role'] ?? 'admin'));
+    if ($automationDefaultOwnerRole === '') {
+        $automationDefaultOwnerRole = 'admin';
+    }
+
+    $formatAutomationLines = static function (array $entries) {
+        $lines = [];
+        foreach ($entries as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+            $type = strtolower(trim((string) ($entry['type'] ?? '')));
+            if ($type === '') {
+                $type = 'custom';
+            }
+            $options = $entry['options'] ?? [];
+            $pairs = [];
+            if (is_array($options)) {
+                foreach ($options as $key => $value) {
+                    if ($value === '' || $value === null) {
+                        continue;
+                    }
+                    if (is_array($value)) {
+                        $pairs[] = $key . '=' . json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                    } else {
+                        $pairs[] = $key . '=' . (string) $value;
+                    }
+                }
+            }
+            $line = $type;
+            if (!empty($pairs)) {
+                $line .= '|' . implode(', ', $pairs);
+            }
+            $lines[] = $line;
+        }
+
+        return implode("\n", $lines);
+    };
+
+    $describeAutomationRule = static function (array $entry) {
+        $type = strtolower(trim((string) ($entry['type'] ?? 'custom')));
+        $label = ucwords(str_replace('_', ' ', $type));
+        $options = $entry['options'] ?? [];
+        if (!is_array($options) || empty($options)) {
+            return $label;
+        }
+        $pairs = [];
+        foreach ($options as $key => $value) {
+            if (is_array($value)) {
+                $pairs[] = htmlspecialchars($key) . ': ' . htmlspecialchars(json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            } else {
+                $pairs[] = htmlspecialchars((string) $key) . ': ' . htmlspecialchars((string) $value);
+            }
+        }
+        return $label . ' (' . implode(', ', $pairs) . ')';
+    };
+
+    $automationStatusRank = [];
+    foreach ($automationStatusOptions as $index => $value) {
+        $automationStatusRank[$value] = $index;
+    }
+
+    $automationEntries = [];
+    $automationStatusCounts = [];
+    $automationTotalRuns = 0;
+    $automationActiveCount = 0;
+
+    foreach ($automationRecords as $record) {
+        if (!is_array($record)) {
+            continue;
+        }
+
+        $status = strtolower((string) ($record['status'] ?? $automationDefaultStatus));
+        if (!in_array($status, $automationStatusOptions, true)) {
+            $status = $automationDefaultStatus;
+        }
+        $automationStatusCounts[$status] = ($automationStatusCounts[$status] ?? 0) + 1;
+        if ($status === 'enabled') {
+            $automationActiveCount++;
+        }
+
+        $runCount = (int) ($record['run_count'] ?? 0);
+        if ($runCount < 0) {
+            $runCount = 0;
+        }
+        $automationTotalRuns += $runCount;
+
+        $conditions = $record['conditions'] ?? [];
+        if (!is_array($conditions)) {
+            $conditions = [];
+        }
+        $actions = $record['actions'] ?? [];
+        if (!is_array($actions)) {
+            $actions = [];
+        }
+
+        $conditionsList = [];
+        foreach ($conditions as $condition) {
+            if (is_array($condition)) {
+                $conditionsList[] = $describeAutomationRule($condition);
+            }
+        }
+
+        $actionsList = [];
+        foreach ($actions as $action) {
+            if (is_array($action)) {
+                $actionsList[] = $describeAutomationRule($action);
+            }
+        }
+
+        $automationEntries[] = array_merge($record, [
+            'status' => $status,
+            'run_count' => $runCount,
+            'conditions_lines' => $formatAutomationLines($conditions),
+            'actions_lines' => $formatAutomationLines($actions),
+            'conditions_list' => $conditionsList,
+            'actions_list' => $actionsList,
+        ]);
+    }
+
+    if (!empty($automationEntries)) {
+        usort($automationEntries, static function (array $a, array $b) use ($automationStatusRank) {
+            $rankA = $automationStatusRank[$a['status'] ?? ''] ?? PHP_INT_MAX;
+            $rankB = $automationStatusRank[$b['status'] ?? ''] ?? PHP_INT_MAX;
+            if ($rankA !== $rankB) {
+                return $rankA <=> $rankB;
+            }
+
+            $timeA = strtotime((string) ($a['updated_at'] ?? $a['created_at'] ?? 'now'));
+            $timeB = strtotime((string) ($b['updated_at'] ?? $b['created_at'] ?? 'now'));
+            return $timeB <=> $timeA;
         });
     }
     $featureRequestStatusOptions = $data['feature_request_statuses'] ?? ['open', 'researching', 'planned', 'in_progress', 'completed', 'declined'];
@@ -2199,6 +2418,350 @@ function fg_render_setup_page(array $data = []): void
     $body .= '</div>';
     $body .= '</form>';
     $body .= '</article>';
+    $body .= '</section>';
+
+    $body .= '<section class="automation-manager">';
+    $body .= '<h2>Automation rules</h2>';
+    $body .= '<p>Define local-first workflows that react to Filegate events without relying on remote services.</p>';
+
+    if (!empty($automationStatusLabels) || !empty($automationTriggerLabels) || !empty($automationConditionTypes) || !empty($automationActionTypes)) {
+        $body .= '<details class="automation-legend" open>';
+        $body .= '<summary>Automation reference guide</summary>';
+        $body .= '<div class="automation-legend-grid">';
+
+        if (!empty($automationStatusLabels)) {
+            $body .= '<section class="automation-legend-column">';
+            $body .= '<h3>Status options</h3>';
+            $body .= '<ul>';
+            foreach ($automationStatusLabels as $statusKey => $label) {
+                $body .= '<li><code>' . htmlspecialchars((string) $statusKey) . '</code> – ' . htmlspecialchars($label) . '</li>';
+            }
+            $body .= '</ul>';
+            $body .= '</section>';
+        }
+
+        if (!empty($automationTriggerLabels)) {
+            $body .= '<section class="automation-legend-column">';
+            $body .= '<h3>Triggers</h3>';
+            $body .= '<ul>';
+            foreach ($automationTriggerLabels as $triggerKey => $triggerLabel) {
+                $body .= '<li><code>' . htmlspecialchars((string) $triggerKey) . '</code> – ' . htmlspecialchars($triggerLabel) . '</li>';
+            }
+            $body .= '</ul>';
+            $body .= '</section>';
+        }
+
+        if (!empty($automationConditionTypes)) {
+            $body .= '<section class="automation-legend-column">';
+            $body .= '<h3>Condition types</h3>';
+            $body .= '<ul>';
+            foreach ($automationConditionTypes as $conditionType) {
+                $body .= '<li><code>' . htmlspecialchars((string) $conditionType) . '</code> – ' . htmlspecialchars(ucwords(str_replace('_', ' ', (string) $conditionType))) . '</li>';
+            }
+            $body .= '</ul>';
+            $body .= '</section>';
+        }
+
+        if (!empty($automationActionTypes)) {
+            $body .= '<section class="automation-legend-column">';
+            $body .= '<h3>Action types</h3>';
+            $body .= '<ul>';
+            foreach ($automationActionTypes as $actionType) {
+                $body .= '<li><code>' . htmlspecialchars((string) $actionType) . '</code> – ' . htmlspecialchars(ucwords(str_replace('_', ' ', (string) $actionType))) . '</li>';
+            }
+            $body .= '</ul>';
+            $body .= '</section>';
+        }
+
+        $body .= '</div>';
+        $body .= '<p class="automation-legend-note">Format each rule as <code>type|key=value</code>; multiple key-value pairs can be separated with commas.</p>';
+        $body .= '</details>';
+    }
+
+    if (!empty($automationEntries)) {
+        $body .= '<div class="automation-summary">';
+        foreach ($automationStatusLabels as $statusKey => $label) {
+            $count = (int) ($automationStatusCounts[$statusKey] ?? 0);
+            $statusClass = $automationStatusClass((string) $statusKey);
+            $body .= '<article class="automation-chip automation-status-' . htmlspecialchars($statusClass) . '">';
+            $body .= '<h3>' . htmlspecialchars($label) . '</h3>';
+            $body .= '<p class="automation-total">' . $count . ' ' . ($count === 1 ? 'rule' : 'rules') . '</p>';
+            $body .= '</article>';
+        }
+        $body .= '<article class="automation-chip automation-active">';
+        $body .= '<h3>Active</h3>';
+        $body .= '<p class="automation-total">' . $automationActiveCount . '</p>';
+        $body .= '</article>';
+        $body .= '<article class="automation-chip automation-run-metric">';
+        $body .= '<h3>Total runs</h3>';
+        $body .= '<p class="automation-total">' . $automationTotalRuns . '</p>';
+        $body .= '</article>';
+        $body .= '</div>';
+    } else {
+        $body .= '<p class="notice muted">No automations recorded yet. Use the form below to generate your first rule.</p>';
+    }
+
+    $conditionTypeSummary = implode(', ', array_map('strval', $automationConditionTypes));
+    $actionTypeSummary = implode(', ', array_map('strval', $automationActionTypes));
+
+    foreach ($automationEntries as $automation) {
+        $automationId = (int) ($automation['id'] ?? 0);
+        $name = trim((string) ($automation['name'] ?? 'Untitled automation'));
+        $description = trim((string) ($automation['description'] ?? ''));
+        $status = (string) ($automation['status'] ?? $automationDefaultStatus);
+        $statusLabel = $automationStatusLabels[$status] ?? ucwords(str_replace('_', ' ', $status));
+        $statusClass = $automationStatusClass($status);
+        $trigger = strtolower((string) ($automation['trigger'] ?? ($automationTriggerOptions[0] ?? 'user_registered')));
+        if (!isset($automationTriggerLabels[$trigger])) {
+            $trigger = $automationTriggerOptions[0] ?? 'user_registered';
+        }
+        $priority = strtolower((string) ($automation['priority'] ?? ($automationPriorityOptions[0] ?? 'medium')));
+        if (!isset($automationPriorityLabels[$priority])) {
+            $priority = $automationPriorityOptions[0] ?? 'medium';
+        }
+        $priorityLabel = $automationPriorityLabels[$priority] ?? ucwords(str_replace('_', ' ', $priority));
+        $runCount = (int) ($automation['run_count'] ?? 0);
+        if ($runCount < 0) {
+            $runCount = 0;
+        }
+        $runLimit = $automation['run_limit'] ?? null;
+        $runLimitValue = $runLimit === null ? '' : (int) $runLimit;
+        $lastRunAt = trim((string) ($automation['last_run_at'] ?? ''));
+        $lastRunLabel = '';
+        if ($lastRunAt !== '') {
+            $lastRunTimestamp = strtotime($lastRunAt);
+            if ($lastRunTimestamp !== false) {
+                $lastRunLabel = date('M j, Y H:i', $lastRunTimestamp);
+            }
+        }
+        $tags = $automation['tags'] ?? [];
+        if (!is_array($tags)) {
+            $tags = [];
+        }
+        $tagsValue = implode(', ', array_map('strval', $tags));
+        $tagList = array_values(array_filter(array_map('strval', $tags), static function ($value) {
+            return trim($value) !== '';
+        }));
+        $ownerRole = trim((string) ($automation['owner_role'] ?? ''));
+        $ownerUserId = $automation['owner_user_id'] ?? null;
+        $conditionsLines = $automation['conditions_lines'] ?? '';
+        $actionsLines = $automation['actions_lines'] ?? '';
+        $conditionsList = $automation['conditions_list'] ?? [];
+        $actionsList = $automation['actions_list'] ?? [];
+        $updatedAt = trim((string) ($automation['updated_at'] ?? $automation['created_at'] ?? ''));
+        $updatedLabel = '';
+        if ($updatedAt !== '') {
+            $updatedTimestamp = strtotime($updatedAt);
+            if ($updatedTimestamp !== false) {
+                $updatedLabel = date('M j, Y H:i', $updatedTimestamp);
+            }
+        }
+
+        $body .= '<article class="automation-card automation-status-' . htmlspecialchars($statusClass) . '" id="automation-' . $automationId . '">';
+        $body .= '<header class="automation-card-header">';
+        $body .= '<div class="automation-card-title">';
+        $body .= '<h3>' . htmlspecialchars($name) . '</h3>';
+        $body .= '<span class="automation-status-pill">' . htmlspecialchars($statusLabel) . '</span>';
+        $body .= '</div>';
+        $metaParts = [];
+        $metaParts[] = 'Status: ' . htmlspecialchars($statusLabel);
+        $metaParts[] = 'Trigger: ' . htmlspecialchars($automationTriggerLabels[$trigger] ?? ucwords(str_replace('_', ' ', $trigger)));
+        $metaParts[] = 'Priority: ' . htmlspecialchars($priorityLabel);
+        $metaParts[] = 'Runs: ' . $runCount;
+        if ($runLimitValue !== '') {
+            $metaParts[] = 'Limit: ' . $runLimitValue;
+        }
+        if ($lastRunLabel !== '') {
+            $metaParts[] = 'Last run ' . htmlspecialchars($lastRunLabel);
+        }
+        $body .= '<p class="automation-meta">' . implode(' · ', $metaParts) . '</p>';
+        if ($updatedLabel !== '') {
+            $body .= '<p class="automation-meta-subtle">Updated ' . htmlspecialchars($updatedLabel) . '</p>';
+        }
+        $body .= '<p class="automation-meta-subtle">Automation #' . $automationId . '</p>';
+        if ($description !== '') {
+            $body .= '<p class="automation-description">' . htmlspecialchars($description) . '</p>';
+        }
+        if (!empty($tagList)) {
+            $body .= '<ul class="automation-tag-list">';
+            foreach ($tagList as $tag) {
+                $body .= '<li><span>' . htmlspecialchars($tag) . '</span></li>';
+            }
+            $body .= '</ul>';
+        }
+        $body .= '</header>';
+
+        $body .= '<div class="automation-details">';
+        $body .= '<div class="automation-column">';
+        $body .= '<h4>Conditions</h4>';
+        if (!empty($conditionsList)) {
+            $body .= '<ul class="automation-rule-list">';
+            foreach ($conditionsList as $item) {
+                $body .= '<li>' . $item . '</li>';
+            }
+            $body .= '</ul>';
+        } else {
+            $body .= '<p class="automation-empty-rules">Runs for every matching trigger.</p>';
+        }
+        $body .= '</div>';
+        $body .= '<div class="automation-column">';
+        $body .= '<h4>Actions</h4>';
+        if (!empty($actionsList)) {
+            $body .= '<ul class="automation-rule-list">';
+            foreach ($actionsList as $item) {
+                $body .= '<li>' . $item . '</li>';
+            }
+            $body .= '</ul>';
+        } else {
+            $body .= '<p class="automation-empty-rules">No actions parsed.</p>';
+        }
+        $body .= '</div>';
+        $body .= '</div>';
+
+        $body .= '<form method="post" action="/setup.php" class="automation-form">';
+        $body .= '<input type="hidden" name="action" value="update_automation">';
+        $body .= '<input type="hidden" name="automation_id" value="' . $automationId . '">';
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Name</span><span class="field-control"><input type="text" name="name" value="' . htmlspecialchars($name) . '" required></span></label>';
+        $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+        foreach ($automationStatusLabels as $value => $label) {
+            $selected = $status === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Trigger</span><span class="field-control"><select name="trigger">';
+        foreach ($automationTriggerLabels as $value => $label) {
+            $selected = $trigger === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Priority</span><span class="field-control"><select name="priority">';
+        foreach ($automationPriorityLabels as $value => $label) {
+            $selected = $priority === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '</div>';
+
+        $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="2">' . htmlspecialchars($description) . '</textarea></span></label>';
+
+        $body .= '<details class="automation-advanced">';
+        $body .= '<summary>Advanced controls</summary>';
+        $body .= '<div class="field-grid automation-advanced-grid">';
+        $body .= '<label class="field"><span class="field-label">Run limit</span><span class="field-control"><input type="number" name="run_limit" min="0" value="' . htmlspecialchars((string) $runLimitValue) . '"></span><span class="field-description">Leave blank for unlimited runs.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Run count</span><span class="field-control"><input type="number" name="run_count" min="0" value="' . $runCount . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Last run timestamp</span><span class="field-control"><input type="text" name="last_run_at" value="' . htmlspecialchars($lastRunAt) . '" placeholder="2024-01-01T00:00:00+00:00"></span></label>';
+        $body .= '</div>';
+
+        $body .= '<div class="field-grid automation-advanced-grid">';
+        $body .= '<label class="field"><span class="field-label">Owner role</span><span class="field-control"><select name="owner_role">';
+        $body .= '<option value="">Unassigned</option>';
+        foreach ($roles as $roleKey => $roleDescription) {
+            $roleValue = (string) $roleKey;
+            $selected = $ownerRole !== '' && $ownerRole === $roleValue ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($roleValue) . '"' . $selected . '>' . htmlspecialchars(ucfirst($roleValue)) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Owner profile</span><span class="field-control"><select name="owner_user_id">';
+        $body .= '<option value="">Unassigned</option>';
+        foreach ($users as $user) {
+            $userId = (int) ($user['id'] ?? 0);
+            if ($userId <= 0) {
+                continue;
+            }
+            $username = $user['username'] ?? ('User #' . $userId);
+            $selected = ($ownerUserId !== null && (int) $ownerUserId === $userId) ? ' selected' : '';
+            $body .= '<option value="' . $userId . '"' . $selected . '>' . htmlspecialchars($username) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '</div>';
+        $body .= '</details>';
+
+        $body .= '<label class="field"><span class="field-label">Tags</span><span class="field-control"><input type="text" name="tags" value="' . htmlspecialchars($tagsValue) . '" placeholder="onboarding, welcome"></span></label>';
+
+        $body .= '<label class="field"><span class="field-label">Conditions</span><span class="field-control"><textarea name="conditions" rows="3" placeholder="role_equals|role=member">' . htmlspecialchars($conditionsLines) . '</textarea></span><span class="field-description">One rule per line. Allowed types: ' . htmlspecialchars($conditionTypeSummary) . '.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Actions</span><span class="field-control"><textarea name="actions" rows="3" placeholder="enqueue_notification|channel=email,template=post_update" required>' . htmlspecialchars($actionsLines) . '</textarea></span><span class="field-description">One action per line. Allowed types: ' . htmlspecialchars($actionTypeSummary) . '.</span></label>';
+
+        $body .= '<div class="action-row">';
+        $body .= '<button type="submit" class="button primary">Update automation</button>';
+        $body .= '</div>';
+        $body .= '</form>';
+
+        $body .= '<form method="post" action="/setup.php" class="inline-form automation-delete-form" onsubmit="return confirm(\'Delete this automation?\');">';
+        $body .= '<input type="hidden" name="action" value="delete_automation">';
+        $body .= '<input type="hidden" name="automation_id" value="' . $automationId . '">';
+        $body .= '<button type="submit" class="button danger">Delete automation</button>';
+        $body .= '</form>';
+
+        $body .= '</article>';
+    }
+
+    $body .= '<article class="automation-card automation-create">';
+    $body .= '<header class="automation-card-header">';
+    $body .= '<h3>Create automation</h3>';
+    $body .= '<p class="automation-description">Launch a new workflow with triggers, optional conditions, and one or more actions.</p>';
+    $body .= '</header>';
+    $body .= '<form method="post" action="/setup.php" class="automation-form">';
+    $body .= '<input type="hidden" name="action" value="create_automation">';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Name</span><span class="field-control"><input type="text" name="name" required></span></label>';
+    $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+    foreach ($automationStatusLabels as $value => $label) {
+        $selected = $value === $automationDefaultStatus ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Trigger</span><span class="field-control"><select name="trigger">';
+    foreach ($automationTriggerLabels as $value => $label) {
+        $body .= '<option value="' . htmlspecialchars($value) . '">' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Priority</span><span class="field-control"><select name="priority">';
+    foreach ($automationPriorityLabels as $value => $label) {
+        $selected = $value === ($automationPriorityOptions[0] ?? 'medium') ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '</div>';
+
+    $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="2" placeholder="Describe what this automation does"></textarea></span></label>';
+
+    $body .= '<details class="automation-advanced">';
+    $body .= '<summary>Advanced controls</summary>';
+    $body .= '<div class="field-grid automation-advanced-grid">';
+    $body .= '<label class="field"><span class="field-label">Run limit</span><span class="field-control"><input type="number" name="run_limit" min="0" placeholder="Leave blank"></span><span class="field-description">Leave blank for unlimited runs.</span></label>';
+    $body .= '<label class="field"><span class="field-label">Owner role</span><span class="field-control"><select name="owner_role">';
+    $body .= '<option value="">Unassigned</option>';
+    foreach ($roles as $roleKey => $roleDescription) {
+        $roleValue = (string) $roleKey;
+        $selected = $roleValue === $automationDefaultOwnerRole ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($roleValue) . '"' . $selected . '>' . htmlspecialchars(ucfirst($roleValue)) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Owner profile</span><span class="field-control"><select name="owner_user_id">';
+    $body .= '<option value="">Unassigned</option>';
+    foreach ($users as $user) {
+        $userId = (int) ($user['id'] ?? 0);
+        if ($userId <= 0) {
+            continue;
+        }
+        $username = $user['username'] ?? ('User #' . $userId);
+        $body .= '<option value="' . $userId . '">' . htmlspecialchars($username) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '</div>';
+    $body .= '</details>';
+
+    $body .= '<label class="field"><span class="field-label">Tags</span><span class="field-control"><input type="text" name="tags" placeholder="onboarding, alerts"></span><span class="field-description">Separate with commas or new lines.</span></label>';
+    $body .= '<label class="field"><span class="field-label">Conditions</span><span class="field-control"><textarea name="conditions" rows="3" placeholder="role_equals|role=member"></textarea></span><span class="field-description">One condition per line. Allowed types: ' . htmlspecialchars($conditionTypeSummary) . '. Leave blank to run for every trigger.</span></label>';
+    $body .= '<label class="field"><span class="field-label">Actions</span><span class="field-control"><textarea name="actions" rows="3" placeholder="enqueue_notification|channel=email,template=post_update" required></textarea></span><span class="field-description">One action per line. Allowed types: ' . htmlspecialchars($actionTypeSummary) . '.</span></label>';
+
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Create automation</button>';
+    $body .= '</div>';
+    $body .= '</form>';
+    $body .= '</article>';
+
     $body .= '</section>';
 
     $changelogList = [];

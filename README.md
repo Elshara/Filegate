@@ -17,6 +17,7 @@ Filegate is a profile-centred social application designed for shared hosting. Ev
 - **Poll-driven engagement** – Community polls live in flat files with delegated creation policies, visibility defaults, and multi-select support that admins manage entirely from the setup dashboard.
 - **Self-hosted knowledge base** – Publish onboarding guides and reference articles locally so members can search, filter, and read without leaving Filegate.
 - **Local bug triage** – A bug tracker dataset powers feed summaries and setup workflows so teams can capture, assign, and follow issues without external services.
+- **Automation engine** – Flat-file automation rules respond to triggers with configurable conditions and actions that admins manage from the setup dashboard and review on the feed.
 
 ## Directory layout
 
@@ -126,6 +127,8 @@ Statistics follow the **Post Statistics Visibility** setting. When hidden, the v
 ## Managing datasets
 
 Administrators can expand the **Dataset Management** section on `/setup.php` to edit or upload replacements for any dataset in the manifest. The summary panel highlights each store’s nature, format, size, and last update time, and the inline editor routes writes to the correct `static` or `dynamic` directory automatically. When a supported dataset (such as `users`, `posts`, `uploads`, `notifications`, `settings`, or `asset_overrides`) exposes defaults, the **Reset to defaults** button regenerates the seeded payload without touching the shell.
+
+The latest release also introduces an `automations` dataset that stores trigger/condition/action metadata for Filegate's local workflow engine. Setup exposes dedicated cards for creating, editing, and deleting automations, while the member feed summarises status counts, priorities, and recent activity so everyone can see which routines are active. The automation dashboard now bundles an inline reference guide, advanced controls that stay tucked behind expandable panels, and stricter validation so malformed conditions or actions are caught before writes land. On the feed, automation summaries use sanitised status badges and call out when additional rules exist beyond the configured display limit.
 
 Before any dataset write lands, Filegate now records the previous payload into the `asset_snapshots` store (`assets/json/dynamic/asset_snapshots.json`). The setup dashboard surfaces the most recent captures for each dataset—complete with timestamps, the member who triggered the change, the original reason, and a trimmed preview. Administrators can create named snapshots on demand, restore an older payload in a single click, or prune redundant snapshots without leaving the browser.
 

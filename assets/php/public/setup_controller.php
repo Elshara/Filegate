@@ -68,6 +68,11 @@ require_once __DIR__ . '/../global/add_knowledge_category.php';
 require_once __DIR__ . '/../global/update_knowledge_category.php';
 require_once __DIR__ . '/../global/delete_knowledge_category.php';
 require_once __DIR__ . '/../global/list_knowledge_categories.php';
+require_once __DIR__ . '/../global/load_automations.php';
+require_once __DIR__ . '/../global/default_automations_dataset.php';
+require_once __DIR__ . '/../global/add_automation.php';
+require_once __DIR__ . '/../global/update_automation.php';
+require_once __DIR__ . '/../global/delete_automation.php';
 require_once __DIR__ . '/../pages/render_setup.php';
 require_once __DIR__ . '/../global/guard_asset.php';
 require_once __DIR__ . '/../global/load_asset_snapshots.php';
@@ -178,6 +183,16 @@ function fg_public_setup_controller(): void
     } catch (Throwable $exception) {
         $errors[] = 'Unable to load knowledge category dataset: ' . $exception->getMessage();
         $knowledgeCategories = fg_default_knowledge_categories_dataset();
+    }
+
+    try {
+        $automations = fg_load_automations();
+        if (!isset($automations['records']) || !is_array($automations['records'])) {
+            $automations = fg_default_automations_dataset();
+        }
+    } catch (Throwable $exception) {
+        $errors[] = 'Unable to load automation dataset: ' . $exception->getMessage();
+        $automations = fg_default_automations_dataset();
     }
 
     $featureRequestStatusOptions = fg_get_setting('feature_request_statuses', ['open', 'researching', 'planned', 'in_progress', 'completed', 'declined']);
@@ -296,6 +311,71 @@ function fg_public_setup_controller(): void
     $knowledgeDefaultCategoryId = (int) fg_get_setting('knowledge_base_default_category', 0);
     if ($knowledgeDefaultCategoryId <= 0) {
         $knowledgeDefaultCategoryId = null;
+    }
+
+    $automationStatusOptions = fg_get_setting('automation_statuses', ['enabled', 'paused', 'disabled']);
+    if (!is_array($automationStatusOptions) || empty($automationStatusOptions)) {
+        $automationStatusOptions = ['enabled', 'paused', 'disabled'];
+    }
+    $automationStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationStatusOptions)));
+    if (empty($automationStatusOptions)) {
+        $automationStatusOptions = ['enabled'];
+    }
+
+    $automationDefaultStatus = strtolower((string) fg_get_setting('automation_default_status', $automationStatusOptions[0]));
+    if (!in_array($automationDefaultStatus, $automationStatusOptions, true)) {
+        $automationDefaultStatus = $automationStatusOptions[0];
+    }
+
+    $automationTriggerOptions = fg_get_setting('automation_triggers', ['user_registered', 'post_published', 'feature_request_submitted', 'bug_report_created']);
+    if (!is_array($automationTriggerOptions) || empty($automationTriggerOptions)) {
+        $automationTriggerOptions = ['user_registered'];
+    }
+    $automationTriggerOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationTriggerOptions)));
+    if (empty($automationTriggerOptions)) {
+        $automationTriggerOptions = ['user_registered'];
+    }
+
+    $automationActionTypes = fg_get_setting('automation_action_types', ['enqueue_notification', 'record_activity', 'update_dataset']);
+    if (!is_array($automationActionTypes) || empty($automationActionTypes)) {
+        $automationActionTypes = ['enqueue_notification'];
+    }
+    $automationActionTypes = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationActionTypes)));
+    if (empty($automationActionTypes)) {
+        $automationActionTypes = ['enqueue_notification'];
+    }
+
+    $automationConditionTypes = fg_get_setting('automation_condition_types', ['custom', 'role_equals', 'dataset_threshold', 'time_window']);
+    if (!is_array($automationConditionTypes) || empty($automationConditionTypes)) {
+        $automationConditionTypes = ['custom'];
+    }
+    $automationConditionTypes = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationConditionTypes)));
+    if (empty($automationConditionTypes)) {
+        $automationConditionTypes = ['custom'];
+    }
+
+    $automationPriorityOptions = fg_get_setting('automation_priority_options', ['low', 'medium', 'high']);
+    if (!is_array($automationPriorityOptions) || empty($automationPriorityOptions)) {
+        $automationPriorityOptions = ['low', 'medium', 'high'];
+    }
+    $automationPriorityOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationPriorityOptions)));
+    if (empty($automationPriorityOptions)) {
+        $automationPriorityOptions = ['medium'];
+    }
+
+    $automationDefaultOwnerRole = trim((string) fg_get_setting('automation_default_owner_role', 'admin'));
+    if ($automationDefaultOwnerRole === '') {
+        $automationDefaultOwnerRole = 'admin';
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -1336,6 +1416,86 @@ function fg_public_setup_controller(): void
             }
 
             $knowledgeBase = fg_load_knowledge_base();
+        } elseif (in_array($action, ['create_automation', 'update_automation', 'delete_automation'], true)) {
+            try {
+                $automations = fg_load_automations();
+                if (!isset($automations['records']) || !is_array($automations['records'])) {
+                    $automations = fg_default_automations_dataset();
+                }
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to load automation dataset: ' . $exception->getMessage();
+                $automations = fg_default_automations_dataset();
+            }
+
+            if ($action === 'create_automation') {
+                try {
+                    fg_add_automation([
+                        'name' => $_POST['name'] ?? '',
+                        'description' => $_POST['description'] ?? '',
+                        'status' => $_POST['status'] ?? $automationDefaultStatus,
+                        'trigger' => $_POST['trigger'] ?? ($automationTriggerOptions[0] ?? 'user_registered'),
+                        'conditions' => $_POST['conditions'] ?? '',
+                        'actions' => $_POST['actions'] ?? '',
+                        'owner_role' => $_POST['owner_role'] ?? $automationDefaultOwnerRole,
+                        'owner_user_id' => $_POST['owner_user_id'] ?? null,
+                        'run_limit' => $_POST['run_limit'] ?? null,
+                        'priority' => $_POST['priority'] ?? ($automationPriorityOptions[0] ?? 'medium'),
+                        'tags' => $_POST['tags'] ?? '',
+                    ], [
+                        'performed_by' => $current['id'] ?? null,
+                        'trigger' => 'setup_ui',
+                    ]);
+                    $message = 'Automation created successfully.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            } elseif ($action === 'update_automation') {
+                $automationId = (int) ($_POST['automation_id'] ?? 0);
+                if ($automationId <= 0) {
+                    $errors[] = 'Unknown automation specified for update.';
+                } else {
+                    try {
+                        fg_update_automation($automationId, [
+                            'name' => $_POST['name'] ?? '',
+                            'description' => $_POST['description'] ?? '',
+                            'status' => $_POST['status'] ?? $automationDefaultStatus,
+                            'trigger' => $_POST['trigger'] ?? ($automationTriggerOptions[0] ?? 'user_registered'),
+                            'conditions' => $_POST['conditions'] ?? '',
+                            'actions' => $_POST['actions'] ?? '',
+                            'owner_role' => $_POST['owner_role'] ?? $automationDefaultOwnerRole,
+                            'owner_user_id' => $_POST['owner_user_id'] ?? null,
+                            'run_limit' => $_POST['run_limit'] ?? null,
+                            'run_count' => $_POST['run_count'] ?? null,
+                            'last_run_at' => $_POST['last_run_at'] ?? null,
+                            'priority' => $_POST['priority'] ?? ($automationPriorityOptions[0] ?? 'medium'),
+                            'tags' => $_POST['tags'] ?? '',
+                        ], [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_ui',
+                        ]);
+                        $message = 'Automation updated successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'delete_automation') {
+                $automationId = (int) ($_POST['automation_id'] ?? 0);
+                if ($automationId <= 0) {
+                    $errors[] = 'Unknown automation specified for deletion.';
+                } else {
+                    try {
+                        fg_delete_automation($automationId, [
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_ui',
+                        ]);
+                        $message = 'Automation deleted successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            }
+
+            $automations = fg_load_automations();
         } elseif (in_array($action, ['create_knowledge_category', 'update_knowledge_category', 'delete_knowledge_category'], true)) {
             try {
                 $knowledgeCategories = fg_load_knowledge_categories();
@@ -1767,6 +1927,14 @@ function fg_public_setup_controller(): void
         'poll_policy' => $pollPolicy,
         'poll_default_visibility' => $pollDefaultVisibility,
         'poll_allow_multiple_default' => $pollAllowMultipleDefault,
+        'automations' => $automations,
+        'automation_statuses' => $automationStatusOptions,
+        'automation_default_status' => $automationDefaultStatus,
+        'automation_triggers' => $automationTriggerOptions,
+        'automation_action_types' => $automationActionTypes,
+        'automation_condition_types' => $automationConditionTypes,
+        'automation_priority_options' => $automationPriorityOptions,
+        'automation_default_owner_role' => $automationDefaultOwnerRole,
         'knowledge_base' => $knowledgeBase,
         'knowledge_categories' => $knowledgeCategories,
         'knowledge_default_status' => $knowledgeDefaultStatus,

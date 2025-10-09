@@ -12,6 +12,8 @@ require_once __DIR__ . '/../global/load_project_status.php';
 require_once __DIR__ . '/../global/load_changelog.php';
 require_once __DIR__ . '/../global/load_feature_requests.php';
 require_once __DIR__ . '/../global/load_bug_reports.php';
+require_once __DIR__ . '/../global/load_automations.php';
+require_once __DIR__ . '/../global/default_automations_dataset.php';
 require_once __DIR__ . '/../global/filter_knowledge_articles.php';
 require_once __DIR__ . '/../global/list_knowledge_categories.php';
 require_once __DIR__ . '/../global/get_asset_parameter_value.php';
@@ -363,6 +365,163 @@ function fg_render_feed(array $viewer): string
                 'last_activity_label' => $lastActivityLabel,
             ]);
         }
+    }
+
+    $automationStatusOptions = fg_get_setting('automation_statuses', ['enabled', 'paused', 'disabled']);
+    if (!is_array($automationStatusOptions) || empty($automationStatusOptions)) {
+        $automationStatusOptions = ['enabled', 'paused', 'disabled'];
+    }
+    $automationStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationStatusOptions)));
+    if (empty($automationStatusOptions)) {
+        $automationStatusOptions = ['enabled'];
+    }
+    $automationStatusLabels = [];
+    $automationStatusCounts = [];
+    foreach ($automationStatusOptions as $statusValue) {
+        $automationStatusLabels[$statusValue] = ucwords(str_replace('_', ' ', $statusValue));
+        $automationStatusCounts[$statusValue] = 0;
+    }
+
+    $automationTriggerOptions = fg_get_setting('automation_triggers', ['user_registered', 'post_published', 'feature_request_submitted', 'bug_report_created']);
+    if (!is_array($automationTriggerOptions) || empty($automationTriggerOptions)) {
+        $automationTriggerOptions = ['user_registered'];
+    }
+    $automationTriggerOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationTriggerOptions)));
+    if (empty($automationTriggerOptions)) {
+        $automationTriggerOptions = ['user_registered'];
+    }
+    $automationTriggerLabels = [];
+    foreach ($automationTriggerOptions as $triggerValue) {
+        $automationTriggerLabels[$triggerValue] = ucwords(str_replace('_', ' ', $triggerValue));
+    }
+
+    $automationPriorityOptions = fg_get_setting('automation_priority_options', ['low', 'medium', 'high']);
+    if (!is_array($automationPriorityOptions) || empty($automationPriorityOptions)) {
+        $automationPriorityOptions = ['low', 'medium', 'high'];
+    }
+    $automationPriorityOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $automationPriorityOptions)));
+    if (empty($automationPriorityOptions)) {
+        $automationPriorityOptions = ['medium'];
+    }
+    $automationPriorityLabels = [];
+    foreach ($automationPriorityOptions as $priorityValue) {
+        $automationPriorityLabels[$priorityValue] = ucwords(str_replace('_', ' ', $priorityValue));
+    }
+
+    $automationStatusClass = static function (string $value): string {
+        $slug = strtolower($value);
+        $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+        if ($slug === null) {
+            $slug = '';
+        }
+        $slug = trim($slug, '-');
+        return $slug === '' ? 'unknown' : $slug;
+    };
+
+    try {
+        $automationDataset = fg_load_automations();
+        if (!isset($automationDataset['records']) || !is_array($automationDataset['records'])) {
+            $automationDataset = fg_default_automations_dataset();
+        }
+    } catch (Throwable $exception) {
+        $automationDataset = fg_default_automations_dataset();
+    }
+
+    $automationRecords = $automationDataset['records'] ?? [];
+    $automationEntries = [];
+    $automationTotalRuns = 0;
+    $automationActiveCount = 0;
+    $automationStatusRank = [];
+    foreach ($automationStatusOptions as $index => $statusValue) {
+        $automationStatusRank[$statusValue] = $index;
+    }
+
+    if (is_array($automationRecords)) {
+        foreach ($automationRecords as $automation) {
+            if (!is_array($automation)) {
+                continue;
+            }
+
+            $status = strtolower((string) ($automation['status'] ?? $automationStatusOptions[0]));
+            if (!isset($automationStatusLabels[$status])) {
+                $automationStatusLabels[$status] = ucwords(str_replace('_', ' ', $status));
+            }
+            $automationStatusCounts[$status] = ($automationStatusCounts[$status] ?? 0) + 1;
+            if ($status === 'enabled') {
+                $automationActiveCount++;
+            }
+
+            $trigger = strtolower((string) ($automation['trigger'] ?? ($automationTriggerOptions[0] ?? 'user_registered')));
+            if (!isset($automationTriggerLabels[$trigger])) {
+                $automationTriggerLabels[$trigger] = ucwords(str_replace('_', ' ', $trigger));
+            }
+
+            $priority = strtolower((string) ($automation['priority'] ?? ($automationPriorityOptions[0] ?? 'medium')));
+            if (!isset($automationPriorityLabels[$priority])) {
+                $automationPriorityLabels[$priority] = ucwords(str_replace('_', ' ', $priority));
+            }
+
+            $runCount = (int) ($automation['run_count'] ?? 0);
+            if ($runCount < 0) {
+                $runCount = 0;
+            }
+            $automationTotalRuns += $runCount;
+
+            $lastRunAt = trim((string) ($automation['last_run_at'] ?? ''));
+            $lastRunLabel = '';
+            if ($lastRunAt !== '') {
+                $lastRunTimestamp = strtotime($lastRunAt);
+                if ($lastRunTimestamp !== false) {
+                    $lastRunLabel = date('M j, Y H:i', $lastRunTimestamp);
+                }
+            }
+
+            $automationEntries[] = [
+                'id' => (int) ($automation['id'] ?? 0),
+                'name' => trim((string) ($automation['name'] ?? 'Untitled automation')),
+                'description' => trim((string) ($automation['description'] ?? '')),
+                'status' => $status,
+                'status_class' => $automationStatusClass($status),
+                'trigger' => $trigger,
+                'priority' => $priority,
+                'run_count' => $runCount,
+                'run_limit' => $automation['run_limit'] ?? null,
+                'last_run_label' => $lastRunLabel,
+                'updated_at' => $automation['updated_at'] ?? $automation['created_at'] ?? '',
+            ];
+        }
+    }
+
+    if (!empty($automationEntries)) {
+        usort($automationEntries, static function (array $a, array $b) use ($automationStatusRank) {
+            $rankA = $automationStatusRank[$a['status'] ?? ''] ?? PHP_INT_MAX;
+            $rankB = $automationStatusRank[$b['status'] ?? ''] ?? PHP_INT_MAX;
+            if ($rankA !== $rankB) {
+                return $rankA <=> $rankB;
+            }
+
+            $timeA = strtotime((string) ($a['updated_at'] ?? 'now'));
+            $timeB = strtotime((string) ($b['updated_at'] ?? 'now'));
+            return $timeB <=> $timeA;
+        });
+    }
+
+    $automationFeedTotalRecords = count($automationEntries);
+    $automationFeedHiddenCount = 0;
+
+    $automationFeedLimit = (int) fg_get_setting('automation_feed_display_limit', 3);
+    if ($automationFeedLimit < 1) {
+        $automationFeedLimit = 3;
+    }
+    if ($automationFeedLimit > 0 && count($automationEntries) > $automationFeedLimit) {
+        $automationEntries = array_slice($automationEntries, 0, $automationFeedLimit);
+        $automationFeedHiddenCount = $automationFeedTotalRecords - count($automationEntries);
     }
 
     if (!empty($bugEntries)) {
@@ -1125,6 +1284,75 @@ function fg_render_feed(array $viewer): string
             $html .= '</li>';
         }
         $html .= '</ul>';
+        $html .= '</section>';
+    }
+
+    if (!empty($automationEntries)) {
+        $html .= '<section class="panel automation-feed-panel">';
+        $html .= '<h2>Automation rules</h2>';
+        $html .= '<p class="automation-panel-intro">Local-first workflows currently configured on this Filegate instance.</p>';
+
+        $html .= '<div class="automation-feed-summary">';
+        foreach ($automationStatusLabels as $statusKey => $label) {
+            $count = (int) ($automationStatusCounts[$statusKey] ?? 0);
+            if ($count <= 0) {
+                continue;
+            }
+            $statusClass = $automationStatusClass((string) $statusKey);
+            $html .= '<article class="automation-feed-chip automation-status-' . htmlspecialchars($statusClass) . '">';
+            $html .= '<h3>' . htmlspecialchars($label) . '</h3>';
+            $html .= '<p class="automation-feed-total">' . $count . ' ' . ($count === 1 ? 'rule' : 'rules') . '</p>';
+            $html .= '</article>';
+        }
+        $html .= '<article class="automation-feed-chip automation-feed-active">';
+        $html .= '<h3>Active</h3>';
+        $html .= '<p class="automation-feed-total">' . $automationActiveCount . '</p>';
+        $html .= '</article>';
+        $html .= '<article class="automation-feed-chip automation-feed-runs">';
+        $html .= '<h3>Total runs</h3>';
+        $html .= '<p class="automation-feed-total">' . $automationTotalRuns . '</p>';
+        $html .= '</article>';
+        $html .= '</div>';
+
+        $html .= '<ul class="automation-feed-list">';
+        foreach ($automationEntries as $automation) {
+            $status = (string) ($automation['status'] ?? 'enabled');
+            $statusLabel = $automationStatusLabels[$status] ?? ucwords(str_replace('_', ' ', $status));
+            $trigger = (string) ($automation['trigger'] ?? ($automationTriggerOptions[0] ?? 'user_registered'));
+            $triggerLabel = $automationTriggerLabels[$trigger] ?? ucwords(str_replace('_', ' ', $trigger));
+            $priority = (string) ($automation['priority'] ?? ($automationPriorityOptions[0] ?? 'medium'));
+            $priorityLabel = $automationPriorityLabels[$priority] ?? ucwords(str_replace('_', ' ', $priority));
+            $runCount = (int) ($automation['run_count'] ?? 0);
+            $runLimit = $automation['run_limit'] ?? null;
+            $limitLabel = $runLimit === null ? 'Unlimited' : (int) $runLimit;
+            $description = trim((string) ($automation['description'] ?? ''));
+            $lastRunLabel = $automation['last_run_label'] ?? '';
+
+            $statusClass = $automation['status_class'] ?? $automationStatusClass($status);
+            $html .= '<li class="automation-feed-item automation-status-' . htmlspecialchars($statusClass) . '">';
+            $html .= '<div class="automation-feed-header">';
+            $html .= '<strong>' . htmlspecialchars($automation['name'] ?? 'Automation') . '</strong>';
+            $html .= '<span class="automation-feed-status">' . htmlspecialchars($statusLabel) . '</span>';
+            $html .= '</div>';
+            $metaParts = [];
+            $metaParts[] = 'Trigger: ' . $triggerLabel;
+            $metaParts[] = 'Priority: ' . $priorityLabel;
+            $metaParts[] = 'Runs: ' . $runCount;
+            $metaParts[] = 'Limit: ' . $limitLabel;
+            if ($lastRunLabel !== '') {
+                $metaParts[] = 'Last run ' . $lastRunLabel;
+            }
+            $html .= '<p class="automation-feed-meta">' . implode(' · ', array_map('htmlspecialchars', $metaParts)) . '</p>';
+            if ($description !== '') {
+                $html .= '<p>' . htmlspecialchars($description) . '</p>';
+            }
+            $html .= '</li>';
+        }
+        $html .= '</ul>';
+        if ($automationFeedHiddenCount > 0) {
+            $hiddenLabel = $automationFeedHiddenCount === 1 ? 'automation not shown' : 'automations not shown';
+            $html .= '<p class="automation-feed-footnote">' . htmlspecialchars((string) $automationFeedHiddenCount) . ' ' . htmlspecialchars($hiddenLabel) . '. Adjust the feed display limit in settings to see more.</p>';
+        }
         $html .= '</section>';
     }
 

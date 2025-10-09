@@ -35,6 +35,12 @@
         "nature": "dynamic",
         "expose_via_api": false
     },
+    "automations": {
+        "label": "Automation Rules",
+        "description": "Local-first automation definitions describing triggers, conditions, and actions.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
     "themes": {
         "label": "Theme Definitions",
         "description": "Configurable palettes applied to the interface and preview tooling.",
