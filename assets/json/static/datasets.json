@@ -139,6 +139,12 @@
         "nature": "dynamic",
         "expose_via_api": false
     },
+    "events": {
+        "label": "Events",
+        "description": "Locally managed events with scheduling, visibility, RSVP policies, and host metadata.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
     "knowledge_categories": {
         "label": "Knowledge Categories",
         "description": "Category definitions that organise knowledge base articles for browsing and filtering.",

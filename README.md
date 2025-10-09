@@ -138,6 +138,67 @@ The dataset manager works alongside the dataset viewer endpoint (`/dataset.php`)
 
 The feed and composer use the same client runtime to fetch the HTML5 element reference on demand, provide live previews, and post likes asynchronously without full page reloads. All network calls terminate within the application—no remote APIs are required.
 
+## Events
+
+Events are stored in `assets/json/dynamic/events.json`. Each record captures the title, summary, long-form description, visibility, status (`draft`, `scheduled`, `completed`, `cancelled` by default), scheduled start/end timestamps, timezone hints, location details (with optional URL), host IDs, collaborator IDs, tags, attachment references, and RSVP metadata (policy, limit, supporter IDs). Helper functions under `assets/php/global` handle creation, updates, and deletions while enforcing validation so the dataset stays well-formed.
+
+Administrators manage scheduling from **Setup → Event planning**. The dashboard surfaces:
+
+- status, upcoming/past, and RSVP totals so operators can scan overall engagement;
+- a creation form with labelled controls for timing, visibility, timezone, hosts, collaborators, tags, attachments, and RSVP limits;
+- editable cards for every event that expose the same controls inline, complete with quick delete actions; and
+- policy-aware notices when event creation is limited to specific roles via the **Event creation policy** setting.
+
+Member visibility honours the flat-file settings added to `settings.json`:
+
+- **Event creation policy** (`event_policy`) delegates who can schedule events (`disabled`, `members`, `moderators`, `admins`).
+- **Event default visibility** (`event_default_visibility`) establishes the baseline (`public`, `members`, `private`).
+- **Event statuses** (`event_statuses`) defines the selectable lifecycle labels.
+- **Event RSVP policy** (`event_rsvp_policy`) sets the default audience for RSVP collection.
+- **Event default timezone** (`event_default_timezone`) seeds new schedules with a sensible offset.
+- **Event feed display limit** (`event_feed_display_limit`) caps how many cards appear on the home feed.
+
+The home feed now includes an **Events** panel that renders upcoming sessions first (falling back to recent past events if required). Cards highlight status, visibility, timing, timezone, location, RSVP progress, and hosts, while a summary row totals statuses and RSVP counts. Additional events beyond the configured display limit are noted, and administrators receive a direct link back to the setup dashboard (`/setup.php#event-manager`) for deeper management.
+
+### Verifying the events experience
+
+Use the built-in PHP development server to review the full workflow locally:
+
+```bash
+php -S 0.0.0.0:8000
+```
+
+1. Visit `http://127.0.0.1:8000/register.php` in your browser to seed the first administrator account.
+2. Sign in at `http://127.0.0.1:8000/login.php` and open `http://127.0.0.1:8000/setup.php#event-manager` to manage records, defaults, and policies.
+3. Return to `http://127.0.0.1:8000/index.php` to confirm upcoming events appear on the member feed.
+
+For automated coverage, the following Playwright snippet signs in and captures screenshots of both the setup manager and the feed without relying on remote services:
+
+```python
+import asyncio, os
+from playwright.async_api import async_playwright
+
+async def main():
+    os.makedirs('artifacts', exist_ok=True)
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page()
+        await page.goto('http://127.0.0.1:8000/login.php', wait_until='domcontentloaded')
+        await page.fill('input[name="username"]', 'adminuser')
+        await page.fill('input[name="password"]', 'StrongPass123!')
+        await page.click('button[type="submit"]')
+        await page.wait_for_load_state('networkidle')
+        await page.goto('http://127.0.0.1:8000/setup.php#event-manager', wait_until='domcontentloaded')
+        await page.screenshot(path='artifacts/setup-event-manager.png', full_page=False)
+        await page.goto('http://127.0.0.1:8000/index.php', wait_until='domcontentloaded')
+        await page.screenshot(path='artifacts/feed-events.png', full_page=False)
+        await browser.close()
+
+asyncio.run(main())
+```
+
+The generated screenshots (`artifacts/setup-event-manager.png` and `artifacts/feed-events.png`) help confirm that localised assets render correctly after each deployment.
+
 ## Polls
 
 Poll data lives in `assets/json/dynamic/polls.json`. Each record stores the question, description, status, visibility, whether multiple selections are allowed, a `max_selections` cap (with `0` representing unlimited picks for multi-select polls), option metadata (including supporter IDs and vote counts), owner role/user hints, timestamps, and optional expiry dates.

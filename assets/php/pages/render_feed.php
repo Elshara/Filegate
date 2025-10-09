@@ -12,6 +12,7 @@ require_once __DIR__ . '/../global/load_project_status.php';
 require_once __DIR__ . '/../global/load_changelog.php';
 require_once __DIR__ . '/../global/load_feature_requests.php';
 require_once __DIR__ . '/../global/load_bug_reports.php';
+require_once __DIR__ . '/../global/load_events.php';
 require_once __DIR__ . '/../global/load_automations.php';
 require_once __DIR__ . '/../global/default_automations_dataset.php';
 require_once __DIR__ . '/../global/filter_knowledge_articles.php';
@@ -555,6 +556,221 @@ function fg_render_feed(array $viewer): string
         }
     }
 
+    $eventStatusOptions = fg_get_setting('event_statuses', ['draft', 'scheduled', 'completed', 'cancelled']);
+    if (!is_array($eventStatusOptions) || empty($eventStatusOptions)) {
+        $eventStatusOptions = ['draft', 'scheduled', 'completed', 'cancelled'];
+    }
+    $eventStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $eventStatusOptions)));
+    if (empty($eventStatusOptions)) {
+        $eventStatusOptions = ['draft'];
+    }
+
+    $eventStatusLabels = [];
+    $eventStatusCounts = [];
+    foreach ($eventStatusOptions as $statusValue) {
+        $eventStatusLabels[$statusValue] = ucwords(str_replace('_', ' ', $statusValue));
+        $eventStatusCounts[$statusValue] = 0;
+    }
+
+    $eventPolicySetting = strtolower((string) fg_get_setting('event_policy', 'moderators'));
+    if ($eventPolicySetting === 'enabled') {
+        $eventPolicySetting = 'members';
+    }
+    if (!in_array($eventPolicySetting, ['disabled', 'members', 'moderators', 'admins'], true)) {
+        $eventPolicySetting = 'moderators';
+    }
+
+    $eventDefaultVisibility = strtolower((string) fg_get_setting('event_default_visibility', 'members'));
+    if (!in_array($eventDefaultVisibility, ['public', 'members', 'private'], true)) {
+        $eventDefaultVisibility = 'members';
+    }
+
+    $eventVisibilityLabels = [
+        'public' => 'Public',
+        'members' => 'Members',
+        'private' => 'Administrators',
+    ];
+
+    $eventFeedLimit = (int) fg_get_setting('event_feed_display_limit', 4);
+    if ($eventFeedLimit < 1) {
+        $eventFeedLimit = 4;
+    }
+
+    $eventDataset = fg_load_events();
+    $eventRecords = $eventDataset['records'] ?? [];
+    if (!is_array($eventRecords)) {
+        $eventRecords = [];
+    }
+
+    $eventUserCache = [];
+    $resolveUserLabel = static function (int $userId) use (&$eventUserCache) {
+        if (isset($eventUserCache[$userId])) {
+            return $eventUserCache[$userId];
+        }
+        $user = fg_find_user_by_id($userId);
+        if ($user) {
+            $label = trim((string) ($user['username'] ?? 'User #' . $userId));
+            if ($label === '') {
+                $label = 'User #' . $userId;
+            }
+            $role = trim((string) ($user['role'] ?? ''));
+            if ($role !== '') {
+                $label .= ' · ' . ucfirst($role);
+            }
+        } else {
+            $label = 'User #' . $userId;
+        }
+        $eventUserCache[$userId] = $label;
+        return $label;
+    };
+
+    $eventUpcomingEntries = [];
+    $eventPastEntries = [];
+    $eventUpcomingCount = 0;
+    $eventPastCount = 0;
+    $eventTotalRsvps = 0;
+    $eventTotalCapacity = 0;
+    $eventNowTimestamp = time();
+
+    foreach ($eventRecords as $eventRecord) {
+        if (!is_array($eventRecord)) {
+            continue;
+        }
+
+        $status = strtolower((string) ($eventRecord['status'] ?? $eventStatusOptions[0]));
+        if (!isset($eventStatusLabels[$status])) {
+            $status = $eventStatusOptions[0];
+        }
+        if ($status === 'draft' && !$canModerate) {
+            continue;
+        }
+
+        $visibility = strtolower((string) ($eventRecord['visibility'] ?? $eventDefaultVisibility));
+        if ($visibility === 'private' && !$canModerate) {
+            continue;
+        }
+        if ($visibility === 'members' && !$isMember) {
+            continue;
+        }
+        if (!isset($eventVisibilityLabels[$visibility])) {
+            $visibility = $eventDefaultVisibility;
+        }
+
+        $startTimestamp = $eventRecord['start_at'] ?? '';
+        $endTimestamp = $eventRecord['end_at'] ?? '';
+        $startTimestamp = $startTimestamp !== '' ? strtotime((string) $startTimestamp) : false;
+        $endTimestamp = $endTimestamp !== '' ? strtotime((string) $endTimestamp) : false;
+        if ($startTimestamp === false) {
+            $startTimestamp = $eventNowTimestamp;
+        }
+        if ($endTimestamp === false) {
+            $endTimestamp = $startTimestamp + 3600;
+        }
+
+        $isPast = $endTimestamp < $eventNowTimestamp;
+        if ($isPast) {
+            $eventPastCount++;
+        } else {
+            $eventUpcomingCount++;
+        }
+
+        $eventStatusCounts[$status] = ($eventStatusCounts[$status] ?? 0) + 1;
+
+        $allowRsvp = !empty($eventRecord['allow_rsvp']);
+        $rsvps = $eventRecord['rsvps'] ?? [];
+        if (!is_array($rsvps)) {
+            $rsvps = [];
+        }
+        $rsvps = array_values(array_unique(array_map('intval', $rsvps)));
+        $eventTotalRsvps += count($rsvps);
+
+        $rsvpLimit = $eventRecord['rsvp_limit'] ?? null;
+        if ($rsvpLimit !== null) {
+            $rsvpLimit = (int) $rsvpLimit;
+            if ($rsvpLimit > 0) {
+                $eventTotalCapacity += $rsvpLimit;
+            }
+        }
+
+        $hosts = $eventRecord['hosts'] ?? [];
+        if (!is_array($hosts)) {
+            $hosts = [];
+        }
+        $hosts = array_values(array_unique(array_map('intval', $hosts)));
+        $hostLabels = [];
+        foreach ($hosts as $hostId) {
+            $hostLabels[] = $resolveUserLabel($hostId);
+        }
+
+        $eventEntry = [
+            'id' => (int) ($eventRecord['id'] ?? 0),
+            'title' => trim((string) ($eventRecord['title'] ?? 'Untitled event')),
+            'summary' => trim((string) ($eventRecord['summary'] ?? '')),
+            'description' => trim((string) ($eventRecord['description'] ?? '')),
+            'status' => $status,
+            'status_label' => $eventStatusLabels[$status] ?? ucwords(str_replace('_', ' ', $status)),
+            'visibility' => $visibility,
+            'visibility_label' => $eventVisibilityLabels[$visibility] ?? ucfirst($visibility),
+            'start_timestamp' => $startTimestamp,
+            'end_timestamp' => $endTimestamp,
+            'start_label' => date('M j, Y H:i', $startTimestamp),
+            'end_label' => date('M j, Y H:i', $endTimestamp),
+            'location' => trim((string) ($eventRecord['location'] ?? '')),
+            'location_url' => trim((string) ($eventRecord['location_url'] ?? '')),
+            'timezone' => trim((string) ($eventRecord['timezone'] ?? 'UTC')),
+            'allow_rsvp' => $allowRsvp,
+            'rsvp_count' => count($rsvps),
+            'rsvp_limit' => $rsvpLimit,
+            'hosts' => $hostLabels,
+            'is_past' => $isPast,
+        ];
+
+        if ($isPast) {
+            $eventPastEntries[] = $eventEntry;
+        } else {
+            $eventUpcomingEntries[] = $eventEntry;
+        }
+    }
+
+    if (!empty($eventUpcomingEntries)) {
+        usort($eventUpcomingEntries, static function (array $a, array $b) {
+            return ($a['start_timestamp'] ?? 0) <=> ($b['start_timestamp'] ?? 0);
+        });
+    }
+    if (!empty($eventPastEntries)) {
+        usort($eventPastEntries, static function (array $a, array $b) {
+            return ($b['end_timestamp'] ?? 0) <=> ($a['end_timestamp'] ?? 0);
+        });
+    }
+
+    $eventEntries = array_slice($eventUpcomingEntries, 0, $eventFeedLimit);
+    if (count($eventEntries) < $eventFeedLimit && !empty($eventPastEntries)) {
+        $eventEntries = array_merge($eventEntries, array_slice($eventPastEntries, 0, $eventFeedLimit - count($eventEntries)));
+    }
+
+    $eventFeedTotalRecords = count($eventUpcomingEntries) + count($eventPastEntries);
+    $eventFeedHiddenCount = max(0, $eventFeedTotalRecords - count($eventEntries));
+
+    $canCreateEvents = $eventPolicySetting !== 'disabled'
+        && (
+            $eventPolicySetting === 'members'
+            || ($eventPolicySetting === 'moderators' && $canModerate)
+            || ($eventPolicySetting === 'admins' && $viewerRole === 'admin')
+        );
+
+    $eventSubmissionMessage = '';
+    if (!$canCreateEvents) {
+        if ($eventPolicySetting === 'disabled') {
+            $eventSubmissionMessage = 'Event creation is currently disabled.';
+        } elseif ($eventPolicySetting === 'admins') {
+            $eventSubmissionMessage = 'Only administrators can schedule new events right now.';
+        } elseif ($eventPolicySetting === 'moderators') {
+            $eventSubmissionMessage = 'Only administrators and moderators can schedule new events right now.';
+        }
+    }
+
     $roadmapDataset = fg_load_project_status();
     $roadmapRecords = $roadmapDataset['records'] ?? [];
     $roadmapEntries = [];
@@ -597,6 +813,128 @@ function fg_render_feed(array $viewer): string
         }
         $progressTotal += $progress;
         $progressCount++;
+    }
+
+    if (!empty($eventEntries) || $canCreateEvents) {
+        $html .= '<section class="panel event-feed-panel">';
+        $html .= '<h2>Events</h2>';
+        $html .= '<p>Discover upcoming Filegate sessions, workshops, and launch milestones managed entirely from the shared host deployment.</p>';
+
+        if (!empty($eventStatusCounts)) {
+            $html .= '<div class="event-feed-summary">';
+            foreach ($eventStatusCounts as $statusKey => $count) {
+                $label = $eventStatusLabels[$statusKey] ?? ucwords(str_replace('_', ' ', $statusKey));
+                $html .= '<article class="event-summary-chip event-status-' . htmlspecialchars($statusKey) . '">';
+                $html .= '<h3>' . htmlspecialchars($label) . '</h3>';
+                $html .= '<p class="event-summary-total">' . $count . ' ' . ($count === 1 ? 'event' : 'events') . '</p>';
+                $html .= '</article>';
+            }
+            $html .= '<article class="event-summary-chip event-summary-upcoming">';
+            $html .= '<h3>Upcoming</h3>';
+            $html .= '<p class="event-summary-total">' . $eventUpcomingCount . '</p>';
+            $html .= '</article>';
+            $html .= '<article class="event-summary-chip event-summary-past">';
+            $html .= '<h3>Past</h3>';
+            $html .= '<p class="event-summary-total">' . $eventPastCount . '</p>';
+            $html .= '</article>';
+            if ($eventTotalRsvps > 0 || $eventTotalCapacity > 0) {
+                $html .= '<article class="event-summary-chip event-summary-rsvp">';
+                $html .= '<h3>RSVPs</h3>';
+                $capacityLabel = $eventTotalCapacity > 0 ? ' / ' . $eventTotalCapacity : '';
+                $html .= '<p class="event-summary-total">' . $eventTotalRsvps . $capacityLabel . '</p>';
+                $html .= '</article>';
+            }
+            $html .= '</div>';
+        }
+
+        if (!empty($eventEntries)) {
+            $html .= '<ul class="event-feed-list">';
+            foreach ($eventEntries as $eventEntry) {
+                $eventId = (int) ($eventEntry['id'] ?? 0);
+                $statusKey = strtolower((string) ($eventEntry['status'] ?? 'scheduled'));
+                $statusLabel = $eventEntry['status_label'] ?? ucwords(str_replace('_', ' ', $statusKey));
+                $visibilityLabel = $eventEntry['visibility_label'] ?? '';
+                $title = $eventEntry['title'] ?? 'Untitled event';
+                $summaryText = $eventEntry['summary'] ?? '';
+                $descriptionText = $eventEntry['description'] ?? '';
+                $location = $eventEntry['location'] ?? '';
+                $locationUrl = $eventEntry['location_url'] ?? '';
+                $timezone = $eventEntry['timezone'] ?? 'UTC';
+                $startLabel = $eventEntry['start_label'] ?? '';
+                $endLabel = $eventEntry['end_label'] ?? '';
+                $rsvpCount = (int) ($eventEntry['rsvp_count'] ?? 0);
+                $rsvpLimit = $eventEntry['rsvp_limit'];
+                $allowRsvp = !empty($eventEntry['allow_rsvp']);
+                $hosts = $eventEntry['hosts'] ?? [];
+                $isPast = !empty($eventEntry['is_past']);
+
+                $html .= '<li class="event-feed-card event-status-' . htmlspecialchars($statusKey) . '" id="event-' . $eventId . '">';
+                $html .= '<header class="event-feed-header">';
+                $html .= '<span class="event-feed-status">' . htmlspecialchars($statusLabel) . '</span>';
+                if ($visibilityLabel !== '') {
+                    $html .= '<span class="event-feed-visibility">' . htmlspecialchars($visibilityLabel) . '</span>';
+                }
+                if ($isPast) {
+                    $html .= '<span class="event-feed-flag">Past</span>';
+                }
+                $html .= '</header>';
+
+                $html .= '<h3>' . htmlspecialchars($title) . '</h3>';
+                if ($summaryText !== '') {
+                    $html .= '<p class="event-feed-summary-text">' . htmlspecialchars($summaryText) . '</p>';
+                }
+
+                $metaParts = [];
+                if ($startLabel !== '') {
+                    $metaParts[] = 'Starts ' . $startLabel;
+                }
+                if ($endLabel !== '') {
+                    $metaParts[] = 'Ends ' . $endLabel;
+                }
+                if ($timezone !== '') {
+                    $metaParts[] = 'Timezone ' . $timezone;
+                }
+                if ($location !== '') {
+                    if ($locationUrl !== '') {
+                        $metaParts[] = 'Location <a href="' . htmlspecialchars($locationUrl) . '">' . htmlspecialchars($location) . '</a>';
+                    } else {
+                        $metaParts[] = 'Location ' . htmlspecialchars($location);
+                    }
+                }
+                if ($allowRsvp) {
+                    $capacityLabel = ($rsvpLimit ?? 0) > 0 ? ' / ' . (int) $rsvpLimit : '';
+                    $metaParts[] = 'RSVPs ' . $rsvpCount . $capacityLabel;
+                }
+                if (!empty($hosts)) {
+                    $metaParts[] = 'Hosts ' . htmlspecialchars(implode(', ', $hosts));
+                }
+
+                if (!empty($metaParts)) {
+                    $html .= '<p class="event-feed-meta">' . implode(' · ', $metaParts) . '</p>';
+                }
+
+                if ($descriptionText !== '') {
+                    $html .= '<details class="event-feed-description"><summary>Event details</summary><p>' . nl2br(htmlspecialchars($descriptionText)) . '</p></details>';
+                }
+
+                $html .= '</li>';
+            }
+            $html .= '</ul>';
+
+            if ($eventFeedHiddenCount > 0) {
+                $html .= '<p class="notice muted">' . $eventFeedHiddenCount . ' additional ' . ($eventFeedHiddenCount === 1 ? 'event is' : 'events are') . ' scheduled beyond this preview. Visit setup for the complete schedule.</p>';
+            }
+        } else {
+            $html .= '<p class="notice muted">No events are scheduled yet. Check back soon or request one from the team.</p>';
+        }
+
+        if ($canCreateEvents) {
+            $html .= '<p class="event-feed-actions"><a class="button secondary" href="/setup.php#event-manager">Manage events</a></p>';
+        } elseif ($eventSubmissionMessage !== '') {
+            $html .= '<p class="notice muted">' . htmlspecialchars($eventSubmissionMessage) . '</p>';
+        }
+
+        $html .= '</section>';
     }
 
     if (!empty($bugEntries) || $canSubmitBugReports) {

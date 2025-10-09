@@ -35,6 +35,9 @@ require_once __DIR__ . '/default_bug_reports_dataset.php';
 require_once __DIR__ . '/load_polls.php';
 require_once __DIR__ . '/save_polls.php';
 require_once __DIR__ . '/default_polls_dataset.php';
+require_once __DIR__ . '/load_events.php';
+require_once __DIR__ . '/save_events.php';
+require_once __DIR__ . '/default_events_dataset.php';
 require_once __DIR__ . '/load_knowledge_base.php';
 require_once __DIR__ . '/save_knowledge_base.php';
 require_once __DIR__ . '/default_knowledge_base_dataset.php';
@@ -100,6 +103,22 @@ function fg_seed_defaults(): void
     if (!isset($polls['records']) || !is_array($polls['records'])) {
         $polls = fg_default_polls_dataset();
         fg_save_polls($polls, 'Seed poll dataset', ['trigger' => 'seed_defaults']);
+    }
+
+    try {
+        $events = fg_load_events();
+        if (!isset($events['records']) || !is_array($events['records'])) {
+            $events = fg_default_events_dataset();
+        }
+    } catch (Throwable $exception) {
+        $events = fg_default_events_dataset();
+    }
+
+    if (!isset($events['records']) || !is_array($events['records'])) {
+        $events = fg_default_events_dataset();
+    }
+    if (!file_exists(fg_dataset_path('events'))) {
+        fg_save_events($events, 'Seed event dataset', ['trigger' => 'seed_defaults']);
     }
 
     $knowledgeBase = fg_load_knowledge_base();

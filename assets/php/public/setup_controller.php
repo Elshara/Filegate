@@ -57,6 +57,11 @@ require_once __DIR__ . '/../global/default_polls_dataset.php';
 require_once __DIR__ . '/../global/add_poll.php';
 require_once __DIR__ . '/../global/update_poll.php';
 require_once __DIR__ . '/../global/delete_poll.php';
+require_once __DIR__ . '/../global/load_events.php';
+require_once __DIR__ . '/../global/default_events_dataset.php';
+require_once __DIR__ . '/../global/add_event.php';
+require_once __DIR__ . '/../global/update_event.php';
+require_once __DIR__ . '/../global/delete_event.php';
 require_once __DIR__ . '/../global/load_knowledge_base.php';
 require_once __DIR__ . '/../global/default_knowledge_base_dataset.php';
 require_once __DIR__ . '/../global/add_knowledge_article.php';
@@ -163,6 +168,16 @@ function fg_public_setup_controller(): void
     } catch (Throwable $exception) {
         $errors[] = 'Unable to load poll dataset: ' . $exception->getMessage();
         $polls = fg_default_polls_dataset();
+    }
+
+    try {
+        $events = fg_load_events();
+        if (!isset($events['records']) || !is_array($events['records'])) {
+            $events = fg_default_events_dataset();
+        }
+    } catch (Throwable $exception) {
+        $errors[] = 'Unable to load event dataset: ' . $exception->getMessage();
+        $events = fg_default_events_dataset();
     }
 
     try {
@@ -297,6 +312,45 @@ function fg_public_setup_controller(): void
     }
 
     $pollAllowMultipleDefault = (bool) fg_get_setting('poll_allow_multiple_default', false);
+
+    $eventStatusOptions = fg_get_setting('event_statuses', ['draft', 'scheduled', 'completed', 'cancelled']);
+    if (!is_array($eventStatusOptions) || empty($eventStatusOptions)) {
+        $eventStatusOptions = ['draft', 'scheduled', 'completed', 'cancelled'];
+    }
+    $eventStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $eventStatusOptions)));
+    if (empty($eventStatusOptions)) {
+        $eventStatusOptions = ['draft'];
+    }
+
+    $eventDefaultVisibility = strtolower((string) fg_get_setting('event_default_visibility', 'members'));
+    if (!in_array($eventDefaultVisibility, ['public', 'members', 'private'], true)) {
+        $eventDefaultVisibility = 'members';
+    }
+
+    $eventPolicy = strtolower((string) fg_get_setting('event_policy', 'moderators'));
+    if ($eventPolicy === 'enabled') {
+        $eventPolicy = 'members';
+    }
+    if (!in_array($eventPolicy, ['disabled', 'members', 'moderators', 'admins'], true)) {
+        $eventPolicy = 'moderators';
+    }
+
+    $eventRsvpPolicy = strtolower((string) fg_get_setting('event_rsvp_policy', 'members'));
+    if (!in_array($eventRsvpPolicy, ['public', 'members', 'private'], true)) {
+        $eventRsvpPolicy = 'members';
+    }
+
+    $eventDefaultTimezone = trim((string) fg_get_setting('event_default_timezone', 'UTC'));
+    if ($eventDefaultTimezone === '') {
+        $eventDefaultTimezone = 'UTC';
+    }
+
+    $eventFeedDisplayLimit = (int) fg_get_setting('event_feed_display_limit', 4);
+    if ($eventFeedDisplayLimit < 1) {
+        $eventFeedDisplayLimit = 4;
+    }
 
     $knowledgeDefaultStatus = strtolower((string) fg_get_setting('knowledge_base_default_status', 'published'));
     if (!in_array($knowledgeDefaultStatus, ['draft', 'scheduled', 'published', 'archived'], true)) {
@@ -1331,10 +1385,98 @@ function fg_public_setup_controller(): void
                         $errors[] = $exception->getMessage();
                     }
                 }
-            }
+        }
 
-            $polls = fg_load_polls();
-        } elseif (in_array($action, ['create_knowledge_article', 'update_knowledge_article', 'delete_knowledge_article'], true)) {
+        $polls = fg_load_polls();
+    } elseif (in_array($action, ['create_event', 'update_event', 'delete_event'], true)) {
+        try {
+            $events = fg_load_events();
+            if (!isset($events['records']) || !is_array($events['records'])) {
+                $events = fg_default_events_dataset();
+            }
+        } catch (Throwable $exception) {
+            $errors[] = 'Unable to load event dataset: ' . $exception->getMessage();
+            $events = fg_default_events_dataset();
+        }
+
+        if ($action === 'create_event') {
+            try {
+                fg_add_event([
+                    'title' => $_POST['title'] ?? '',
+                    'summary' => $_POST['summary'] ?? '',
+                    'description' => $_POST['description'] ?? '',
+                    'status' => $_POST['status'] ?? ($eventStatusOptions[0] ?? 'draft'),
+                    'visibility' => $_POST['visibility'] ?? $eventDefaultVisibility,
+                    'start_at' => $_POST['start_at'] ?? '',
+                    'end_at' => $_POST['end_at'] ?? '',
+                    'timezone' => $_POST['timezone'] ?? $eventDefaultTimezone,
+                    'location' => $_POST['location'] ?? '',
+                    'location_url' => $_POST['location_url'] ?? '',
+                    'allow_rsvp' => isset($_POST['allow_rsvp']),
+                    'rsvp_policy' => $_POST['rsvp_policy'] ?? $eventRsvpPolicy,
+                    'rsvp_limit' => $_POST['rsvp_limit'] ?? null,
+                    'hosts' => $_POST['hosts'] ?? [],
+                    'collaborators' => $_POST['collaborators'] ?? [],
+                    'tags' => $_POST['tags'] ?? [],
+                    'attachments' => $_POST['attachments'] ?? [],
+                    'performed_by' => $current['id'] ?? null,
+                    'trigger' => 'setup_ui',
+                ]);
+                $message = 'Event created successfully.';
+            } catch (Throwable $exception) {
+                $errors[] = $exception->getMessage();
+            }
+        } elseif ($action === 'update_event') {
+            $eventId = (int) ($_POST['event_id'] ?? 0);
+            if ($eventId <= 0) {
+                $errors[] = 'Unknown event specified for update.';
+            } else {
+                try {
+                    fg_update_event($eventId, [
+                        'title' => $_POST['title'] ?? '',
+                        'summary' => $_POST['summary'] ?? '',
+                        'description' => $_POST['description'] ?? '',
+                        'status' => $_POST['status'] ?? ($eventStatusOptions[0] ?? 'draft'),
+                        'visibility' => $_POST['visibility'] ?? $eventDefaultVisibility,
+                        'start_at' => $_POST['start_at'] ?? '',
+                        'end_at' => $_POST['end_at'] ?? '',
+                        'timezone' => $_POST['timezone'] ?? $eventDefaultTimezone,
+                        'location' => $_POST['location'] ?? '',
+                        'location_url' => $_POST['location_url'] ?? '',
+                        'allow_rsvp' => isset($_POST['allow_rsvp']),
+                        'rsvp_policy' => $_POST['rsvp_policy'] ?? $eventRsvpPolicy,
+                        'rsvp_limit' => $_POST['rsvp_limit'] ?? null,
+                        'hosts' => $_POST['hosts'] ?? [],
+                        'collaborators' => $_POST['collaborators'] ?? [],
+                        'tags' => $_POST['tags'] ?? [],
+                        'attachments' => $_POST['attachments'] ?? [],
+                        'performed_by' => $current['id'] ?? null,
+                        'trigger' => 'setup_ui',
+                    ]);
+                    $message = 'Event updated successfully.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            }
+        } elseif ($action === 'delete_event') {
+            $eventId = (int) ($_POST['event_id'] ?? 0);
+            if ($eventId <= 0) {
+                $errors[] = 'Unknown event specified for deletion.';
+            } else {
+                try {
+                    fg_delete_event($eventId, [
+                        'trigger' => 'setup_ui',
+                        'performed_by' => $current['id'] ?? null,
+                    ]);
+                    $message = 'Event deleted successfully.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            }
+        }
+
+        $events = fg_load_events();
+    } elseif (in_array($action, ['create_knowledge_article', 'update_knowledge_article', 'delete_knowledge_article'], true)) {
             try {
                 $knowledgeBase = fg_load_knowledge_base();
                 if (!isset($knowledgeBase['records']) || !is_array($knowledgeBase['records'])) {
@@ -1927,6 +2069,13 @@ function fg_public_setup_controller(): void
         'poll_policy' => $pollPolicy,
         'poll_default_visibility' => $pollDefaultVisibility,
         'poll_allow_multiple_default' => $pollAllowMultipleDefault,
+        'events' => $events,
+        'event_status_options' => $eventStatusOptions,
+        'event_policy' => $eventPolicy,
+        'event_default_visibility' => $eventDefaultVisibility,
+        'event_rsvp_policy' => $eventRsvpPolicy,
+        'event_default_timezone' => $eventDefaultTimezone,
+        'event_feed_display_limit' => $eventFeedDisplayLimit,
         'automations' => $automations,
         'automation_statuses' => $automationStatusOptions,
         'automation_default_status' => $automationDefaultStatus,

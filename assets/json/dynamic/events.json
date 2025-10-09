@@ -1,0 +1,36 @@
+{
+    "next_id": 2,
+    "records": [
+        {
+            "id": 1,
+            "title": "Welcome to Filegate",
+            "summary": "Tour the platform, explore datasets, and learn how to tailor every asset.",
+            "description": "Join the core team for a walkthrough of Filegate's configurable assets, datasets, and workflows. We'll cover setup delegation, localized overrides, and how to operate entirely from shared hosting environments.",
+            "status": "scheduled",
+            "visibility": "members",
+            "start_at": "2024-01-05T14:00:00+00:00",
+            "end_at": "2024-01-05T16:00:00+00:00",
+            "timezone": "UTC",
+            "location": "Community Hub (Virtual)",
+            "location_url": "",
+            "allow_rsvp": true,
+            "rsvp_policy": "members",
+            "rsvp_limit": 50,
+            "rsvps": [],
+            "hosts": [
+                1
+            ],
+            "collaborators": [],
+            "tags": [
+                "onboarding",
+                "tour"
+            ],
+            "attachments": [],
+            "created_at": "2024-01-01T10:00:00+00:00",
+            "updated_at": "2024-01-01T10:00:00+00:00",
+            "last_activity_at": "2024-01-01T10:00:00+00:00",
+            "created_by": 1,
+            "updated_by": 1
+        }
+    ]
+}

@@ -9,6 +9,25 @@ function fg_render_setup_page(array $data = []): void
     $overrides = $data['overrides']['records'] ?? ['global' => [], 'roles' => [], 'users' => []];
     $roles = $data['roles'] ?? [];
     $users = $data['users'] ?? [];
+    $userDirectory = [];
+    foreach ($users as $user) {
+        if (!is_array($user)) {
+            continue;
+        }
+        $userId = (int) ($user['id'] ?? 0);
+        if ($userId <= 0) {
+            continue;
+        }
+        $username = trim((string) ($user['username'] ?? 'User #' . $userId));
+        if ($username === '') {
+            $username = 'User #' . $userId;
+        }
+        $roleLabel = trim((string) ($user['role'] ?? ''));
+        if ($roleLabel !== '') {
+            $username .= ' · ' . ucfirst($roleLabel);
+        }
+        $userDirectory[$userId] = $username;
+    }
     $datasets = $data['datasets'] ?? [];
     $themes = $data['themes']['records'] ?? [];
     $themeTokens = $data['theme_tokens']['tokens'] ?? [];
@@ -49,6 +68,11 @@ function fg_render_setup_page(array $data = []): void
         $pollDataset['records'] = [];
     }
     $pollRecords = $pollDataset['records'];
+    $eventDataset = $data['events'] ?? ['records' => [], 'next_id' => 1];
+    if (!isset($eventDataset['records']) || !is_array($eventDataset['records'])) {
+        $eventDataset['records'] = [];
+    }
+    $eventRecords = $eventDataset['records'];
     $automationDataset = $data['automations'] ?? ['records' => [], 'next_id' => 1];
     if (!isset($automationDataset['records']) || !is_array($automationDataset['records'])) {
         $automationDataset['records'] = [];
@@ -482,6 +506,195 @@ function fg_render_setup_page(array $data = []): void
             $timeA = strtotime((string) ($a['last_activity_at'] ?? $a['updated_at'] ?? $a['created_at'] ?? 'now'));
             $timeB = strtotime((string) ($b['last_activity_at'] ?? $b['updated_at'] ?? $b['created_at'] ?? 'now'));
             return $timeB <=> $timeA;
+        });
+    }
+
+    $eventStatusOptions = $data['event_status_options'] ?? ['draft', 'scheduled', 'completed', 'cancelled'];
+    if (!is_array($eventStatusOptions) || empty($eventStatusOptions)) {
+        $eventStatusOptions = ['draft', 'scheduled', 'completed', 'cancelled'];
+    }
+    $eventStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $eventStatusOptions)));
+    if (empty($eventStatusOptions)) {
+        $eventStatusOptions = ['draft'];
+    }
+
+    $eventStatusLabels = [];
+    $eventStatusCounts = [];
+    foreach ($eventStatusOptions as $statusValue) {
+        $eventStatusLabels[$statusValue] = ucwords(str_replace('_', ' ', $statusValue));
+        $eventStatusCounts[$statusValue] = 0;
+    }
+
+    $eventPolicySetting = (string) ($data['event_policy'] ?? 'moderators');
+    if ($eventPolicySetting === 'enabled') {
+        $eventPolicySetting = 'members';
+    }
+    if (!in_array($eventPolicySetting, ['disabled', 'members', 'moderators', 'admins'], true)) {
+        $eventPolicySetting = 'moderators';
+    }
+
+    $eventDefaultVisibility = strtolower((string) ($data['event_default_visibility'] ?? 'members'));
+    if (!in_array($eventDefaultVisibility, ['public', 'members', 'private'], true)) {
+        $eventDefaultVisibility = 'members';
+    }
+
+    $eventVisibilityLabels = [
+        'public' => 'Public',
+        'members' => 'Members only',
+        'private' => 'Administrators only',
+    ];
+
+    $eventRsvpPolicySetting = strtolower((string) ($data['event_rsvp_policy'] ?? 'members'));
+    if (!in_array($eventRsvpPolicySetting, ['public', 'members', 'private'], true)) {
+        $eventRsvpPolicySetting = 'members';
+    }
+
+    $eventDefaultTimezone = trim((string) ($data['event_default_timezone'] ?? 'UTC'));
+    if ($eventDefaultTimezone === '') {
+        $eventDefaultTimezone = 'UTC';
+    }
+
+    $eventEntries = [];
+    $eventUpcomingCount = 0;
+    $eventPastCount = 0;
+    $eventTotalRsvps = 0;
+    $eventTotalCapacity = 0;
+    $nowTimestamp = time();
+
+    foreach ($eventRecords as $eventRecord) {
+        if (!is_array($eventRecord)) {
+            continue;
+        }
+
+        $status = strtolower((string) ($eventRecord['status'] ?? $eventStatusOptions[0]));
+        if (!isset($eventStatusLabels[$status])) {
+            $eventStatusLabels[$status] = ucwords(str_replace('_', ' ', $status));
+            $eventStatusCounts[$status] = 0;
+        }
+        $eventStatusCounts[$status] = ($eventStatusCounts[$status] ?? 0) + 1;
+
+        $visibility = strtolower((string) ($eventRecord['visibility'] ?? $eventDefaultVisibility));
+        if (!isset($eventVisibilityLabels[$visibility])) {
+            $visibility = $eventDefaultVisibility;
+        }
+
+        $startAt = trim((string) ($eventRecord['start_at'] ?? ''));
+        $endAt = trim((string) ($eventRecord['end_at'] ?? ''));
+        $startTimestamp = $startAt !== '' ? strtotime($startAt) : false;
+        $endTimestamp = $endAt !== '' ? strtotime($endAt) : false;
+        if ($startTimestamp === false) {
+            $startTimestamp = $nowTimestamp;
+        }
+        if ($endTimestamp === false) {
+            $endTimestamp = $startTimestamp + 3600;
+        }
+        $isPast = $endTimestamp < $nowTimestamp;
+        if ($isPast) {
+            $eventPastCount++;
+        } else {
+            $eventUpcomingCount++;
+        }
+
+        $startInput = date('Y-m-d\TH:i', $startTimestamp);
+        $endInput = date('Y-m-d\TH:i', $endTimestamp);
+        $startLabel = date('M j, Y H:i', $startTimestamp);
+        $endLabel = date('M j, Y H:i', $endTimestamp);
+
+        $allowRsvp = !empty($eventRecord['allow_rsvp']);
+        $rsvps = $eventRecord['rsvps'] ?? [];
+        if (!is_array($rsvps)) {
+            $rsvps = [];
+        }
+        $rsvps = array_values(array_unique(array_map('intval', $rsvps)));
+        $eventTotalRsvps += count($rsvps);
+
+        $rsvpLimit = $eventRecord['rsvp_limit'] ?? null;
+        if ($rsvpLimit !== null) {
+            $rsvpLimit = (int) $rsvpLimit;
+            if ($rsvpLimit > 0) {
+                $eventTotalCapacity += $rsvpLimit;
+            }
+        }
+
+        $hosts = $eventRecord['hosts'] ?? [];
+        if (!is_array($hosts)) {
+            $hosts = [];
+        }
+        $hosts = array_values(array_unique(array_map('intval', $hosts)));
+        $hostLabels = [];
+        foreach ($hosts as $hostId) {
+            $hostLabels[] = $userDirectory[$hostId] ?? ('User #' . $hostId);
+        }
+
+        $collaborators = $eventRecord['collaborators'] ?? [];
+        if (!is_array($collaborators)) {
+            $collaborators = [];
+        }
+        $collaborators = array_values(array_unique(array_map('intval', $collaborators)));
+        $collaboratorLabels = [];
+        foreach ($collaborators as $collaboratorId) {
+            $collaboratorLabels[] = $userDirectory[$collaboratorId] ?? ('User #' . $collaboratorId);
+        }
+
+        $tags = $eventRecord['tags'] ?? [];
+        if (!is_array($tags)) {
+            $tags = [];
+        }
+        $tagsTextarea = implode("\n", $tags);
+
+        $attachments = $eventRecord['attachments'] ?? [];
+        if (!is_array($attachments)) {
+            $attachments = [];
+        }
+        $attachmentsTextarea = implode("\n", $attachments);
+
+        $hostsTextarea = implode("\n", array_map('strval', $hosts));
+        $collaboratorsTextarea = implode("\n", array_map('strval', $collaborators));
+
+        $eventEntries[] = array_merge($eventRecord, [
+            'status' => $status,
+            'visibility' => $visibility,
+            'status_label' => $eventStatusLabels[$status] ?? ucwords(str_replace('_', ' ', $status)),
+            'visibility_label' => $eventVisibilityLabels[$visibility] ?? ucfirst($visibility),
+            'start_timestamp' => $startTimestamp,
+            'end_timestamp' => $endTimestamp,
+            'start_input' => $startInput,
+            'end_input' => $endInput,
+            'start_label' => $startLabel,
+            'end_label' => $endLabel,
+            'hosts' => $hosts,
+            'hosts_labels' => $hostLabels,
+            'hosts_input' => $hostsTextarea,
+            'collaborators' => $collaborators,
+            'collaborators_labels' => $collaboratorLabels,
+            'collaborators_input' => $collaboratorsTextarea,
+            'tags_input' => $tagsTextarea,
+            'attachments_input' => $attachmentsTextarea,
+            'allow_rsvp' => $allowRsvp,
+            'rsvps' => $rsvps,
+            'rsvp_limit' => $rsvpLimit,
+            'is_past' => $isPast,
+        ]);
+    }
+
+    if (!empty($eventEntries)) {
+        usort($eventEntries, static function (array $a, array $b) {
+            $pastA = !empty($a['is_past']);
+            $pastB = !empty($b['is_past']);
+            if ($pastA !== $pastB) {
+                return $pastA <=> $pastB;
+            }
+
+            $startA = (int) ($a['start_timestamp'] ?? 0);
+            $startB = (int) ($b['start_timestamp'] ?? 0);
+
+            if ($pastA && $pastB) {
+                return $startB <=> $startA;
+            }
+
+            return $startA <=> $startB;
         });
     }
 
@@ -2225,6 +2438,203 @@ function fg_render_setup_page(array $data = []): void
     $body .= '</div>';
     $body .= '</form>';
     $body .= '</article>';
+
+    $body .= '</section>';
+
+    $body .= '<section class="event-manager" id="event-manager">';
+    $body .= '<h2>Event planning</h2>';
+    $body .= '<p>Curate upcoming sessions, workshops, and community gatherings without editing JSON files. Configure visibility, hosts, RSVP policies, and supporting metadata directly from this dashboard.</p>';
+
+    if ($eventPolicySetting === 'disabled') {
+        $body .= '<p class="notice muted">Event creation is currently disabled for members. Administrators can still seed events here.</p>';
+    } elseif ($eventPolicySetting === 'admins') {
+        $body .= '<p class="notice muted">Only administrators can create new events while this policy is active.</p>';
+    } elseif ($eventPolicySetting === 'moderators') {
+        $body .= '<p class="notice muted">Administrators and moderators can schedule events. Members can only view published listings.</p>';
+    }
+
+    if (!empty($eventStatusCounts)) {
+        $body .= '<div class="event-summary">';
+        foreach ($eventStatusCounts as $statusKey => $count) {
+            $label = $eventStatusLabels[$statusKey] ?? ucwords(str_replace('_', ' ', $statusKey));
+            $body .= '<article class="poll-chip event-status-' . htmlspecialchars($statusKey) . '">';
+            $body .= '<h3>' . htmlspecialchars($label) . '</h3>';
+            $body .= '<p class="poll-total">' . $count . ' ' . ($count === 1 ? 'event' : 'events') . '</p>';
+            $body .= '</article>';
+        }
+        $body .= '<article class="poll-chip event-upcoming">';
+        $body .= '<h3>Upcoming</h3>';
+        $body .= '<p class="poll-total">' . $eventUpcomingCount . '</p>';
+        $body .= '</article>';
+        $body .= '<article class="poll-chip event-past">';
+        $body .= '<h3>Past</h3>';
+        $body .= '<p class="poll-total">' . $eventPastCount . '</p>';
+        $body .= '</article>';
+        if ($eventTotalRsvps > 0 || $eventTotalCapacity > 0) {
+            $body .= '<article class="poll-chip event-rsvp">';
+            $body .= '<h3>RSVPs</h3>';
+            $capacityLabel = $eventTotalCapacity > 0 ? ' / ' . $eventTotalCapacity : '';
+            $body .= '<p class="poll-total">' . $eventTotalRsvps . $capacityLabel . '</p>';
+            $body .= '</article>';
+        }
+        $body .= '</div>';
+    }
+
+    $body .= '<article class="event-create-card">';
+    $body .= '<h3>Schedule a new event</h3>';
+    $body .= '<p>Provide a title, timing, and optional RSVP controls. All fields can be adjusted later.</p>';
+    $body .= '<form method="post" action="/setup.php" class="event-form">';
+    $body .= '<input type="hidden" name="action" value="create_event">';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" required></span></label>';
+    $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+    foreach ($eventStatusLabels as $value => $label) {
+        $body .= '<option value="' . htmlspecialchars($value) . '">' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+    foreach ($eventVisibilityLabels as $value => $label) {
+        $selected = $value === $eventDefaultVisibility ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '</div>';
+    $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><textarea name="summary" rows="2"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="4"></textarea></span></label>';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Start</span><span class="field-control"><input type="datetime-local" name="start_at" value="' . htmlspecialchars(date('Y-m-d\TH:i', $nowTimestamp + 86400)) . '"></span></label>';
+    $body .= '<label class="field"><span class="field-label">End</span><span class="field-control"><input type="datetime-local" name="end_at" value="' . htmlspecialchars(date('Y-m-d\TH:i', $nowTimestamp + 90000)) . '"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Timezone</span><span class="field-control"><input type="text" name="timezone" value="' . htmlspecialchars($eventDefaultTimezone) . '"></span></label>';
+    $body .= '</div>';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Location</span><span class="field-control"><input type="text" name="location" placeholder="Main hall or virtual space"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Location link</span><span class="field-control"><input type="url" name="location_url" placeholder="https://"></span></label>';
+    $body .= '</div>';
+    $body .= '<fieldset class="fieldset">';
+    $body .= '<legend>RSVP options</legend>';
+    $body .= '<label class="field checkbox-field"><input type="checkbox" name="allow_rsvp" value="1"> Enable RSVP tracking</label>';
+    $body .= '<label class="field"><span class="field-label">RSVP policy</span><span class="field-control"><select name="rsvp_policy">';
+    $rsvpOptions = ['public' => 'Public', 'members' => 'Members', 'private' => 'Private'];
+    foreach ($rsvpOptions as $value => $label) {
+        $selected = $value === $eventRsvpPolicySetting ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">RSVP limit</span><span class="field-control"><input type="number" name="rsvp_limit" min="0" placeholder="0 for unlimited"></span></label>';
+    $body .= '</fieldset>';
+    $body .= '<label class="field"><span class="field-label">Host IDs</span><span class="field-control"><textarea name="hosts" rows="2" placeholder="Numeric profile IDs"></textarea></span><span class="field-description">Provide one ID per line or comma separated. Defaults to the submitting admin.</span></label>';
+    $body .= '<label class="field"><span class="field-label">Collaborator IDs</span><span class="field-control"><textarea name="collaborators" rows="2" placeholder="Numeric profile IDs"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Tags</span><span class="field-control"><textarea name="tags" rows="2" placeholder="workshop, onboarding"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Attachment references</span><span class="field-control"><textarea name="attachments" rows="2" placeholder="Optional upload identifiers"></textarea></span></label>';
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Create event</button>';
+    $body .= '</div>';
+    $body .= '</form>';
+    $body .= '</article>';
+
+    if (!empty($eventEntries)) {
+        foreach ($eventEntries as $event) {
+            $eventId = (int) ($event['id'] ?? 0);
+            $title = trim((string) ($event['title'] ?? 'Untitled event'));
+            $summary = trim((string) ($event['summary'] ?? ''));
+            $description = trim((string) ($event['description'] ?? ''));
+            $status = $event['status'] ?? ($eventStatusOptions[0] ?? 'draft');
+            $visibility = $event['visibility'] ?? $eventDefaultVisibility;
+            $allowRsvp = !empty($event['allow_rsvp']);
+            $rsvpPolicy = strtolower((string) ($event['rsvp_policy'] ?? $eventRsvpPolicySetting));
+            if (!isset($rsvpOptions[$rsvpPolicy])) {
+                $rsvpPolicy = $eventRsvpPolicySetting;
+            }
+            $rsvpLimitValue = $event['rsvp_limit'];
+            $hostList = $event['hosts_labels'] ?? [];
+            $collaboratorList = $event['collaborators_labels'] ?? [];
+            $body .= '<article class="event-admin-card" id="event-' . $eventId . '">';
+            $body .= '<header class="event-admin-header">';
+            $body .= '<h3>' . htmlspecialchars($title) . '</h3>';
+            $metaParts = [];
+            $metaParts[] = 'Status: ' . htmlspecialchars($eventStatusLabels[$status] ?? ucwords(str_replace('_', ' ', $status)));
+            $metaParts[] = 'Visibility: ' . htmlspecialchars($eventVisibilityLabels[$visibility] ?? ucfirst($visibility));
+            $metaParts[] = 'Starts ' . htmlspecialchars($event['start_label'] ?? '');
+            $metaParts[] = 'Ends ' . htmlspecialchars($event['end_label'] ?? '');
+            if ($allowRsvp) {
+                $capacity = ($rsvpLimitValue ?? 0) > 0 ? ' / ' . (int) $rsvpLimitValue : '';
+                $metaParts[] = 'RSVPs: ' . count($event['rsvps'] ?? []) . $capacity;
+            }
+            $body .= '<p class="event-meta">' . implode(' · ', array_filter($metaParts)) . '</p>';
+            if (!empty($hostList)) {
+                $body .= '<p class="event-meta-subtle">Hosts: ' . htmlspecialchars(implode(', ', $hostList)) . '</p>';
+            }
+            if (!empty($collaboratorList)) {
+                $body .= '<p class="event-meta-subtle">Collaborators: ' . htmlspecialchars(implode(', ', $collaboratorList)) . '</p>';
+            }
+            $body .= '</header>';
+
+            if ($summary !== '') {
+                $body .= '<p class="event-summary-text">' . htmlspecialchars($summary) . '</p>';
+            }
+            if ($description !== '') {
+                $body .= '<details class="event-description"><summary>View description</summary><p>' . nl2br(htmlspecialchars($description)) . '</p></details>';
+            }
+
+            $body .= '<form method="post" action="/setup.php" class="event-form">';
+            $body .= '<input type="hidden" name="action" value="update_event">';
+            $body .= '<input type="hidden" name="event_id" value="' . $eventId . '">';
+            $body .= '<div class="field-grid">';
+            $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value="' . htmlspecialchars($title) . '"></span></label>';
+            $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+            foreach ($eventStatusLabels as $value => $label) {
+                $selected = $status === $value ? ' selected' : '';
+                $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+            }
+            $body .= '</select></span></label>';
+            $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+            foreach ($eventVisibilityLabels as $value => $label) {
+                $selected = $visibility === $value ? ' selected' : '';
+                $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+            }
+            $body .= '</select></span></label>';
+            $body .= '</div>';
+            $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><textarea name="summary" rows="2">' . htmlspecialchars($summary) . '</textarea></span></label>';
+            $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="4">' . htmlspecialchars($description) . '</textarea></span></label>';
+            $body .= '<div class="field-grid">';
+            $body .= '<label class="field"><span class="field-label">Start</span><span class="field-control"><input type="datetime-local" name="start_at" value="' . htmlspecialchars($event['start_input'] ?? '') . '"></span></label>';
+            $body .= '<label class="field"><span class="field-label">End</span><span class="field-control"><input type="datetime-local" name="end_at" value="' . htmlspecialchars($event['end_input'] ?? '') . '"></span></label>';
+            $body .= '<label class="field"><span class="field-label">Timezone</span><span class="field-control"><input type="text" name="timezone" value="' . htmlspecialchars($event['timezone'] ?? $eventDefaultTimezone) . '"></span></label>';
+            $body .= '</div>';
+            $body .= '<div class="field-grid">';
+            $body .= '<label class="field"><span class="field-label">Location</span><span class="field-control"><input type="text" name="location" value="' . htmlspecialchars($event['location'] ?? '') . '"></span></label>';
+            $body .= '<label class="field"><span class="field-label">Location link</span><span class="field-control"><input type="url" name="location_url" value="' . htmlspecialchars($event['location_url'] ?? '') . '"></span></label>';
+            $body .= '</div>';
+            $checkedRsvp = $allowRsvp ? ' checked' : '';
+            $body .= '<fieldset class="fieldset">';
+            $body .= '<legend>RSVP options</legend>';
+            $body .= '<label class="field checkbox-field"><input type="checkbox" name="allow_rsvp" value="1"' . $checkedRsvp . '> Enable RSVP tracking</label>';
+            $body .= '<label class="field"><span class="field-label">RSVP policy</span><span class="field-control"><select name="rsvp_policy">';
+            foreach ($rsvpOptions as $value => $label) {
+                $selected = $rsvpPolicy === $value ? ' selected' : '';
+                $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+            }
+            $body .= '</select></span></label>';
+            $body .= '<label class="field"><span class="field-label">RSVP limit</span><span class="field-control"><input type="number" name="rsvp_limit" min="0" value="' . ($rsvpLimitValue !== null ? (int) $rsvpLimitValue : '') . '" placeholder="0 for unlimited"></span></label>';
+            $body .= '</fieldset>';
+            $body .= '<label class="field"><span class="field-label">Host IDs</span><span class="field-control"><textarea name="hosts" rows="2">' . htmlspecialchars($event['hosts_input'] ?? '') . '</textarea></span></label>';
+            $body .= '<label class="field"><span class="field-label">Collaborator IDs</span><span class="field-control"><textarea name="collaborators" rows="2">' . htmlspecialchars($event['collaborators_input'] ?? '') . '</textarea></span></label>';
+            $body .= '<label class="field"><span class="field-label">Tags</span><span class="field-control"><textarea name="tags" rows="2">' . htmlspecialchars($event['tags_input'] ?? '') . '</textarea></span></label>';
+            $body .= '<label class="field"><span class="field-label">Attachment references</span><span class="field-control"><textarea name="attachments" rows="2">' . htmlspecialchars($event['attachments_input'] ?? '') . '</textarea></span></label>';
+            $body .= '<div class="action-row">';
+            $body .= '<button type="submit" class="button primary">Update event</button>';
+            $body .= '</div>';
+            $body .= '</form>';
+            $body .= '<form method="post" action="/setup.php" class="inline-form event-delete-form" onsubmit="return confirm(\'Delete this event?\');">';
+            $body .= '<input type="hidden" name="action" value="delete_event">';
+            $body .= '<input type="hidden" name="event_id" value="' . $eventId . '">';
+            $body .= '<button type="submit" class="button danger">Delete event</button>';
+            $body .= '</form>';
+            $body .= '</article>';
+        }
+    } else {
+        $body .= '<p class="notice muted">No events are scheduled yet. Use the form above to plan the first gathering.</p>';
+    }
 
     $body .= '</section>';
 
