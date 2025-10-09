@@ -2731,3 +2731,321 @@ input[type="submit"]:hover {
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.08));
     color: rgba(248, 113, 113, 0.95);
 }
+
+/* Bug report styling */
+.bug-report-manager {
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.bug-report-manager > h2 {
+    margin: 0;
+    font-size: 1.6rem;
+}
+
+.bug-report-manager > p {
+    margin: 0;
+    color: rgba(28, 37, 48, 0.7);
+    line-height: 1.6;
+}
+
+.bug-report-summary {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.bug-report-chip {
+    border-radius: 1rem;
+    background: rgba(14, 116, 144, 0.12);
+    padding: 1rem 1.25rem;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.bug-report-chip h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: rgba(15, 23, 42, 0.85);
+}
+
+.bug-report-total {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: rgba(15, 23, 42, 0.9);
+}
+
+.bug-report-chip.bug-status-new {
+    background: rgba(59, 130, 246, 0.14);
+}
+
+.bug-report-chip.bug-status-triaged {
+    background: rgba(6, 182, 212, 0.16);
+}
+
+.bug-report-chip.bug-status-in_progress {
+    background: rgba(99, 102, 241, 0.16);
+}
+
+.bug-report-chip.bug-status-resolved {
+    background: rgba(34, 197, 94, 0.16);
+}
+
+.bug-report-chip.bug-status-wont_fix {
+    background: rgba(234, 179, 8, 0.18);
+}
+
+.bug-report-chip.bug-status-duplicate {
+    background: rgba(107, 114, 128, 0.18);
+}
+
+.bug-report-chip.bug-watchers {
+    background: rgba(30, 64, 175, 0.16);
+    box-shadow: 0 12px 28px rgba(30, 64, 175, 0.18);
+}
+
+.bug-report-admin-card {
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.96);
+    padding: 1.5rem;
+    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.bug-report-admin-card.bug-report-create {
+    background: rgba(14, 165, 233, 0.08);
+    border-style: dashed;
+    border-color: rgba(14, 165, 233, 0.32);
+}
+
+.bug-report-admin-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.bug-report-admin-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: rgba(15, 23, 42, 0.9);
+}
+
+.bug-report-admin-meta,
+.bug-report-admin-summary,
+.bug-report-admin-timestamps {
+    margin: 0;
+    color: rgba(15, 23, 42, 0.7);
+    line-height: 1.5;
+}
+
+.bug-report-admin-summary {
+    font-weight: 500;
+}
+
+.bug-report-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.bug-report-form .field-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.bug-report-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.bug-report-form .field-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(15, 23, 42, 0.72);
+}
+
+.bug-report-form .field-control input,
+.bug-report-form .field-control textarea,
+.bug-report-form .field-control select {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(15, 23, 42, 0.15);
+    padding: 0.65rem 0.75rem;
+    font-size: 0.95rem;
+    background: rgba(255, 255, 255, 0.98);
+    color: rgba(15, 23, 42, 0.85);
+}
+
+.bug-report-form textarea {
+    min-height: 120px;
+}
+
+.bug-report-form .action-row {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.bug-report-delete-form {
+    margin-top: -0.5rem;
+}
+
+.bug-report-delete-form .button.danger {
+    margin-top: 0.25rem;
+}
+
+/* Feed bug tracker styling */
+.bug-report-panel {
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.bug-report-panel > h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.bug-report-intro {
+    margin: 0;
+    color: rgba(30, 41, 59, 0.7);
+    line-height: 1.6;
+}
+
+.bug-report-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1.25rem;
+}
+
+.bug-report-card {
+    border: 1px solid rgba(30, 41, 59, 0.12);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.bug-report-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.bug-report-status,
+.bug-report-severity,
+.bug-report-watchers,
+.bug-report-updated {
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: rgba(30, 64, 175, 0.12);
+    color: #1d4ed8;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+}
+
+.bug-report-severity {
+    background: rgba(244, 114, 182, 0.14);
+    color: #be185d;
+}
+
+.bug-report-watchers {
+    background: rgba(16, 185, 129, 0.16);
+    color: #047857;
+}
+
+.bug-report-updated {
+    background: rgba(148, 163, 184, 0.16);
+    color: #1f2937;
+}
+
+.bug-report-card h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: rgba(15, 23, 42, 0.95);
+}
+
+.bug-report-summary-text {
+    margin: 0;
+    color: rgba(30, 41, 59, 0.8);
+}
+
+.bug-report-details {
+    color: rgba(30, 41, 59, 0.8);
+}
+
+.bug-report-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.bug-report-meta {
+    margin: 0;
+    color: rgba(30, 41, 59, 0.7);
+    font-size: 0.9rem;
+}
+
+.bug-report-steps,
+.bug-report-tags,
+.bug-report-links,
+.bug-report-attachments {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: rgba(30, 41, 59, 0.75);
+    line-height: 1.5;
+}
+
+.bug-report-tags,
+.bug-report-links,
+.bug-report-attachments {
+    list-style: disc;
+}
+
+.bug-report-steps {
+    list-style: decimal;
+}
+
+.bug-report-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.bug-report-actions .button.primary {
+    background: linear-gradient(120deg, #2563eb, #1d4ed8);
+    color: #fff;
+}
+
+.bug-report-actions .button.secondary {
+    background: rgba(30, 41, 59, 0.1);
+    color: #1f2937;
+}
+
+.bug-report-manage {
+    color: #1d4ed8;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.bug-report-create {
+    border-style: dashed;
+    border-color: rgba(59, 130, 246, 0.35);
+    background: rgba(59, 130, 246, 0.08);
+}

@@ -150,5 +150,11 @@
         "description": "Release notes and highlights that communicate what changed across Filegate.",
         "nature": "dynamic",
         "expose_via_api": false
+    },
+    "bug_reports": {
+        "label": "Bug Reports",
+        "description": "Locally triaged bug submissions with severity, status, and watcher metadata.",
+        "nature": "dynamic",
+        "expose_via_api": false
     }
 }

@@ -47,6 +47,11 @@ require_once __DIR__ . '/../global/default_feature_requests_dataset.php';
 require_once __DIR__ . '/../global/add_feature_request.php';
 require_once __DIR__ . '/../global/update_feature_request.php';
 require_once __DIR__ . '/../global/delete_feature_request.php';
+require_once __DIR__ . '/../global/load_bug_reports.php';
+require_once __DIR__ . '/../global/default_bug_reports_dataset.php';
+require_once __DIR__ . '/../global/add_bug_report.php';
+require_once __DIR__ . '/../global/update_bug_report.php';
+require_once __DIR__ . '/../global/delete_bug_report.php';
 require_once __DIR__ . '/../global/load_polls.php';
 require_once __DIR__ . '/../global/default_polls_dataset.php';
 require_once __DIR__ . '/../global/add_poll.php';
@@ -136,6 +141,16 @@ function fg_public_setup_controller(): void
     }
 
     try {
+        $bugReports = fg_load_bug_reports();
+        if (!isset($bugReports['records']) || !is_array($bugReports['records'])) {
+            $bugReports = fg_default_bug_reports_dataset();
+        }
+    } catch (Throwable $exception) {
+        $errors[] = 'Unable to load bug report dataset: ' . $exception->getMessage();
+        $bugReports = fg_default_bug_reports_dataset();
+    }
+
+    try {
         $polls = fg_load_polls();
         if (!isset($polls['records']) || !is_array($polls['records'])) {
             $polls = fg_default_polls_dataset();
@@ -195,6 +210,51 @@ function fg_public_setup_controller(): void
     $featureRequestPolicy = strtolower((string) fg_get_setting('feature_request_policy', 'members'));
     if ($featureRequestPolicy === 'enabled') {
         $featureRequestPolicy = 'members';
+    }
+
+    $bugStatusOptions = fg_get_setting('bug_report_statuses', ['new', 'triaged', 'in_progress', 'resolved', 'wont_fix', 'duplicate']);
+    if (!is_array($bugStatusOptions) || empty($bugStatusOptions)) {
+        $bugStatusOptions = ['new'];
+    }
+    $bugStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $bugStatusOptions)));
+    if (empty($bugStatusOptions)) {
+        $bugStatusOptions = ['new'];
+    }
+
+    $bugSeverityOptions = fg_get_setting('bug_report_severities', ['low', 'medium', 'high', 'critical']);
+    if (!is_array($bugSeverityOptions) || empty($bugSeverityOptions)) {
+        $bugSeverityOptions = ['medium'];
+    }
+    $bugSeverityOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $bugSeverityOptions)));
+    if (empty($bugSeverityOptions)) {
+        $bugSeverityOptions = ['medium'];
+    }
+
+    $bugDefaultVisibility = strtolower((string) fg_get_setting('bug_report_default_visibility', 'members'));
+    if (!in_array($bugDefaultVisibility, ['public', 'members', 'private'], true)) {
+        $bugDefaultVisibility = 'members';
+    }
+
+    $bugPolicy = strtolower((string) fg_get_setting('bug_report_policy', 'members'));
+    if ($bugPolicy === 'enabled') {
+        $bugPolicy = 'members';
+    }
+    if (!in_array($bugPolicy, ['disabled', 'members', 'moderators', 'admins'], true)) {
+        $bugPolicy = 'members';
+    }
+
+    $bugDefaultOwnerRole = trim((string) fg_get_setting('bug_report_default_owner_role', 'moderator'));
+    if ($bugDefaultOwnerRole === '') {
+        $bugDefaultOwnerRole = 'moderator';
+    }
+
+    $bugFeedDisplayLimit = (int) fg_get_setting('bug_report_feed_display_limit', 5);
+    if ($bugFeedDisplayLimit < 1) {
+        $bugFeedDisplayLimit = 5;
     }
 
     $pollStatusOptions = fg_get_setting('poll_statuses', ['draft', 'open', 'closed']);
@@ -1031,6 +1091,95 @@ function fg_public_setup_controller(): void
             }
 
             $featureRequests = fg_load_feature_requests();
+        } elseif (in_array($action, ['create_bug_report', 'update_bug_report', 'delete_bug_report'], true)) {
+            try {
+                $bugReports = fg_load_bug_reports();
+                if (!isset($bugReports['records']) || !is_array($bugReports['records'])) {
+                    $bugReports = fg_default_bug_reports_dataset();
+                }
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to load bug report dataset: ' . $exception->getMessage();
+                $bugReports = fg_default_bug_reports_dataset();
+            }
+
+            if ($action === 'create_bug_report') {
+                try {
+                    fg_add_bug_report([
+                        'title' => $_POST['title'] ?? '',
+                        'summary' => $_POST['summary'] ?? '',
+                        'details' => $_POST['details'] ?? '',
+                        'status' => $_POST['status'] ?? ($bugStatusOptions[0] ?? 'new'),
+                        'severity' => $_POST['severity'] ?? ($bugSeverityOptions[0] ?? 'medium'),
+                        'visibility' => $_POST['visibility'] ?? $bugDefaultVisibility,
+                        'reporter_user_id' => $_POST['reporter_user_id'] ?? null,
+                        'owner_role' => $_POST['owner_role'] ?? $bugDefaultOwnerRole,
+                        'owner_user_id' => $_POST['owner_user_id'] ?? null,
+                        'tags' => $_POST['tags'] ?? '',
+                        'steps_to_reproduce' => $_POST['steps_to_reproduce'] ?? '',
+                        'affected_versions' => $_POST['affected_versions'] ?? '',
+                        'environment' => $_POST['environment'] ?? '',
+                        'reference_links' => $_POST['reference_links'] ?? '',
+                        'attachments' => $_POST['attachments'] ?? '',
+                        'resolution_notes' => $_POST['resolution_notes'] ?? '',
+                        'watchers' => $_POST['watchers'] ?? '',
+                        'performed_by' => $current['id'] ?? null,
+                        'trigger' => 'setup_ui',
+                    ]);
+                    $message = 'Bug report created successfully.';
+                } catch (Throwable $exception) {
+                    $errors[] = $exception->getMessage();
+                }
+            } elseif ($action === 'update_bug_report') {
+                $bugId = (int) ($_POST['bug_report_id'] ?? 0);
+                if ($bugId <= 0) {
+                    $errors[] = 'Unknown bug report specified for update.';
+                } else {
+                    try {
+                        fg_update_bug_report($bugId, [
+                            'title' => $_POST['title'] ?? '',
+                            'summary' => $_POST['summary'] ?? '',
+                            'details' => $_POST['details'] ?? '',
+                            'status' => $_POST['status'] ?? ($bugStatusOptions[0] ?? 'new'),
+                            'severity' => $_POST['severity'] ?? ($bugSeverityOptions[0] ?? 'medium'),
+                            'visibility' => $_POST['visibility'] ?? $bugDefaultVisibility,
+                            'reporter_user_id' => $_POST['reporter_user_id'] ?? null,
+                            'owner_role' => $_POST['owner_role'] ?? $bugDefaultOwnerRole,
+                            'owner_user_id' => $_POST['owner_user_id'] ?? null,
+                            'tags' => $_POST['tags'] ?? '',
+                            'steps_to_reproduce' => $_POST['steps_to_reproduce'] ?? '',
+                            'affected_versions' => $_POST['affected_versions'] ?? '',
+                            'environment' => $_POST['environment'] ?? '',
+                            'reference_links' => $_POST['reference_links'] ?? '',
+                            'attachments' => $_POST['attachments'] ?? '',
+                            'resolution_notes' => $_POST['resolution_notes'] ?? '',
+                            'watchers' => $_POST['watchers'] ?? '',
+                            'performed_by' => $current['id'] ?? null,
+                            'trigger' => 'setup_ui',
+                            'touch_activity' => true,
+                        ]);
+                        $message = 'Bug report updated successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'delete_bug_report') {
+                $bugId = (int) ($_POST['bug_report_id'] ?? 0);
+                if ($bugId <= 0) {
+                    $errors[] = 'Unknown bug report specified for deletion.';
+                } else {
+                    try {
+                        fg_delete_bug_report($bugId, [
+                            'trigger' => 'setup_ui',
+                            'performed_by' => $current['id'] ?? null,
+                        ]);
+                        $message = 'Bug report deleted successfully.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            }
+
+            $bugReports = fg_load_bug_reports();
         } elseif (in_array($action, ['create_poll', 'update_poll', 'delete_poll'], true)) {
             try {
                 $polls = fg_load_polls();
@@ -1612,6 +1761,7 @@ function fg_public_setup_controller(): void
         'project_status' => $projectStatus,
         'changelog' => $changelog,
         'feature_requests' => $featureRequests,
+        'bug_reports' => $bugReports,
         'polls' => $polls,
         'poll_statuses' => $pollStatusOptions,
         'poll_policy' => $pollPolicy,
@@ -1626,6 +1776,12 @@ function fg_public_setup_controller(): void
         'feature_request_priorities' => $featureRequestPriorityOptions,
         'feature_request_policy' => $featureRequestPolicy,
         'feature_request_default_visibility' => $featureRequestDefaultVisibility,
+        'bug_report_statuses' => $bugStatusOptions,
+        'bug_report_severities' => $bugSeverityOptions,
+        'bug_report_policy' => $bugPolicy,
+        'bug_report_default_visibility' => $bugDefaultVisibility,
+        'bug_report_default_owner_role' => $bugDefaultOwnerRole,
+        'bug_report_feed_display_limit' => $bugFeedDisplayLimit,
         'locale_policy' => fg_get_setting('locale_personalisation_policy', 'enabled'),
         'default_locale' => fg_get_setting('default_locale', $translations['fallback_locale'] ?? 'en'),
         'pages' => fg_load_pages(),

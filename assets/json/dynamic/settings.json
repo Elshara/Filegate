@@ -284,7 +284,25 @@
                 "admin"
             ],
             "category": "knowledge"
-        }
+        },
+        "bug_report_policy": "members",
+        "bug_report_default_visibility": "members",
+        "bug_report_statuses": [
+            "new",
+            "triaged",
+            "in_progress",
+            "resolved",
+            "wont_fix",
+            "duplicate"
+        ],
+        "bug_report_severities": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+        ],
+        "bug_report_default_owner_role": "moderator",
+        "bug_report_feed_display_limit": 5
     },
     "role_definitions": {
         "admin": "Full access to all datasets and settings delegation.",

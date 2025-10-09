@@ -11,6 +11,7 @@ require_once __DIR__ . '/../global/translate.php';
 require_once __DIR__ . '/../global/load_project_status.php';
 require_once __DIR__ . '/../global/load_changelog.php';
 require_once __DIR__ . '/../global/load_feature_requests.php';
+require_once __DIR__ . '/../global/load_bug_reports.php';
 require_once __DIR__ . '/../global/filter_knowledge_articles.php';
 require_once __DIR__ . '/../global/list_knowledge_categories.php';
 require_once __DIR__ . '/../global/get_asset_parameter_value.php';
@@ -41,6 +42,12 @@ function fg_render_feed(array $viewer): string
         $alerts[] = ['type' => 'success', 'message' => 'Feature request updated.'];
     } elseif ($noticeCode === 'feature-request-deleted') {
         $alerts[] = ['type' => 'success', 'message' => 'Feature request removed.'];
+    } elseif ($noticeCode === 'bug-report-created') {
+        $alerts[] = ['type' => 'success', 'message' => 'Bug report submitted successfully.'];
+    } elseif ($noticeCode === 'bug-report-watching') {
+        $alerts[] = ['type' => 'success', 'message' => 'You are now watching updates on that bug.'];
+    } elseif ($noticeCode === 'bug-report-unwatched') {
+        $alerts[] = ['type' => 'info', 'message' => 'You will no longer receive notifications for that bug.'];
     }
 
     if ($errorCode === 'feature-request-disabled') {
@@ -49,6 +56,10 @@ function fg_render_feed(array $viewer): string
         $alerts[] = ['type' => 'error', 'message' => 'You do not have permission to manage that feature request.'];
     } elseif ($errorCode === 'feature-request-invalid') {
         $alerts[] = ['type' => 'error', 'message' => 'The requested feature entry could not be found.'];
+    } elseif ($errorCode === 'bug-report-unauthorised') {
+        $alerts[] = ['type' => 'error', 'message' => 'You do not have permission to file a bug right now.'];
+    } elseif ($errorCode === 'bug-report-invalid') {
+        $alerts[] = ['type' => 'error', 'message' => 'The requested bug report could not be located.'];
     }
 
     $featureRequestPolicy = strtolower((string) fg_get_setting('feature_request_policy', 'members'));
@@ -190,6 +201,201 @@ function fg_render_feed(array $viewer): string
         }
     }
 
+    $bugPolicy = strtolower((string) fg_get_setting('bug_report_policy', 'members'));
+    if ($bugPolicy === 'enabled') {
+        $bugPolicy = 'members';
+    }
+    if (!in_array($bugPolicy, ['disabled', 'members', 'moderators', 'admins'], true)) {
+        $bugPolicy = 'members';
+    }
+
+    $bugDefaultVisibility = strtolower((string) fg_get_setting('bug_report_default_visibility', 'members'));
+    if (!in_array($bugDefaultVisibility, ['public', 'members', 'private'], true)) {
+        $bugDefaultVisibility = 'members';
+    }
+
+    $bugStatusOptions = fg_get_setting('bug_report_statuses', ['new', 'triaged', 'in_progress', 'resolved', 'wont_fix', 'duplicate']);
+    if (!is_array($bugStatusOptions) || empty($bugStatusOptions)) {
+        $bugStatusOptions = ['new'];
+    }
+    $bugStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $bugStatusOptions)));
+    if (empty($bugStatusOptions)) {
+        $bugStatusOptions = ['new'];
+    }
+
+    $bugSeverityOptions = fg_get_setting('bug_report_severities', ['low', 'medium', 'high', 'critical']);
+    if (!is_array($bugSeverityOptions) || empty($bugSeverityOptions)) {
+        $bugSeverityOptions = ['medium'];
+    }
+    $bugSeverityOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $bugSeverityOptions)));
+    if (empty($bugSeverityOptions)) {
+        $bugSeverityOptions = ['medium'];
+    }
+
+    $bugStatusLabels = [];
+    $bugStatusCounts = [];
+    foreach ($bugStatusOptions as $statusOption) {
+        $bugStatusLabels[$statusOption] = ucwords(str_replace('_', ' ', $statusOption));
+        $bugStatusCounts[$statusOption] = 0;
+    }
+
+    $bugSeverityLabels = [];
+    foreach ($bugSeverityOptions as $severityOption) {
+        $bugSeverityLabels[$severityOption] = ucwords(str_replace('_', ' ', $severityOption));
+    }
+
+    $bugReportsDataset = fg_load_bug_reports();
+    $bugRecords = $bugReportsDataset['records'] ?? [];
+    $bugEntries = [];
+    $bugTotalWatchers = 0;
+    if (is_array($bugRecords)) {
+        foreach ($bugRecords as $bug) {
+            if (!is_array($bug)) {
+                continue;
+            }
+
+            $visibility = strtolower((string) ($bug['visibility'] ?? $bugDefaultVisibility));
+            if (!in_array($visibility, ['public', 'members', 'private'], true)) {
+                $visibility = $bugDefaultVisibility;
+            }
+            if ($visibility === 'private' && !$canModerate) {
+                continue;
+            }
+            if ($visibility === 'members' && !$isMember) {
+                continue;
+            }
+
+            $status = strtolower((string) ($bug['status'] ?? $bugStatusOptions[0]));
+            if (!isset($bugStatusLabels[$status])) {
+                $bugStatusLabels[$status] = ucwords(str_replace('_', ' ', $status));
+                $bugStatusCounts[$status] = 0;
+            }
+            $bugStatusCounts[$status] = ($bugStatusCounts[$status] ?? 0) + 1;
+
+            $severity = strtolower((string) ($bug['severity'] ?? $bugSeverityOptions[0]));
+            if (!isset($bugSeverityLabels[$severity])) {
+                $bugSeverityLabels[$severity] = ucwords(str_replace('_', ' ', $severity));
+            }
+
+            $watchers = $bug['watchers'] ?? [];
+            if (!is_array($watchers)) {
+                $watchers = [];
+            }
+            $watchers = array_values(array_unique(array_filter(array_map('intval', $watchers), static function ($value) {
+                return $value > 0;
+            })));
+            $bugTotalWatchers += count($watchers);
+
+            $tags = $bug['tags'] ?? [];
+            if (!is_array($tags)) {
+                $tags = [];
+            }
+            $tags = array_values(array_filter(array_map(static function ($tag) {
+                return trim((string) $tag);
+            }, $tags), static function ($value) {
+                return $value !== '';
+            }));
+
+            $steps = $bug['steps_to_reproduce'] ?? [];
+            if (!is_array($steps)) {
+                $steps = [];
+            }
+            $steps = array_values(array_filter(array_map(static function ($step) {
+                return trim((string) $step);
+            }, $steps), static function ($value) {
+                return $value !== '';
+            }));
+
+            $versions = $bug['affected_versions'] ?? [];
+            if (!is_array($versions)) {
+                $versions = [];
+            }
+            $versions = array_values(array_filter(array_map(static function ($version) {
+                return trim((string) $version);
+            }, $versions), static function ($value) {
+                return $value !== '';
+            }));
+
+            $links = $bug['reference_links'] ?? [];
+            if (!is_array($links)) {
+                $links = [];
+            }
+            $links = array_values(array_filter(array_map(static function ($link) {
+                return trim((string) $link);
+            }, $links), static function ($value) {
+                return $value !== '';
+            }));
+
+            $attachments = $bug['attachments'] ?? [];
+            if (!is_array($attachments)) {
+                $attachments = [];
+            }
+            $attachments = array_values(array_filter(array_map(static function ($attachment) {
+                return trim((string) $attachment);
+            }, $attachments), static function ($value) {
+                return $value !== '';
+            }));
+
+            $lastActivity = trim((string) ($bug['last_activity_at'] ?? $bug['updated_at'] ?? $bug['created_at'] ?? ''));
+            $lastActivityLabel = '';
+            if ($lastActivity !== '') {
+                $activityTimestamp = strtotime($lastActivity);
+                if ($activityTimestamp !== false) {
+                    $lastActivityLabel = date('M j, Y H:i', $activityTimestamp);
+                }
+            }
+
+            $bugEntries[] = array_merge($bug, [
+                'status' => $status,
+                'severity' => $severity,
+                'visibility' => $visibility,
+                'watchers' => $watchers,
+                'tags' => $tags,
+                'steps_to_reproduce' => $steps,
+                'affected_versions' => $versions,
+                'reference_links' => $links,
+                'attachments' => $attachments,
+                'viewer_is_watching' => in_array($userId, $watchers, true),
+                'last_activity_label' => $lastActivityLabel,
+            ]);
+        }
+    }
+
+    if (!empty($bugEntries)) {
+        usort($bugEntries, static function (array $a, array $b) {
+            $timeA = strtotime((string) ($a['last_activity_at'] ?? $a['updated_at'] ?? $a['created_at'] ?? 'now'));
+            $timeB = strtotime((string) ($b['last_activity_at'] ?? $b['updated_at'] ?? $b['created_at'] ?? 'now'));
+            return $timeB <=> $timeA;
+        });
+    }
+
+    $bugFeedLimit = (int) fg_get_setting('bug_report_feed_display_limit', 5);
+    if ($bugFeedLimit > 0 && count($bugEntries) > $bugFeedLimit) {
+        $bugEntries = array_slice($bugEntries, 0, $bugFeedLimit);
+    }
+
+    $canSubmitBugReports = $bugPolicy !== 'disabled'
+        && (
+            $bugPolicy === 'members'
+            || ($bugPolicy === 'moderators' && $canModerate)
+            || ($bugPolicy === 'admins' && $role === 'admin')
+        );
+
+    $bugSubmissionMessage = '';
+    if (!$canSubmitBugReports) {
+        if ($bugPolicy === 'disabled') {
+            $bugSubmissionMessage = 'Bug report submissions are currently disabled.';
+        } elseif ($bugPolicy === 'admins') {
+            $bugSubmissionMessage = 'Only administrators can submit new bug reports right now.';
+        } elseif ($bugPolicy === 'moderators') {
+            $bugSubmissionMessage = 'Only administrators and moderators can submit new bug reports right now.';
+        }
+    }
+
     $roadmapDataset = fg_load_project_status();
     $roadmapRecords = $roadmapDataset['records'] ?? [];
     $roadmapEntries = [];
@@ -232,6 +438,187 @@ function fg_render_feed(array $viewer): string
         }
         $progressTotal += $progress;
         $progressCount++;
+    }
+
+    if (!empty($bugEntries) || $canSubmitBugReports) {
+        $html .= '<section class="panel bug-report-panel">';
+        $html .= '<h2>Bug tracker</h2>';
+        $html .= '<p class="bug-report-intro">Monitor and triage issues raised by the community directly from Filegate.</p>';
+
+        if (!empty($bugEntries)) {
+            $html .= '<div class="bug-report-summary">';
+            foreach ($bugStatusLabels as $statusKey => $label) {
+                $count = (int) ($bugStatusCounts[$statusKey] ?? 0);
+                $html .= '<article class="bug-report-chip bug-status-' . htmlspecialchars($statusKey) . '">';
+                $html .= '<h3>' . htmlspecialchars($label) . '</h3>';
+                $html .= '<p class="bug-report-total">' . $count . ' ' . ($count === 1 ? 'bug' : 'bugs') . '</p>';
+                $html .= '</article>';
+            }
+            $html .= '<article class="bug-report-chip bug-watchers">';
+            $html .= '<h3>Total watchers</h3>';
+            $html .= '<p class="bug-report-total">' . $bugTotalWatchers . '</p>';
+            $html .= '</article>';
+            $html .= '</div>';
+
+            $html .= '<ul class="bug-report-list">';
+            foreach ($bugEntries as $entry) {
+                $id = (int) ($entry['id'] ?? 0);
+                $title = trim((string) ($entry['title'] ?? 'Untitled bug'));
+                $summaryText = trim((string) ($entry['summary'] ?? ''));
+                $detailsText = trim((string) ($entry['details'] ?? ''));
+                $statusKey = strtolower((string) ($entry['status'] ?? 'new'));
+                $severityKey = strtolower((string) ($entry['severity'] ?? 'medium'));
+                $statusLabel = $bugStatusLabels[$statusKey] ?? ucwords(str_replace('_', ' ', $statusKey));
+                $severityLabel = $bugSeverityLabels[$severityKey] ?? ucwords(str_replace('_', ' ', $severityKey));
+                $watcherCount = count($entry['watchers'] ?? []);
+                $visibilityKey = strtolower((string) ($entry['visibility'] ?? $bugDefaultVisibility));
+                $visibilityLabel = $visibilityKey === 'members' ? 'Members' : ucfirst($visibilityKey);
+                $environment = trim((string) ($entry['environment'] ?? ''));
+                $resolutionNotes = trim((string) ($entry['resolution_notes'] ?? ''));
+                $lastActivityLabel = (string) ($entry['last_activity_label'] ?? '');
+                $steps = $entry['steps_to_reproduce'] ?? [];
+                $tags = $entry['tags'] ?? [];
+                $links = $entry['reference_links'] ?? [];
+                $attachments = $entry['attachments'] ?? [];
+                $viewerWatching = !empty($entry['viewer_is_watching']);
+
+                $html .= '<li class="bug-report-card bug-status-' . htmlspecialchars($statusKey) . '" id="bug-report-' . $id . '">';
+                $html .= '<header class="bug-report-card-header">';
+                $html .= '<span class="bug-report-status">' . htmlspecialchars($statusLabel) . '</span>';
+                $html .= '<span class="bug-report-severity">Severity: ' . htmlspecialchars($severityLabel) . '</span>';
+                $html .= '<span class="bug-report-watchers">Watchers: ' . $watcherCount . '</span>';
+                if ($lastActivityLabel !== '') {
+                    $html .= '<span class="bug-report-updated">Updated ' . htmlspecialchars($lastActivityLabel) . '</span>';
+                }
+                $html .= '</header>';
+
+                $html .= '<h3>' . htmlspecialchars($title) . '</h3>';
+                if ($summaryText !== '') {
+                    $html .= '<p class="bug-report-summary-text">' . htmlspecialchars($summaryText) . '</p>';
+                }
+                if ($detailsText !== '') {
+                    $html .= '<details class="bug-report-details"><summary>Details</summary><p>' . nl2br(htmlspecialchars($detailsText)) . '</p></details>';
+                }
+
+                $metaParts = [];
+                $metaParts[] = 'Visibility: ' . $visibilityLabel;
+                if ($environment !== '') {
+                    $metaParts[] = 'Environment: ' . $environment;
+                }
+                if ($resolutionNotes !== '') {
+                    $metaParts[] = 'Resolution notes: ' . $resolutionNotes;
+                }
+                if (!empty($metaParts)) {
+                    $html .= '<p class="bug-report-meta">' . htmlspecialchars(implode(' · ', $metaParts)) . '</p>';
+                }
+
+                if (!empty($steps)) {
+                    $html .= '<ol class="bug-report-steps">';
+                    foreach ($steps as $step) {
+                        $html .= '<li>' . htmlspecialchars((string) $step) . '</li>';
+                    }
+                    $html .= '</ol>';
+                }
+
+                if (!empty($tags)) {
+                    $html .= '<ul class="bug-report-tags">';
+                    foreach ($tags as $tag) {
+                        $html .= '<li>' . htmlspecialchars((string) $tag) . '</li>';
+                    }
+                    $html .= '</ul>';
+                }
+
+                if (!empty($links)) {
+                    $html .= '<ul class="bug-report-links">';
+                    foreach ($links as $link) {
+                        $url = trim((string) $link);
+                        if ($url === '') {
+                            continue;
+                        }
+                        $html .= '<li><a href="' . htmlspecialchars($url) . '">' . htmlspecialchars($url) . '</a></li>';
+                    }
+                    $html .= '</ul>';
+                }
+
+                if (!empty($attachments)) {
+                    $html .= '<ul class="bug-report-attachments">';
+                    foreach ($attachments as $attachment) {
+                        $html .= '<li>' . htmlspecialchars((string) $attachment) . '</li>';
+                    }
+                    $html .= '</ul>';
+                }
+
+                $html .= '<div class="bug-report-actions">';
+                $html .= '<form method="post" action="/bug-report.php" class="inline-form bug-report-watch-form">';
+                $html .= '<input type="hidden" name="action" value="toggle_watch">';
+                $html .= '<input type="hidden" name="bug_report_id" value="' . $id . '">';
+                $watchLabel = $viewerWatching ? 'Unwatch' : 'Watch bug';
+                $watchClass = $viewerWatching ? 'button secondary' : 'button primary';
+                $html .= '<button type="submit" class="' . $watchClass . '">' . htmlspecialchars($watchLabel) . '</button>';
+                $html .= '</form>';
+                if ($canModerate) {
+                    $html .= '<a class="bug-report-manage" href="/setup.php#bug-report-manager">Manage in setup</a>';
+                }
+                $html .= '</div>';
+
+                $html .= '</li>';
+            }
+            $html .= '</ul>';
+        } else {
+            $html .= '<p class="notice muted">No bug reports yet. Help the team by logging the first issue below.</p>';
+        }
+
+        if (!$canSubmitBugReports && $bugSubmissionMessage !== '') {
+            $html .= '<p class="notice muted">' . htmlspecialchars($bugSubmissionMessage) . '</p>';
+        }
+
+        if ($canSubmitBugReports) {
+            $html .= '<article class="bug-report-card bug-report-create">';
+            $html .= '<h3>Report a bug</h3>';
+            $html .= '<form method="post" action="/bug-report.php" class="bug-report-form">';
+            $html .= '<input type="hidden" name="action" value="create_bug_report">';
+
+            if ($canModerate) {
+                $html .= '<label>Status<select name="status">';
+                foreach ($bugStatusOptions as $statusOption) {
+                    $html .= '<option value="' . htmlspecialchars($statusOption) . '">' . htmlspecialchars($bugStatusLabels[$statusOption] ?? ucwords(str_replace('_', ' ', $statusOption))) . '</option>';
+                }
+                $html .= '</select></label>';
+            } else {
+                $html .= '<input type="hidden" name="status" value="' . htmlspecialchars($bugStatusOptions[0]) . '">';
+            }
+
+            $html .= '<label>Severity<select name="severity">';
+            foreach ($bugSeverityOptions as $severityOption) {
+                $html .= '<option value="' . htmlspecialchars($severityOption) . '">' . htmlspecialchars($bugSeverityLabels[$severityOption] ?? ucwords(str_replace('_', ' ', $severityOption))) . '</option>';
+            }
+            $html .= '</select></label>';
+
+            if ($canModerate) {
+                $html .= '<label>Visibility<select name="visibility">';
+                foreach (['public' => 'Public', 'members' => 'Members', 'private' => 'Private'] as $value => $label) {
+                    $selected = $value === $bugDefaultVisibility ? ' selected' : '';
+                    $html .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+                }
+                $html .= '</select></label>';
+            } else {
+                $html .= '<input type="hidden" name="visibility" value="' . htmlspecialchars($bugDefaultVisibility) . '">';
+            }
+
+            $html .= '<label>Title<input type="text" name="title" required></label>';
+            $html .= '<label>Summary<textarea name="summary" rows="2" placeholder="Brief description of the issue"></textarea></label>';
+            $html .= '<label>Details<textarea name="details" rows="4" placeholder="What happened and what did you expect?"></textarea></label>';
+            $html .= '<label>Environment<input type="text" name="environment" placeholder="Browser, device, or platform"></label>';
+            $html .= '<label>Steps to reproduce<textarea name="steps_to_reproduce" rows="3" placeholder="One step per line"></textarea></label>';
+            $html .= '<label>Affected versions<textarea name="affected_versions" rows="2" placeholder="One version per line"></textarea></label>';
+            $html .= '<label>Attachments<textarea name="attachments" rows="2" placeholder="Optional upload identifiers or paths"></textarea></label>';
+
+            $html .= '<button type="submit" class="button primary">Submit bug report</button>';
+            $html .= '</form>';
+            $html .= '</article>';
+        }
+
+        $html .= '</section>';
     }
 
     if (!empty($roadmapEntries)) {

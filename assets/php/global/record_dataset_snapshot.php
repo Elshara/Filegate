@@ -7,7 +7,7 @@ require_once __DIR__ . '/dataset_path.php';
 require_once __DIR__ . '/load_dataset_contents.php';
 require_once __DIR__ . '/record_activity_event.php';
 
-function fg_record_dataset_snapshot(string $dataset, string $reason, array $context = [], ?string $payload = null): bool
+function fg_record_dataset_snapshot(string $dataset, string $reason, array $context = [], $payload = null): bool
 {
     $path = fg_dataset_path($dataset);
     if (!file_exists($path)) {
@@ -16,6 +16,18 @@ function fg_record_dataset_snapshot(string $dataset, string $reason, array $cont
 
     if ($payload === null) {
         $payload = fg_load_dataset_contents($dataset);
+    }
+
+    if (is_array($payload) || is_object($payload)) {
+        $encoded = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        if ($encoded === false) {
+            return false;
+        }
+        $payload = $encoded;
+    }
+
+    if ($payload !== null && !is_string($payload)) {
+        $payload = (string) $payload;
     }
 
     $snapshots = fg_load_asset_snapshots();

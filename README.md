@@ -16,6 +16,7 @@ Filegate is a profile-centred social application designed for shared hosting. Ev
 - **Roadmap transparency** – A dedicated roadmap dataset tracks built, in-progress, and planned initiatives with browser-based management and feed summaries.
 - **Poll-driven engagement** – Community polls live in flat files with delegated creation policies, visibility defaults, and multi-select support that admins manage entirely from the setup dashboard.
 - **Self-hosted knowledge base** – Publish onboarding guides and reference articles locally so members can search, filter, and read without leaving Filegate.
+- **Local bug triage** – A bug tracker dataset powers feed summaries and setup workflows so teams can capture, assign, and follow issues without external services.
 
 ## Directory layout
 
@@ -146,6 +147,19 @@ Administrators manage polls from **Setup → Poll catalogue**, where they can:
 - delete or create polls through dedicated forms that automatically normalise option lists and seed IDs.
 
 Creation policies are delegated through the **Poll policy** setting (disabled, members, moderators, admins) alongside defaults for visibility and multi-select behaviour. Non-admins are blocked from accessing the setup dashboard, but the same flat-file dataset backs any future member-facing poll widgets. All saves are written via the poll helper functions in `assets/php/global`, so audit logging and dataset snapshots continue to track every change.
+
+## Bug reports
+
+Bug submissions live in `assets/json/dynamic/bug_reports.json`. Each entry tracks the title, summary, rich details, status, severity, visibility, reporter, optional owner, tags, reproduction steps, affected versions, reference links, attachments, watcher IDs, and timestamps for creation, updates, and activity.
+
+Administrators moderate issues from **Setup → Bug report manager**, which surfaces:
+
+- status chips, severity breakdowns, and watcher totals so teams can understand workload at a glance;
+- edit forms for ownership, status, severity, visibility, notes, reproduction steps, attachments, and tags without touching the filesystem;
+- delete controls and creation forms that honour seeded defaults and record audit events automatically; and
+- instant access to reference links, version metadata, and watcher IDs so follow-up conversations stay local.
+
+Members see a condensed bug tracker on the feed that honours the submission policy configured in Settings. They can log new bugs (when allowed), browse summaries grouped by status and severity, expand details inline, and toggle watch/unwatch state via `/bug-report.php` without leaving Filegate.
 
 ## Roadmap tracking
 

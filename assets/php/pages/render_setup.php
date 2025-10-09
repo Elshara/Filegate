@@ -39,6 +39,11 @@ function fg_render_setup_page(array $data = []): void
         $featureRequestDataset['records'] = [];
     }
     $featureRequestRecords = $featureRequestDataset['records'];
+    $bugReportDataset = $data['bug_reports'] ?? ['records' => [], 'next_id' => 1];
+    if (!isset($bugReportDataset['records']) || !is_array($bugReportDataset['records'])) {
+        $bugReportDataset['records'] = [];
+    }
+    $bugReportRecords = $bugReportDataset['records'];
     $pollDataset = $data['polls'] ?? ['records' => [], 'next_id' => 1];
     if (!isset($pollDataset['records']) || !is_array($pollDataset['records'])) {
         $pollDataset['records'] = [];
@@ -89,6 +94,176 @@ function fg_render_setup_page(array $data = []): void
     $featureRequestDefaultVisibility = strtolower((string) ($data['feature_request_default_visibility'] ?? 'members'));
     if (!in_array($featureRequestDefaultVisibility, ['public', 'members', 'private'], true)) {
         $featureRequestDefaultVisibility = 'members';
+    }
+
+    $bugStatusOptions = $data['bug_report_statuses'] ?? ['new', 'triaged', 'in_progress', 'resolved', 'wont_fix', 'duplicate'];
+    if (!is_array($bugStatusOptions) || empty($bugStatusOptions)) {
+        $bugStatusOptions = ['new'];
+    }
+    $bugStatusOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $bugStatusOptions)));
+    if (empty($bugStatusOptions)) {
+        $bugStatusOptions = ['new'];
+    }
+
+    $bugSeverityOptions = $data['bug_report_severities'] ?? ['low', 'medium', 'high', 'critical'];
+    if (!is_array($bugSeverityOptions) || empty($bugSeverityOptions)) {
+        $bugSeverityOptions = ['medium'];
+    }
+    $bugSeverityOptions = array_values(array_unique(array_map(static function ($value) {
+        return strtolower(trim((string) $value));
+    }, $bugSeverityOptions)));
+    if (empty($bugSeverityOptions)) {
+        $bugSeverityOptions = ['medium'];
+    }
+
+    $bugPolicySetting = (string) ($data['bug_report_policy'] ?? 'members');
+    $bugDefaultVisibility = strtolower((string) ($data['bug_report_default_visibility'] ?? 'members'));
+    if (!in_array($bugDefaultVisibility, ['public', 'members', 'private'], true)) {
+        $bugDefaultVisibility = 'members';
+    }
+
+    $bugDefaultOwnerRole = trim((string) ($data['bug_report_default_owner_role'] ?? 'moderator'));
+    if ($bugDefaultOwnerRole === '') {
+        $bugDefaultOwnerRole = 'moderator';
+    }
+
+    $bugFeedDisplayLimit = (int) ($data['bug_report_feed_display_limit'] ?? 5);
+    if ($bugFeedDisplayLimit < 1) {
+        $bugFeedDisplayLimit = 5;
+    }
+
+    $bugStatusLabels = [];
+    $bugStatusCounts = [];
+    foreach ($bugStatusOptions as $statusOption) {
+        $bugStatusLabels[$statusOption] = ucwords(str_replace('_', ' ', $statusOption));
+        $bugStatusCounts[$statusOption] = 0;
+    }
+
+    $bugSeverityLabels = [];
+    foreach ($bugSeverityOptions as $severityOption) {
+        $bugSeverityLabels[$severityOption] = ucwords(str_replace('_', ' ', $severityOption));
+    }
+
+    $bugEntries = [];
+    $bugTotalWatchers = 0;
+    foreach ($bugReportRecords as $bug) {
+        if (!is_array($bug)) {
+            continue;
+        }
+
+        $status = strtolower((string) ($bug['status'] ?? $bugStatusOptions[0]));
+        if (!isset($bugStatusLabels[$status])) {
+            $bugStatusLabels[$status] = ucwords(str_replace('_', ' ', $status));
+            $bugStatusCounts[$status] = 0;
+        }
+        $bugStatusCounts[$status] = ($bugStatusCounts[$status] ?? 0) + 1;
+
+        $severity = strtolower((string) ($bug['severity'] ?? $bugSeverityOptions[0]));
+        if (!isset($bugSeverityLabels[$severity])) {
+            $bugSeverityLabels[$severity] = ucwords(str_replace('_', ' ', $severity));
+        }
+
+        $visibility = strtolower((string) ($bug['visibility'] ?? $bugDefaultVisibility));
+        if (!in_array($visibility, ['public', 'members', 'private'], true)) {
+            $visibility = $bugDefaultVisibility;
+        }
+
+        $watchers = $bug['watchers'] ?? [];
+        if (!is_array($watchers)) {
+            $watchers = [];
+        }
+        $watchers = array_values(array_unique(array_filter(array_map('intval', $watchers), static function ($value) {
+            return $value > 0;
+        })));
+        $bugTotalWatchers += count($watchers);
+
+        $tagsValue = '';
+        if (!empty($bug['tags']) && is_array($bug['tags'])) {
+            $tagsValue = implode(', ', array_map(static function ($tag) {
+                return (string) $tag;
+            }, $bug['tags']));
+        }
+
+        $stepsValue = '';
+        if (!empty($bug['steps_to_reproduce']) && is_array($bug['steps_to_reproduce'])) {
+            $stepsValue = implode("\n", array_map(static function ($step) {
+                return (string) $step;
+            }, $bug['steps_to_reproduce']));
+        }
+
+        $versionsValue = '';
+        if (!empty($bug['affected_versions']) && is_array($bug['affected_versions'])) {
+            $versionsValue = implode("\n", array_map(static function ($version) {
+                return (string) $version;
+            }, $bug['affected_versions']));
+        }
+
+        $linksValue = '';
+        if (!empty($bug['reference_links']) && is_array($bug['reference_links'])) {
+            $linksValue = implode("\n", array_map(static function ($link) {
+                return (string) $link;
+            }, $bug['reference_links']));
+        }
+
+        $attachmentsValue = '';
+        if (!empty($bug['attachments']) && is_array($bug['attachments'])) {
+            $attachmentsValue = implode("\n", array_map(static function ($attachment) {
+                return (string) $attachment;
+            }, $bug['attachments']));
+        }
+
+        $updatedAt = trim((string) ($bug['updated_at'] ?? $bug['created_at'] ?? ''));
+        $updatedAtLabel = '';
+        if ($updatedAt !== '') {
+            $timestamp = strtotime($updatedAt);
+            if ($timestamp !== false) {
+                $updatedAtLabel = date('M j, Y H:i', $timestamp);
+            }
+        }
+
+        $createdAt = trim((string) ($bug['created_at'] ?? ''));
+        $createdAtLabel = '';
+        if ($createdAt !== '') {
+            $createdTimestamp = strtotime($createdAt);
+            if ($createdTimestamp !== false) {
+                $createdAtLabel = date('M j, Y H:i', $createdTimestamp);
+            }
+        }
+
+        $lastActivity = trim((string) ($bug['last_activity_at'] ?? $updatedAt));
+        $lastActivityLabel = '';
+        if ($lastActivity !== '') {
+            $activityTimestamp = strtotime($lastActivity);
+            if ($activityTimestamp !== false) {
+                $lastActivityLabel = date('M j, Y H:i', $activityTimestamp);
+            }
+        }
+
+        $bugEntries[] = array_merge($bug, [
+            'status' => $status,
+            'severity' => $severity,
+            'visibility' => $visibility,
+            'watchers' => $watchers,
+            'watchers_input' => implode("\n", array_map('strval', $watchers)),
+            'tags_value' => $tagsValue,
+            'steps_value' => $stepsValue,
+            'versions_value' => $versionsValue,
+            'links_value' => $linksValue,
+            'attachments_value' => $attachmentsValue,
+            'updated_at_label' => $updatedAtLabel,
+            'created_at_label' => $createdAtLabel,
+            'last_activity_label' => $lastActivityLabel,
+        ]);
+    }
+
+    if (!empty($bugEntries)) {
+        usort($bugEntries, static function (array $a, array $b) {
+            $timeA = strtotime((string) ($a['last_activity_at'] ?? $a['updated_at'] ?? $a['created_at'] ?? 'now'));
+            $timeB = strtotime((string) ($b['last_activity_at'] ?? $b['updated_at'] ?? $b['created_at'] ?? 'now'));
+            return $timeB <=> $timeA;
+        });
     }
 
     $pollStatusOptions = $data['poll_statuses'] ?? ['draft', 'open', 'closed'];
@@ -1592,6 +1767,242 @@ function fg_render_setup_page(array $data = []): void
 
     $body .= '<div class="action-row">';
     $body .= '<button type="submit" class="button primary">Create feature request</button>';
+    $body .= '</div>';
+    $body .= '</form>';
+    $body .= '</article>';
+
+    $body .= '</section>';
+
+    $body .= '<section class="bug-report-manager" id="bug-report-manager">';
+    $body .= '<h2>Bug report triage</h2>';
+    $body .= '<p>Audit locally filed bugs, adjust ownership, and coordinate fixes without leaving the Filegate setup dashboard.</p>';
+
+    if ($bugPolicySetting === 'disabled') {
+        $body .= '<p class="notice muted">Members cannot submit new bug reports while this policy is disabled. Administrators can still seed and maintain records here.</p>';
+    } elseif ($bugPolicySetting === 'admins') {
+        $body .= '<p class="notice muted">Only administrators may submit new bug reports at the moment.</p>';
+    } elseif ($bugPolicySetting === 'moderators') {
+        $body .= '<p class="notice muted">Moderators and administrators may submit new bug reports. Members can follow along once published.</p>';
+    }
+
+    if (!empty($bugEntries)) {
+        $body .= '<div class="bug-report-summary">';
+        foreach ($bugStatusLabels as $statusKey => $label) {
+            $count = (int) ($bugStatusCounts[$statusKey] ?? 0);
+            $body .= '<article class="bug-report-chip bug-status-' . htmlspecialchars($statusKey) . '">';
+            $body .= '<h3>' . htmlspecialchars($label) . '</h3>';
+            $body .= '<p class="bug-report-total">' . $count . ' ' . ($count === 1 ? 'bug' : 'bugs') . '</p>';
+            $body .= '</article>';
+        }
+        $body .= '<article class="bug-report-chip bug-watchers">';
+        $body .= '<h3>Total watchers</h3>';
+        $body .= '<p class="bug-report-total">' . $bugTotalWatchers . '</p>';
+        $body .= '</article>';
+        $body .= '</div>';
+    } else {
+        $body .= '<p class="notice muted">No bug reports recorded yet. Use the form below to document the first issue.</p>';
+    }
+
+    foreach ($bugEntries as $bug) {
+        $bugId = (int) ($bug['id'] ?? 0);
+        $title = trim((string) ($bug['title'] ?? 'Untitled bug'));
+        $summary = trim((string) ($bug['summary'] ?? ''));
+        $details = trim((string) ($bug['details'] ?? ''));
+        $environment = trim((string) ($bug['environment'] ?? ''));
+        $resolutionNotes = trim((string) ($bug['resolution_notes'] ?? ''));
+        $status = (string) ($bug['status'] ?? ($bugStatusOptions[0] ?? 'new'));
+        $severity = (string) ($bug['severity'] ?? ($bugSeverityOptions[0] ?? 'medium'));
+        $visibility = strtolower((string) ($bug['visibility'] ?? $bugDefaultVisibility));
+        if (!isset($visibilityOptions[$visibility])) {
+            $visibility = $bugDefaultVisibility;
+        }
+        $ownerRole = (string) ($bug['owner_role'] ?? '');
+        $ownerUserId = $bug['owner_user_id'] ?? null;
+        $reporterUserId = $bug['reporter_user_id'] ?? null;
+        $watcherCount = count($bug['watchers'] ?? []);
+        $tagsValue = $bug['tags_value'] ?? '';
+        $stepsValue = $bug['steps_value'] ?? '';
+        $versionsValue = $bug['versions_value'] ?? '';
+        $linksValue = $bug['links_value'] ?? '';
+        $attachmentsValue = $bug['attachments_value'] ?? '';
+        $watchersInput = $bug['watchers_input'] ?? '';
+        $createdLabel = $bug['created_at_label'] ?? '';
+        $updatedLabel = $bug['updated_at_label'] ?? '';
+        $lastActivityLabel = $bug['last_activity_label'] ?? '';
+
+        $body .= '<article class="bug-report-admin-card" id="bug-report-' . $bugId . '">';
+        $body .= '<header class="bug-report-admin-header">';
+        $body .= '<h3>' . htmlspecialchars($title) . '</h3>';
+        $metaParts = [];
+        $metaParts[] = 'Status: ' . htmlspecialchars($bugStatusLabels[$status] ?? ucwords(str_replace('_', ' ', $status)));
+        $metaParts[] = 'Severity: ' . htmlspecialchars($bugSeverityLabels[$severity] ?? ucwords(str_replace('_', ' ', $severity)));
+        $metaParts[] = 'Watchers: ' . $watcherCount;
+        if ($lastActivityLabel !== '') {
+            $metaParts[] = 'Last activity ' . htmlspecialchars($lastActivityLabel);
+        }
+        $body .= '<p class="bug-report-admin-meta">' . implode(' · ', $metaParts) . '</p>';
+        if ($summary !== '') {
+            $body .= '<p class="bug-report-admin-summary">' . htmlspecialchars($summary) . '</p>';
+        }
+        if ($createdLabel !== '' || $updatedLabel !== '') {
+            $body .= '<p class="bug-report-admin-timestamps">';
+            if ($createdLabel !== '') {
+                $body .= 'Created ' . htmlspecialchars($createdLabel);
+            }
+            if ($updatedLabel !== '') {
+                $body .= ' · Updated ' . htmlspecialchars($updatedLabel);
+            }
+            $body .= '</p>';
+        }
+        $body .= '</header>';
+
+        $body .= '<form method="post" action="/setup.php" class="bug-report-form">';
+        $body .= '<input type="hidden" name="action" value="update_bug_report">';
+        $body .= '<input type="hidden" name="bug_report_id" value="' . $bugId . '">';
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value="' . htmlspecialchars($title) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+        foreach ($bugStatusLabels as $value => $label) {
+            $selected = $status === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Severity</span><span class="field-control"><select name="severity">';
+        foreach ($bugSeverityLabels as $value => $label) {
+            $selected = $severity === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '</div>';
+
+        $body .= '<div class="field-grid">';
+        $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+        foreach ($visibilityOptions as $value => $label) {
+            $selected = $visibility === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Owner role</span><span class="field-control"><select name="owner_role">';
+        $body .= '<option value="">Unassigned</option>';
+        foreach ($roles as $roleKey => $roleDescription) {
+            $selected = $ownerRole === (string) $roleKey ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars((string) $roleKey) . '"' . $selected . '>' . htmlspecialchars(ucfirst((string) $roleKey)) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Owner profile</span><span class="field-control"><select name="owner_user_id">';
+        $body .= '<option value="">Unassigned</option>';
+        foreach ($users as $user) {
+            $userId = (int) ($user['id'] ?? 0);
+            if ($userId <= 0) {
+                continue;
+            }
+            $selected = ($ownerUserId !== null && (int) $ownerUserId === $userId) ? ' selected' : '';
+            $username = $user['username'] ?? ('User #' . $userId);
+            $body .= '<option value="' . $userId . '"' . $selected . '>' . htmlspecialchars($username) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Reporter</span><span class="field-control"><select name="reporter_user_id">';
+        $body .= '<option value="">Unassigned</option>';
+        foreach ($users as $user) {
+            $userId = (int) ($user['id'] ?? 0);
+            if ($userId <= 0) {
+                continue;
+            }
+            $selected = ($reporterUserId !== null && (int) $reporterUserId === $userId) ? ' selected' : '';
+            $username = $user['username'] ?? ('User #' . $userId);
+            $body .= '<option value="' . $userId . '"' . $selected . '>' . htmlspecialchars($username) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '</div>';
+
+        $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><textarea name="summary" rows="2">' . htmlspecialchars($summary) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Details</span><span class="field-control"><textarea name="details" rows="4">' . htmlspecialchars($details) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Environment</span><span class="field-control"><input type="text" name="environment" value="' . htmlspecialchars($environment) . '" placeholder="Browser and operating system"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Resolution notes</span><span class="field-control"><textarea name="resolution_notes" rows="2">' . htmlspecialchars($resolutionNotes) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Steps to reproduce</span><span class="field-control"><textarea name="steps_to_reproduce" rows="3" placeholder="One step per line">' . htmlspecialchars($stepsValue) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Affected versions</span><span class="field-control"><textarea name="affected_versions" rows="2" placeholder="One version per line">' . htmlspecialchars($versionsValue) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Tags</span><span class="field-control"><input type="text" name="tags" value="' . htmlspecialchars($tagsValue) . '" placeholder="ui, uploads"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Reference links</span><span class="field-control"><textarea name="reference_links" rows="3" placeholder="One URL or path per line">' . htmlspecialchars($linksValue) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Attachment references</span><span class="field-control"><textarea name="attachments" rows="2" placeholder="Optional upload identifiers or paths">' . htmlspecialchars($attachmentsValue) . '</textarea></span></label>';
+        $body .= '<label class="field"><span class="field-label">Watcher IDs</span><span class="field-control"><textarea name="watchers" rows="2" placeholder="Numeric profile IDs, one per line">' . htmlspecialchars($watchersInput) . '</textarea></span></label>';
+
+        $body .= '<div class="action-row">';
+        $body .= '<button type="submit" class="button primary">Save bug</button>';
+        $body .= '</div>';
+        $body .= '</form>';
+
+        $body .= '<form method="post" action="/setup.php" class="bug-report-delete-form" onsubmit="return confirm(\'Delete this bug report?\');">';
+        $body .= '<input type="hidden" name="action" value="delete_bug_report">';
+        $body .= '<input type="hidden" name="bug_report_id" value="' . $bugId . '">';
+        $body .= '<button type="submit" class="button danger">Delete bug report</button>';
+        $body .= '</form>';
+
+        $body .= '</article>';
+    }
+
+    $defaultBugStatus = $bugStatusOptions[0] ?? 'new';
+    $defaultBugSeverity = $bugSeverityOptions[0] ?? 'medium';
+
+    $body .= '<article class="bug-report-admin-card bug-report-create">';
+    $body .= '<header><h3>Log new bug report</h3><p>Document a new bug, attach reproduction steps, and assign an owner without touching JSON files.</p></header>';
+    $body .= '<form method="post" action="/setup.php" class="bug-report-form">';
+    $body .= '<input type="hidden" name="action" value="create_bug_report">';
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Title</span><span class="field-control"><input type="text" name="title" value=""></span></label>';
+    $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+    foreach ($bugStatusLabels as $value => $label) {
+        $selected = $value === $defaultBugStatus ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Severity</span><span class="field-control"><select name="severity">';
+    foreach ($bugSeverityLabels as $value => $label) {
+        $selected = $value === $defaultBugSeverity ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '</div>';
+
+    $body .= '<div class="field-grid">';
+    $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+    foreach ($visibilityOptions as $value => $label) {
+        $selected = $value === $bugDefaultVisibility ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Owner role</span><span class="field-control"><select name="owner_role">';
+    $body .= '<option value="">Unassigned</option>';
+    foreach ($roles as $roleKey => $roleDescription) {
+        $selected = $bugDefaultOwnerRole !== '' && $bugDefaultOwnerRole === (string) $roleKey ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars((string) $roleKey) . '"' . $selected . '>' . htmlspecialchars(ucfirst((string) $roleKey)) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Owner profile</span><span class="field-control"><select name="owner_user_id">';
+    $body .= '<option value="">Unassigned</option>';
+    foreach ($users as $user) {
+        $userId = (int) ($user['id'] ?? 0);
+        if ($userId <= 0) {
+            continue;
+        }
+        $username = $user['username'] ?? ('User #' . $userId);
+        $body .= '<option value="' . $userId . '">' . htmlspecialchars($username) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '</div>';
+
+    $body .= '<label class="field"><span class="field-label">Summary</span><span class="field-control"><textarea name="summary" rows="2"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Details</span><span class="field-control"><textarea name="details" rows="4"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Environment</span><span class="field-control"><input type="text" name="environment" placeholder="Browser and operating system"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Resolution notes</span><span class="field-control"><textarea name="resolution_notes" rows="2"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Steps to reproduce</span><span class="field-control"><textarea name="steps_to_reproduce" rows="3" placeholder="One step per line"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Affected versions</span><span class="field-control"><textarea name="affected_versions" rows="2" placeholder="One version per line"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Tags</span><span class="field-control"><input type="text" name="tags" placeholder="ui, uploads"></span></label>';
+    $body .= '<label class="field"><span class="field-label">Reference links</span><span class="field-control"><textarea name="reference_links" rows="3" placeholder="One URL or path per line"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Attachment references</span><span class="field-control"><textarea name="attachments" rows="2" placeholder="Optional upload identifiers or paths"></textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Watcher IDs</span><span class="field-control"><textarea name="watchers" rows="2" placeholder="Numeric profile IDs, one per line"></textarea></span></label>';
+
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Create bug report</button>';
     $body .= '</div>';
     $body .= '</form>';
     $body .= '</article>';
