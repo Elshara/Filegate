@@ -1,0 +1,172 @@
+{
+    "users": {
+        "label": "User Profiles",
+        "description": "Profile-centric records including roles, privacy preferences, and biography variables.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "posts": {
+        "label": "Posts",
+        "description": "HTML5-ready post entries with collaborators, privacy, and statistics metadata.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "pages": {
+        "label": "Pages",
+        "description": "Locally managed navigation pages with visibility controls and template metadata.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "settings": {
+        "label": "Settings",
+        "description": "Delegated configuration entries defining application branding and behavior.",
+        "nature": "dynamic",
+        "expose_via_api": true
+    },
+    "uploads": {
+        "label": "Uploaded Assets",
+        "description": "Metadata describing user-provided files grouped by extension for local delivery.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "notifications": {
+        "label": "Notification Queue",
+        "description": "Queued notification payloads awaiting delivery via local channels.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "automations": {
+        "label": "Automation Rules",
+        "description": "Local-first automation definitions describing triggers, conditions, and actions.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "themes": {
+        "label": "Theme Definitions",
+        "description": "Configurable palettes applied to the interface and preview tooling.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "translations": {
+        "label": "Translations",
+        "description": "Locale definitions, translation tokens, and interface strings for Filegate.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "asset_configurations": {
+        "label": "Asset Configuration Defaults",
+        "description": "Metadata describing configurable parameters for each asset in the application.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "asset_overrides": {
+        "label": "Asset Overrides",
+        "description": "Global, role-based, and user-specific overrides for asset configuration parameters.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "asset_snapshots": {
+        "label": "Dataset Snapshots",
+        "description": "Historical captures of dataset payloads recorded before changes are applied.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "activity_log": {
+        "label": "Activity Log",
+        "description": "Operational history of dataset saves, restores, and administrative actions.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "notification_channels": {
+        "label": "Notification Channels",
+        "description": "Static definitions of email, browser, cookie, and cache delivery mechanisms.",
+        "nature": "static",
+        "expose_via_api": true
+    },
+    "template_options": {
+        "label": "Template Options",
+        "description": "Available layout templates and their capabilities for posts and notifications.",
+        "nature": "static",
+        "expose_via_api": true
+    },
+    "editor_options": {
+        "label": "Editor Options",
+        "description": "Client-side editor toggles, formatting controls, and input variable defaults.",
+        "nature": "static",
+        "expose_via_api": true
+    },
+    "embed_providers": {
+        "label": "Embed Providers",
+        "description": "Local templates that describe how recognised services and file types should render.",
+        "nature": "static",
+        "expose_via_api": true
+    },
+    "html5_elements": {
+        "label": "HTML5 Elements",
+        "description": "Reference list of supported HTML5 elements grouped by usage.",
+        "nature": "static",
+        "expose_via_api": true
+    },
+    "theme_tokens": {
+        "label": "Theme Tokens",
+        "description": "Static descriptions of palette tokens and their CSS variable bindings.",
+        "nature": "static",
+        "expose_via_api": true
+    },
+    "notification_templates": {
+        "label": "Notification Templates",
+        "description": "XML descriptors defining multi-channel notification subjects and bodies.",
+        "nature": "static",
+        "format": "xml",
+        "file": "notification_templates",
+        "expose_via_api": false
+    },
+    "project_status": {
+        "label": "Roadmap Tracker",
+        "description": "Progress records describing what is built, underway, or planned across Filegate.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "feature_requests": {
+        "label": "Feature Requests",
+        "description": "Member-submitted feature ideas with prioritisation, visibility, and support tracking.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "polls": {
+        "label": "Polls",
+        "description": "Community polls with locally stored options, votes, and visibility rules.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "events": {
+        "label": "Events",
+        "description": "Locally managed events with scheduling, visibility, RSVP policies, and host metadata.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "knowledge_categories": {
+        "label": "Knowledge Categories",
+        "description": "Category definitions that organise knowledge base articles for browsing and filtering.",
+        "nature": "dynamic",
+        "expose_via_api": true
+    },
+    "knowledge_base": {
+        "label": "Knowledge Base",
+        "description": "Locally stored guides, how-tos, and reference articles for members and guests.",
+        "nature": "dynamic",
+        "expose_via_api": true
+    },
+    "changelog": {
+        "label": "Changelog",
+        "description": "Release notes and highlights that communicate what changed across Filegate.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
+    "bug_reports": {
+        "label": "Bug Reports",
+        "description": "Locally triaged bug submissions with severity, status, and watcher metadata.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    }
+}

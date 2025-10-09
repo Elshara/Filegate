@@ -1,0 +1,21 @@
+{
+    "records": [
+        {
+            "id": 1,
+            "slug": "welcome",
+            "title": "Welcome to Filegate",
+            "summary": "Introduce your community guidelines, collaboration notes, or deployment details here.",
+            "content": "<p>Customize this welcome page from the setup dashboard to explain how Filegate operates for your community. Every element can be adjusted without editing code.</p>",
+            "format": "html",
+            "visibility": "public",
+            "allowed_roles": [],
+            "show_in_navigation": true,
+            "template": "standard",
+            "variables": [],
+            "owner_id": null,
+            "created_at": "2024-01-01T00:00:00+00:00",
+            "updated_at": "2024-01-01T00:00:00+00:00"
+        }
+    ],
+    "next_id": 2
+}

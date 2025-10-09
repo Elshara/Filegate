@@ -1,0 +1,41 @@
+<?php
+
+function fg_default_changelog_dataset(): array
+{
+    return [
+        'records' => [
+            [
+                'id' => 1,
+                'title' => 'Initial release',
+                'summary' => 'Core profiles, posts, and configuration dashboards available.',
+                'type' => 'release',
+                'tags' => ['launch', 'platform'],
+                'visibility' => 'public',
+                'highlight' => true,
+                'body' => 'Filegate launches with profile-centric posting, dataset tools, and theme personalization.',
+                'links' => ['https://example.com/launch-notes'],
+                'related_project_status_ids' => [1],
+                'created_at' => '2024-01-01T00:00:00+00:00',
+                'updated_at' => '2024-01-01T00:00:00+00:00',
+                'published_at' => '2024-01-01T00:00:00+00:00',
+            ],
+            [
+                'id' => 2,
+                'title' => 'Dataset operations',
+                'summary' => 'Administrators gain dataset snapshots, activity logs, and translation tooling.',
+                'type' => 'improvement',
+                'tags' => ['datasets', 'admin'],
+                'visibility' => 'members',
+                'highlight' => false,
+                'body' => 'Setup dashboard enhancements now cover dataset snapshots, translations, and project tracking.',
+                'links' => [],
+                'related_project_status_ids' => [2],
+                'created_at' => '2024-02-15T12:00:00+00:00',
+                'updated_at' => '2024-02-15T12:00:00+00:00',
+                'published_at' => '2024-02-15T12:00:00+00:00',
+            ],
+        ],
+        'next_id' => 3,
+    ];
+}
+

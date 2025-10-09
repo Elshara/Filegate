@@ -1,0 +1,87 @@
+{
+    "tokens": {
+        "nav.feed": {
+            "label": "Navigation \u00b7 Feed",
+            "description": "Primary link to the feed of recent activity."
+        },
+        "nav.profile": {
+            "label": "Navigation \u00b7 Profile",
+            "description": "Link to the signed-in member's profile."
+        },
+        "nav.settings": {
+            "label": "Navigation \u00b7 Settings",
+            "description": "Link to the personal and delegated settings page."
+        },
+        "nav.setup": {
+            "label": "Navigation \u00b7 Setup",
+            "description": "Administrative setup dashboard entry."
+        },
+        "nav.pages": {
+            "label": "Navigation \u00b7 Pages",
+            "description": "Link to the pages directory."
+        },
+        "nav.sign_out": {
+            "label": "Navigation \u00b7 Sign out",
+            "description": "Sign-out button label."
+        },
+        "nav.sign_in": {
+            "label": "Navigation \u00b7 Sign in",
+            "description": "Sign-in link label for guests."
+        },
+        "nav.register": {
+            "label": "Navigation \u00b7 Register",
+            "description": "Account creation link label for guests."
+        },
+        "feed.composer.heading": {
+            "label": "Feed \u00b7 Composer heading",
+            "description": "Heading above the composer form."
+        },
+        "feed.latest_activity.heading": {
+            "label": "Feed \u00b7 Latest activity heading",
+            "description": "Heading above the recent posts list."
+        },
+        "register.heading": {
+            "label": "Register \u00b7 Heading",
+            "description": "Title shown on the registration page."
+        },
+        "register.submit": {
+            "label": "Register \u00b7 Submit button",
+            "description": "Label for the create profile button."
+        },
+        "settings.heading": {
+            "label": "Settings \u00b7 Heading",
+            "description": "Title shown on the settings page."
+        },
+        "nav.knowledge": {
+            "label": "Navigation \u00b7 Knowledge base",
+            "description": "Link to the knowledge base directory."
+        },
+        "feed.knowledge.heading": {
+            "label": "Feed \u00b7 Knowledge base heading",
+            "description": "Heading above the knowledge base summary panel."
+        }
+    },
+    "locales": {
+        "en": {
+            "label": "English (US)",
+            "strings": {
+                "nav.feed": "Feed",
+                "nav.profile": "My Profile",
+                "nav.settings": "Settings",
+                "nav.setup": "Setup",
+                "nav.pages": "Pages",
+                "nav.sign_out": "Sign out",
+                "nav.sign_in": "Sign in",
+                "nav.register": "Create account",
+                "feed.composer.heading": "Share something",
+                "feed.latest_activity.heading": "Latest activity",
+                "register.heading": "Create your profile",
+                "register.submit": "Create profile",
+                "settings.heading": "Settings",
+                "nav.knowledge": "Knowledge base",
+                "feed.knowledge.heading": "Knowledge base"
+            }
+        }
+    },
+    "fallback_locale": "en"
+}

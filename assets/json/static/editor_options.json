@@ -1,0 +1,19 @@
+{
+    "formatting": [
+        {"name": "bold", "label": "Bold", "element": "strong"},
+        {"name": "italic", "label": "Italic", "element": "em"},
+        {"name": "blockquote", "label": "Quote", "element": "blockquote"},
+        {"name": "code", "label": "Code", "element": "code"}
+    ],
+    "inputs": [
+        {"name": "cover_image", "type": "file", "accept": "image/*"},
+        {"name": "attachments", "type": "file", "multiple": true},
+        {"name": "summary", "type": "textarea"},
+        {"name": "tags", "type": "text"}
+    ],
+    "variables": {
+        "privacy_levels": ["public", "connections", "private"],
+        "conversation_styles": ["standard", "threaded", "broadcast"],
+        "notification_templates": ["post_update", "policy_update"]
+    }
+}

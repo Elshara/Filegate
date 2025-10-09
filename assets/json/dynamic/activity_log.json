@@ -1,0 +1,429 @@
+{
+    "records": [
+        {
+            "id": 15,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "dataset",
+            "action": "save",
+            "dataset": "knowledge_categories",
+            "details": {
+                "dataset": "knowledge_categories",
+                "format": "json",
+                "reason": "Seed knowledge category dataset",
+                "trigger": "seed_defaults",
+                "snapshot_recorded": false,
+                "had_previous_payload": true,
+                "changed": false,
+                "bytes_written": 600,
+                "path": "/workspace/Filegate/assets/php/global/../../json/dynamic/knowledge_categories.json",
+                "previous_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39",
+                "current_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39"
+            },
+            "context": {
+                "trigger": "seed_defaults",
+                "dataset": "knowledge_categories"
+            },
+            "performed_by": null,
+            "trigger": "seed_defaults",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 14,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "dataset",
+            "action": "save",
+            "dataset": "knowledge_categories",
+            "details": {
+                "dataset": "knowledge_categories",
+                "format": "json",
+                "reason": "Seed knowledge category dataset",
+                "trigger": "seed_defaults",
+                "snapshot_recorded": false,
+                "had_previous_payload": true,
+                "changed": false,
+                "bytes_written": 600,
+                "path": "/workspace/Filegate/assets/php/global/../../json/dynamic/knowledge_categories.json",
+                "previous_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39",
+                "current_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39"
+            },
+            "context": {
+                "trigger": "seed_defaults",
+                "dataset": "knowledge_categories"
+            },
+            "performed_by": null,
+            "trigger": "seed_defaults",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 13,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "dataset",
+            "action": "save",
+            "dataset": "knowledge_categories",
+            "details": {
+                "dataset": "knowledge_categories",
+                "format": "json",
+                "reason": "Seed knowledge category dataset",
+                "trigger": "seed_defaults",
+                "snapshot_recorded": false,
+                "had_previous_payload": true,
+                "changed": false,
+                "bytes_written": 600,
+                "path": "/workspace/Filegate/assets/php/global/../../json/dynamic/knowledge_categories.json",
+                "previous_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39",
+                "current_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39"
+            },
+            "context": {
+                "trigger": "seed_defaults",
+                "dataset": "knowledge_categories"
+            },
+            "performed_by": null,
+            "trigger": "seed_defaults",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 12,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "dataset",
+            "action": "save",
+            "dataset": "knowledge_categories",
+            "details": {
+                "dataset": "knowledge_categories",
+                "format": "json",
+                "reason": "Seed knowledge category dataset",
+                "trigger": "seed_defaults",
+                "snapshot_recorded": false,
+                "had_previous_payload": true,
+                "changed": false,
+                "bytes_written": 600,
+                "path": "/workspace/Filegate/assets/php/global/../../json/dynamic/knowledge_categories.json",
+                "previous_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39",
+                "current_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39"
+            },
+            "context": {
+                "trigger": "seed_defaults",
+                "dataset": "knowledge_categories"
+            },
+            "performed_by": null,
+            "trigger": "seed_defaults",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 11,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "dataset",
+            "action": "save",
+            "dataset": "knowledge_categories",
+            "details": {
+                "dataset": "knowledge_categories",
+                "format": "json",
+                "reason": "Seed knowledge category dataset",
+                "trigger": "seed_defaults",
+                "snapshot_recorded": false,
+                "had_previous_payload": true,
+                "changed": false,
+                "bytes_written": 600,
+                "path": "/workspace/Filegate/assets/php/global/../../json/dynamic/knowledge_categories.json",
+                "previous_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39",
+                "current_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39"
+            },
+            "context": {
+                "trigger": "seed_defaults",
+                "dataset": "knowledge_categories"
+            },
+            "performed_by": null,
+            "trigger": "seed_defaults",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 10,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "dataset",
+            "action": "save",
+            "dataset": "knowledge_categories",
+            "details": {
+                "dataset": "knowledge_categories",
+                "format": "json",
+                "reason": "Seed knowledge category dataset",
+                "trigger": "seed_defaults",
+                "snapshot_recorded": false,
+                "had_previous_payload": true,
+                "changed": false,
+                "bytes_written": 600,
+                "path": "/workspace/Filegate/assets/php/global/../../json/dynamic/knowledge_categories.json",
+                "previous_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39",
+                "current_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39"
+            },
+            "context": {
+                "trigger": "seed_defaults",
+                "dataset": "knowledge_categories"
+            },
+            "performed_by": null,
+            "trigger": "seed_defaults",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 9,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "dataset",
+            "action": "save",
+            "dataset": "knowledge_categories",
+            "details": {
+                "dataset": "knowledge_categories",
+                "format": "json",
+                "reason": "Seed knowledge category dataset",
+                "trigger": "seed_defaults",
+                "snapshot_recorded": false,
+                "had_previous_payload": true,
+                "changed": false,
+                "bytes_written": 600,
+                "path": "/workspace/Filegate/assets/php/global/../../json/dynamic/knowledge_categories.json",
+                "previous_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39",
+                "current_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39"
+            },
+            "context": {
+                "trigger": "seed_defaults",
+                "dataset": "knowledge_categories"
+            },
+            "performed_by": null,
+            "trigger": "seed_defaults",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 8,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "dataset",
+            "action": "save",
+            "dataset": "asset_configurations",
+            "details": {
+                "dataset": "asset_configurations",
+                "format": "json",
+                "reason": "Programmatic save: asset_configurations",
+                "trigger": "automation",
+                "snapshot_recorded": true,
+                "had_previous_payload": true,
+                "changed": true,
+                "bytes_written": 376727,
+                "path": "/workspace/Filegate/assets/php/global/../../json/dynamic/asset_configurations.json",
+                "previous_hash": "8a38b5a13c147ec3d80402fa405301c817d7b162",
+                "current_hash": "222c38ebdcdedcf91d8d08c4e6b55ae2e0070dc6"
+            },
+            "context": {
+                "trigger": "automation",
+                "dataset": "asset_configurations"
+            },
+            "performed_by": null,
+            "trigger": "automation",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 7,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "snapshot",
+            "action": "recorded",
+            "dataset": "asset_configurations",
+            "details": {
+                "dataset": "asset_configurations",
+                "snapshot_id": 3,
+                "reason": "Programmatic save: asset_configurations",
+                "format": "json",
+                "payload_hash": "8a38b5a13c147ec3d80402fa405301c817d7b162"
+            },
+            "context": {
+                "trigger": "automation",
+                "dataset": "asset_configurations"
+            },
+            "performed_by": null,
+            "trigger": "automation",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 6,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "dataset",
+            "action": "save",
+            "dataset": "asset_snapshots",
+            "details": {
+                "dataset": "asset_snapshots",
+                "format": "json",
+                "reason": "Snapshot dataset update",
+                "trigger": "automation",
+                "snapshot_recorded": false,
+                "had_previous_payload": false,
+                "changed": true,
+                "bytes_written": 331820,
+                "path": "/workspace/Filegate/assets/php/global/../../json/dynamic/asset_snapshots.json",
+                "previous_hash": null,
+                "current_hash": "ce4b398bad66a464b48e157b50a59c9b6acd9050"
+            },
+            "context": {
+                "dataset": "asset_snapshots",
+                "trigger": "automation"
+            },
+            "performed_by": null,
+            "trigger": "automation",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 5,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "dataset",
+            "action": "save",
+            "dataset": "knowledge_categories",
+            "details": {
+                "dataset": "knowledge_categories",
+                "format": "json",
+                "reason": "Seed knowledge category dataset",
+                "trigger": "seed_defaults",
+                "snapshot_recorded": true,
+                "had_previous_payload": true,
+                "changed": false,
+                "bytes_written": 600,
+                "path": "/workspace/Filegate/assets/php/global/../../json/dynamic/knowledge_categories.json",
+                "previous_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39",
+                "current_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39"
+            },
+            "context": {
+                "trigger": "seed_defaults",
+                "dataset": "knowledge_categories"
+            },
+            "performed_by": null,
+            "trigger": "seed_defaults",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 4,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "snapshot",
+            "action": "recorded",
+            "dataset": "knowledge_categories",
+            "details": {
+                "dataset": "knowledge_categories",
+                "snapshot_id": 2,
+                "reason": "Seed knowledge category dataset",
+                "format": "json",
+                "payload_hash": "5452fa7cce5db42167634b9cd6c01c36c5e09c39"
+            },
+            "context": {
+                "trigger": "seed_defaults",
+                "dataset": "knowledge_categories"
+            },
+            "performed_by": null,
+            "trigger": "seed_defaults",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 3,
+            "created_at": "2025-10-09T03:28:10+00:00",
+            "category": "dataset",
+            "action": "save",
+            "dataset": "asset_snapshots",
+            "details": {
+                "dataset": "asset_snapshots",
+                "format": "json",
+                "reason": "Snapshot dataset update",
+                "trigger": "automation",
+                "snapshot_recorded": false,
+                "had_previous_payload": false,
+                "changed": true,
+                "bytes_written": 2340,
+                "path": "/workspace/Filegate/assets/php/global/../../json/dynamic/asset_snapshots.json",
+                "previous_hash": null,
+                "current_hash": "561ad8bdf8a4a5c7763da868a097c62205414321"
+            },
+            "context": {
+                "dataset": "asset_snapshots",
+                "trigger": "automation"
+            },
+            "performed_by": null,
+            "trigger": "automation",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 2,
+            "created_at": "2025-10-09T03:27:17+00:00",
+            "category": "snapshot",
+            "action": "recorded",
+            "dataset": "knowledge_categories",
+            "details": {
+                "dataset": "knowledge_categories",
+                "snapshot_id": 1,
+                "reason": "/workspace/Filegate/assets/php/global/../../json/dynamic/knowledge_categories.json",
+                "format": "json",
+                "payload_hash": "5aad910ebf318e0bf0044b7839b6fe9dfcce50bf"
+            },
+            "context": {
+                "records": [
+                    {
+                        "id": 1,
+                        "slug": "getting-started",
+                        "name": "Getting Started",
+                        "description": "Onboarding guides that introduce core Filegate features and workflows.",
+                        "visibility": "public",
+                        "ordering": 1
+                    },
+                    {
+                        "id": 2,
+                        "slug": "operations",
+                        "name": "Operations",
+                        "description": "Runbooks and operational reference for administrators and moderators.",
+                        "visibility": "members",
+                        "ordering": 2
+                    }
+                ],
+                "next_id": 3,
+                "dataset": "knowledge_categories",
+                "trigger": "snapshot_record"
+            },
+            "performed_by": null,
+            "trigger": "snapshot_record",
+            "ip_address": null,
+            "user_agent": null
+        },
+        {
+            "id": 1,
+            "created_at": "2025-10-09T03:27:17+00:00",
+            "category": "dataset",
+            "action": "save",
+            "dataset": "asset_snapshots",
+            "details": {
+                "dataset": "asset_snapshots",
+                "format": "json",
+                "reason": "Snapshot dataset update",
+                "trigger": "automation",
+                "snapshot_recorded": false,
+                "had_previous_payload": false,
+                "changed": true,
+                "bytes_written": 1335,
+                "path": "/workspace/Filegate/assets/php/global/../../json/dynamic/asset_snapshots.json",
+                "previous_hash": null,
+                "current_hash": "c8c58ffce1a27e23adf69fcf140a2f048c762f69"
+            },
+            "context": {
+                "dataset": "asset_snapshots",
+                "trigger": "automation"
+            },
+            "performed_by": null,
+            "trigger": "automation",
+            "ip_address": null,
+            "user_agent": null
+        }
+    ],
+    "next_id": 16,
+    "metadata": {
+        "limit": 500
+    }
+}
