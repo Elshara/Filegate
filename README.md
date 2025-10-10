@@ -79,6 +79,7 @@ Every PHP, CSS, JSON, JS, XML, and HTTP controller is catalogued automatically t
 - capture global or role-level overrides that cascade to every user; and
 - create or clear user-specific values without editing flat files; and
 - open the dataset manager to upload replacements, edit payloads, or regenerate seeded defaults for JSON and XML stores.
+- curate **Content modules** built from the XML blueprints so teams can import reusable post types, customise field prompts, and guide publishers with step-by-step wizards.
 
 The setup dashboard mirrors the `assets/php` convention by saving each change straight into the flat-file datasets (`asset_configurations.json` and `asset_overrides.json`). As new files are introduced, the manifest is refreshed automatically during bootstrap so the dashboard always reflects the real filesystem.
 

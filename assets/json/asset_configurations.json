@@ -11168,6 +11168,366 @@
                     "baseline_allow_user_override": true
                 }
             }
+        },
+        "assets/json/content_modules.json": {
+            "label": "Json Content Modules",
+            "scope": "global",
+            "extension": "json",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/add_content_module.php": {
+            "label": "Add Content Module",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/default_content_modules_dataset.php": {
+            "label": "Default Content Modules Dataset",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/delete_content_module.php": {
+            "label": "Delete Content Module",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/load_content_blueprints.php": {
+            "label": "Load Content Blueprints",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/load_content_modules.php": {
+            "label": "Load Content Modules",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/normalize_content_module_key.php": {
+            "label": "Normalize Content Module Key",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/save_content_modules.php": {
+            "label": "Save Content Modules",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
+        },
+        "assets/php/update_content_module.php": {
+            "label": "Update Content Module",
+            "scope": "global",
+            "extension": "php",
+            "allow_user_override": false,
+            "allowed_roles": [
+                "admin"
+            ],
+            "parameters": {
+                "enabled": {
+                    "label": "Enable Asset",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle whether this asset is active.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "mode": {
+                    "label": "Mode",
+                    "type": "select",
+                    "options": [
+                        "default",
+                        "minimal",
+                        "extended"
+                    ],
+                    "default": "default",
+                    "description": "Choose the default operating mode for this asset.",
+                    "allow_user_override": false,
+                    "baseline_allow_user_override": false
+                },
+                "variant": {
+                    "label": "Template Variant",
+                    "type": "text",
+                    "default": "",
+                    "description": "Optional variant keyword applied when rendering.",
+                    "allow_user_override": true,
+                    "baseline_allow_user_override": true
+                }
+            }
         }
     }
 }

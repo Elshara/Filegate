@@ -73,6 +73,13 @@ require_once __DIR__ . '/add_knowledge_category.php';
 require_once __DIR__ . '/update_knowledge_category.php';
 require_once __DIR__ . '/delete_knowledge_category.php';
 require_once __DIR__ . '/list_knowledge_categories.php';
+require_once __DIR__ . '/load_content_modules.php';
+require_once __DIR__ . '/save_content_modules.php';
+require_once __DIR__ . '/default_content_modules_dataset.php';
+require_once __DIR__ . '/add_content_module.php';
+require_once __DIR__ . '/update_content_module.php';
+require_once __DIR__ . '/delete_content_module.php';
+require_once __DIR__ . '/load_content_blueprints.php';
 require_once __DIR__ . '/load_automations.php';
 require_once __DIR__ . '/default_automations_dataset.php';
 require_once __DIR__ . '/add_automation.php';
@@ -119,6 +126,7 @@ function fg_public_setup_controller(): void
     $errors = [];
     fg_ensure_data_directory();
     $manifest = fg_load_dataset_manifest();
+    $datasets = $manifest;
     $translations = fg_load_translations();
     try {
         $projectStatus = fg_load_project_status();
@@ -199,6 +207,18 @@ function fg_public_setup_controller(): void
         $errors[] = 'Unable to load knowledge category dataset: ' . $exception->getMessage();
         $knowledgeCategories = fg_default_knowledge_categories_dataset();
     }
+
+    try {
+        $contentModules = fg_load_content_modules();
+        if (!isset($contentModules['records']) || !is_array($contentModules['records'])) {
+            $contentModules = fg_default_content_modules_dataset();
+        }
+    } catch (Throwable $exception) {
+        $errors[] = 'Unable to load content module dataset: ' . $exception->getMessage();
+        $contentModules = fg_default_content_modules_dataset();
+    }
+
+    $contentBlueprints = fg_load_content_blueprints();
 
     try {
         $automations = fg_load_automations();
@@ -988,6 +1008,122 @@ function fg_public_setup_controller(): void
                         $errors[] = $exception->getMessage();
                     }
                 }
+            }
+        } elseif (in_array($action, ['create_content_module', 'update_content_module', 'delete_content_module', 'adopt_content_blueprint'], true)) {
+            try {
+                $contentModules = fg_load_content_modules();
+                if (!isset($contentModules['records']) || !is_array($contentModules['records'])) {
+                    $contentModules = fg_default_content_modules_dataset();
+                    fg_save_content_modules($contentModules);
+                }
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to load content module dataset: ' . $exception->getMessage();
+                $contentModules = fg_default_content_modules_dataset();
+            }
+
+            if ($action === 'delete_content_module') {
+                $moduleId = (int) ($_POST['module_id'] ?? 0);
+                if ($moduleId <= 0) {
+                    $errors[] = 'Unknown module selected for deletion.';
+                } else {
+                    try {
+                        if (fg_delete_content_module($moduleId)) {
+                            $message = 'Content module deleted successfully.';
+                        } else {
+                            $errors[] = 'Content module could not be deleted or no longer exists.';
+                        }
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } else {
+                $payload = [
+                    'label' => $_POST['label'] ?? '',
+                    'dataset' => $_POST['dataset'] ?? 'posts',
+                    'format' => $_POST['format'] ?? '',
+                    'description' => $_POST['description'] ?? '',
+                    'categories' => $_POST['categories'] ?? [],
+                    'fields' => $_POST['fields'] ?? [],
+                    'profile_prompts' => $_POST['profile_prompts'] ?? [],
+                    'wizard_steps' => $_POST['wizard_steps'] ?? [],
+                    'css_tokens' => $_POST['css_tokens'] ?? [],
+                ];
+
+                if ($action === 'adopt_content_blueprint') {
+                    $blueprintRaw = $_POST['blueprint'] ?? '';
+                    $decoded = json_decode((string) $blueprintRaw, true);
+                    if (is_array($decoded)) {
+                        $payload['label'] = $decoded['label'] ?? ($decoded['title'] ?? 'Content module');
+                        $payload['description'] = $decoded['description'] ?? ($decoded['summary'] ?? '');
+                        $payload['format'] = $decoded['format'] ?? '';
+                        if (!empty($decoded['categories']) && is_array($decoded['categories'])) {
+                            $payload['categories'] = $decoded['categories'];
+                        }
+                        if (!empty($decoded['fields']) && is_array($decoded['fields'])) {
+                            $payload['fields'] = array_map(static function (array $field): string {
+                                $label = trim((string) ($field['label'] ?? ($field['title'] ?? '')));
+                                $description = trim((string) ($field['description'] ?? ''));
+                                if ($description === '') {
+                                    return $label;
+                                }
+                                return $label . '|' . $description;
+                            }, $decoded['fields']);
+                        }
+                        if (!empty($decoded['profile_prompts']) && is_array($decoded['profile_prompts'])) {
+                            $payload['profile_prompts'] = array_map(static function (array $prompt): string {
+                                $label = trim((string) ($prompt['label'] ?? ($prompt['name'] ?? '')));
+                                $description = trim((string) ($prompt['description'] ?? ''));
+                                if ($description === '') {
+                                    return $label;
+                                }
+                                return $label . '|' . $description;
+                            }, $decoded['profile_prompts']);
+                        }
+                        if (!empty($decoded['wizard_steps']) && is_array($decoded['wizard_steps'])) {
+                            $payload['wizard_steps'] = array_map(static function (array $step): string {
+                                $title = trim((string) ($step['title'] ?? ''));
+                                $prompt = trim((string) ($step['prompt'] ?? ''));
+                                if ($prompt === '') {
+                                    return $title;
+                                }
+                                return $title . '|' . $prompt;
+                            }, $decoded['wizard_steps']);
+                        }
+                        if (!empty($decoded['css_tokens']) && is_array($decoded['css_tokens'])) {
+                            $payload['css_tokens'] = $decoded['css_tokens'];
+                        }
+                    }
+                }
+
+                if ($action === 'create_content_module' || $action === 'adopt_content_blueprint') {
+                    try {
+                        $created = fg_add_content_module($payload);
+                        $message = 'Content module "' . ($created['label'] ?? 'Module') . '" created.';
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                } elseif ($action === 'update_content_module') {
+                    $moduleId = (int) ($_POST['module_id'] ?? 0);
+                    if ($moduleId <= 0) {
+                        $errors[] = 'Invalid module identifier supplied.';
+                    } else {
+                        try {
+                            $updated = fg_update_content_module($moduleId, $payload);
+                            if ($updated !== null) {
+                                $message = 'Content module updated successfully.';
+                            } else {
+                                $errors[] = 'Content module not found.';
+                            }
+                        } catch (Throwable $exception) {
+                            $errors[] = $exception->getMessage();
+                        }
+                    }
+                }
+            }
+            try {
+                $contentModules = fg_load_content_modules();
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to refresh content module dataset: ' . $exception->getMessage();
             }
         } elseif (in_array($action, ['create_project_status', 'update_project_status', 'delete_project_status'], true)) {
             try {
@@ -2089,6 +2225,8 @@ function fg_public_setup_controller(): void
         'knowledge_default_status' => $knowledgeDefaultStatus,
         'knowledge_default_visibility' => $knowledgeDefaultVisibility,
         'knowledge_default_category' => $knowledgeDefaultCategoryId,
+        'content_modules' => $contentModules,
+        'content_blueprints' => $contentBlueprints,
         'feature_request_statuses' => $featureRequestStatusOptions,
         'feature_request_priorities' => $featureRequestPriorityOptions,
         'feature_request_policy' => $featureRequestPolicy,

@@ -1,0 +1,389 @@
+{
+    "records": [
+        {
+            "id": 1,
+            "key": "create-agreement",
+            "label": "Create Agreement",
+            "format": "Informative",
+            "dataset": "posts",
+            "description": "Use   agreements   to form mutual benefits for completing work which may otherwise not get accomplished.",
+            "categories": [
+                "Interfold Community",
+                "General Interactions",
+                "Greetings For Newcomers",
+                "Say Hello",
+                "Community Icebreakers",
+                "Say Goodbye"
+            ],
+            "fields": [
+                "Job|Describe the job that is needed, in as much detail as you can.",
+                "Provisions|Describe any mutual benefits to this agreement that come with the job implementation process as commitment happens.",
+                "Considerations|Add things to consider regarding this agreement, that the job may entail from time to time, which may get overlooked but are important to keep in mind."
+            ],
+            "profile_prompts": [
+                "Profile Information|Your Interfold Community Profile will be unlike any other profile on every other social site you have ever discovered. Built from the ground up literally to let you be in control of the data you'd like to share, however you wish at Any time. In a way that is forever and always truly your own. Prioritizing ideas that you brought to life first in a virtual format. Welcome to a unique design, where no two profiles will look exactly the same. This is the first of many other input areas you can use, or keep it simple with just one. Whatever you feel best keeps a record of interests of yours, you would like to enjoy with someone else.",
+                "Birthday|Add your birthday to your profile.",
+                "Gender|Female, Male, X, None Add your gender to your profile.",
+                "Picture|The photo you would like to set as your profile avatar and icon across the site.",
+                "Posts|In this part of your profile, you can link to any post that you would like to follow, including your own creations, or otherwise have an interest in contributing to.",
+                "Replies|In this part of your profile, you can link to any replies, including your own that you have made on posts you follow."
+            ],
+            "wizard_steps": [
+                "Outline|Use   agreements   to form mutual benefits for completing work which may otherwise not get accomplished.",
+                "Structure|Select categories and supporting fields before publishing.",
+                "Review|Confirm attachments, collaborators, and privacy rules prior to launch."
+            ],
+            "css_tokens": [
+                "%",
+                "::after",
+                "::backdrop",
+                "::before",
+                "::file-selector-button",
+                "::first-letter",
+                "::first-line",
+                "::grammar-error",
+                "::highlight()",
+                "::marker",
+                "::placeholder",
+                "::selection"
+            ]
+        },
+        {
+            "id": 2,
+            "key": "create-article",
+            "label": "Create Article",
+            "format": "Informative",
+            "dataset": "posts",
+            "description": "Use   articles   for time-sensitive content like news, press releases or blog posts.",
+            "categories": [
+                "Interfold Community",
+                "General Interactions",
+                "Greetings For Newcomers",
+                "Say Hello",
+                "Community Icebreakers",
+                "Say Goodbye"
+            ],
+            "fields": [
+                "Avatar|Set an avatar or theme for your post.",
+                "Entry|What is your article about?"
+            ],
+            "profile_prompts": [
+                "Profile Information|Your Interfold Community Profile will be unlike any other profile on every other social site you have ever discovered. Built from the ground up literally to let you be in control of the data you'd like to share, however you wish at Any time. In a way that is forever and always truly your own. Prioritizing ideas that you brought to life first in a virtual format. Welcome to a unique design, where no two profiles will look exactly the same. This is the first of many other input areas you can use, or keep it simple with just one. Whatever you feel best keeps a record of interests of yours, you would like to enjoy with someone else.",
+                "Birthday|Add your birthday to your profile.",
+                "Gender|Female, Male, X, None Add your gender to your profile.",
+                "Picture|The photo you would like to set as your profile avatar and icon across the site.",
+                "Posts|In this part of your profile, you can link to any post that you would like to follow, including your own creations, or otherwise have an interest in contributing to.",
+                "Replies|In this part of your profile, you can link to any replies, including your own that you have made on posts you follow."
+            ],
+            "wizard_steps": [
+                "Outline|Use   articles   for time-sensitive content like news, press releases or blog posts.",
+                "Structure|Select categories and supporting fields before publishing.",
+                "Review|Confirm attachments, collaborators, and privacy rules prior to launch."
+            ],
+            "css_tokens": [
+                "%",
+                "::after",
+                "::backdrop",
+                "::before",
+                "::file-selector-button",
+                "::first-letter",
+                "::first-line",
+                "::grammar-error",
+                "::highlight()",
+                "::marker",
+                "::placeholder",
+                "::selection"
+            ]
+        },
+        {
+            "id": 3,
+            "key": "create-audio",
+            "label": "Create Audio",
+            "format": "Multimedia",
+            "dataset": "posts",
+            "description": "Use   audio files   to hear amazing sounds.",
+            "categories": [
+                "Interfold Community",
+                "General Interactions",
+                "Greetings For Newcomers",
+                "Say Hello",
+                "Community Icebreakers",
+                "Say Goodbye"
+            ],
+            "fields": [
+                "Add, Browse or Import Audio|Create a playlist of audio files.",
+                "Contents|Describe the content of what people will hear in these audio files."
+            ],
+            "profile_prompts": [
+                "Profile Information|Your Interfold Community Profile will be unlike any other profile on every other social site you have ever discovered. Built from the ground up literally to let you be in control of the data you'd like to share, however you wish at Any time. In a way that is forever and always truly your own. Prioritizing ideas that you brought to life first in a virtual format. Welcome to a unique design, where no two profiles will look exactly the same. This is the first of many other input areas you can use, or keep it simple with just one. Whatever you feel best keeps a record of interests of yours, you would like to enjoy with someone else.",
+                "Birthday|Add your birthday to your profile.",
+                "Gender|Female, Male, X, None Add your gender to your profile.",
+                "Picture|The photo you would like to set as your profile avatar and icon across the site.",
+                "Posts|In this part of your profile, you can link to any post that you would like to follow, including your own creations, or otherwise have an interest in contributing to.",
+                "Replies|In this part of your profile, you can link to any replies, including your own that you have made on posts you follow."
+            ],
+            "wizard_steps": [
+                "Outline|Use   audio files   to hear amazing sounds.",
+                "Structure|Select categories and supporting fields before publishing.",
+                "Review|Confirm attachments, collaborators, and privacy rules prior to launch."
+            ],
+            "css_tokens": [
+                "%",
+                "::after",
+                "::backdrop",
+                "::before",
+                "::file-selector-button",
+                "::first-letter",
+                "::first-line",
+                "::grammar-error",
+                "::highlight()",
+                "::marker",
+                "::placeholder",
+                "::selection"
+            ]
+        },
+        {
+            "id": 4,
+            "key": "create-basic-page",
+            "label": "Create Basic Page",
+            "format": "Informative",
+            "dataset": "posts",
+            "description": "Use   basic pages   for your static content, such as an 'About us' page.",
+            "categories": [
+                "Interfold Community",
+                "General Interactions",
+                "Greetings For Newcomers",
+                "Say Hello",
+                "Community Icebreakers",
+                "Say Goodbye"
+            ],
+            "fields": [
+                "Create Basic Page|Describe how this entry should appear when published."
+            ],
+            "profile_prompts": [
+                "Profile Information|Your Interfold Community Profile will be unlike any other profile on every other social site you have ever discovered. Built from the ground up literally to let you be in control of the data you'd like to share, however you wish at Any time. In a way that is forever and always truly your own. Prioritizing ideas that you brought to life first in a virtual format. Welcome to a unique design, where no two profiles will look exactly the same. This is the first of many other input areas you can use, or keep it simple with just one. Whatever you feel best keeps a record of interests of yours, you would like to enjoy with someone else.",
+                "Birthday|Add your birthday to your profile.",
+                "Gender|Female, Male, X, None Add your gender to your profile.",
+                "Picture|The photo you would like to set as your profile avatar and icon across the site.",
+                "Posts|In this part of your profile, you can link to any post that you would like to follow, including your own creations, or otherwise have an interest in contributing to.",
+                "Replies|In this part of your profile, you can link to any replies, including your own that you have made on posts you follow."
+            ],
+            "wizard_steps": [
+                "Outline|Use   basic pages   for your static content, such as an 'About us' page.",
+                "Structure|Select categories and supporting fields before publishing.",
+                "Review|Confirm attachments, collaborators, and privacy rules prior to launch."
+            ],
+            "css_tokens": [
+                "%",
+                "::after",
+                "::backdrop",
+                "::before",
+                "::file-selector-button",
+                "::first-letter",
+                "::first-line",
+                "::grammar-error",
+                "::highlight()",
+                "::marker",
+                "::placeholder",
+                "::selection"
+            ]
+        },
+        {
+            "id": 5,
+            "key": "create-biography",
+            "label": "Create Biography",
+            "format": "Informative",
+            "dataset": "posts",
+            "description": "Use   biographies   to introduce yourself to the community.",
+            "categories": [
+                "Interfold Community",
+                "General Interactions",
+                "Greetings For Newcomers",
+                "Say Hello",
+                "Community Icebreakers",
+                "Say Goodbye"
+            ],
+            "fields": [
+                "Introduction|Discuss your personal biography in detail.",
+                "Impressions|Describe your community impressions, in ways that your feedback can be used at any time to implement improvements. We are here to help you out, if you need it."
+            ],
+            "profile_prompts": [
+                "Profile Information|Your Interfold Community Profile will be unlike any other profile on every other social site you have ever discovered. Built from the ground up literally to let you be in control of the data you'd like to share, however you wish at Any time. In a way that is forever and always truly your own. Prioritizing ideas that you brought to life first in a virtual format. Welcome to a unique design, where no two profiles will look exactly the same. This is the first of many other input areas you can use, or keep it simple with just one. Whatever you feel best keeps a record of interests of yours, you would like to enjoy with someone else.",
+                "Birthday|Add your birthday to your profile.",
+                "Gender|Female, Male, X, None Add your gender to your profile.",
+                "Picture|The photo you would like to set as your profile avatar and icon across the site.",
+                "Posts|In this part of your profile, you can link to any post that you would like to follow, including your own creations, or otherwise have an interest in contributing to.",
+                "Replies|In this part of your profile, you can link to any replies, including your own that you have made on posts you follow."
+            ],
+            "wizard_steps": [
+                "Outline|Use   biographies   to introduce yourself to the community.",
+                "Structure|Select categories and supporting fields before publishing.",
+                "Review|Confirm attachments, collaborators, and privacy rules prior to launch."
+            ],
+            "css_tokens": [
+                "%",
+                "::after",
+                "::backdrop",
+                "::before",
+                "::file-selector-button",
+                "::first-letter",
+                "::first-line",
+                "::grammar-error",
+                "::highlight()",
+                "::marker",
+                "::placeholder",
+                "::selection"
+            ]
+        },
+        {
+            "id": 6,
+            "key": "create-category",
+            "label": "Create Category",
+            "format": "Guidance",
+            "dataset": "posts",
+            "description": "Use categories to list content into links of relativity.",
+            "categories": [
+                "Interfold Community",
+                "General Interactions",
+                "Greetings For Newcomers",
+                "Say Hello",
+                "Community Icebreakers",
+                "Say Goodbye"
+            ],
+            "fields": [
+                "Create Category|Describe how this entry should appear when published."
+            ],
+            "profile_prompts": [
+                "Profile Information|Your Interfold Community Profile will be unlike any other profile on every other social site you have ever discovered. Built from the ground up literally to let you be in control of the data you'd like to share, however you wish at Any time. In a way that is forever and always truly your own. Prioritizing ideas that you brought to life first in a virtual format. Welcome to a unique design, where no two profiles will look exactly the same. This is the first of many other input areas you can use, or keep it simple with just one. Whatever you feel best keeps a record of interests of yours, you would like to enjoy with someone else.",
+                "Birthday|Add your birthday to your profile.",
+                "Gender|Female, Male, X, None Add your gender to your profile.",
+                "Picture|The photo you would like to set as your profile avatar and icon across the site.",
+                "Posts|In this part of your profile, you can link to any post that you would like to follow, including your own creations, or otherwise have an interest in contributing to.",
+                "Replies|In this part of your profile, you can link to any replies, including your own that you have made on posts you follow."
+            ],
+            "wizard_steps": [
+                "Outline|Use categories to list content into links of relativity.",
+                "Structure|Select categories and supporting fields before publishing.",
+                "Review|Confirm attachments, collaborators, and privacy rules prior to launch."
+            ],
+            "css_tokens": [
+                "%",
+                "::after",
+                "::backdrop",
+                "::before",
+                "::file-selector-button",
+                "::first-letter",
+                "::first-line",
+                "::grammar-error",
+                "::highlight()",
+                "::marker",
+                "::placeholder",
+                "::selection"
+            ]
+        },
+        {
+            "id": 7,
+            "key": "create-concern",
+            "label": "Create Concern",
+            "format": "Engagement",
+            "dataset": "posts",
+            "description": "Use   concerns   to voice care for projects of passion, that volunteer contributors like yourself appreciate.",
+            "categories": [
+                "Interfold Community",
+                "General Interactions",
+                "Greetings For Newcomers",
+                "Say Hello",
+                "Community Icebreakers",
+                "Say Goodbye"
+            ],
+            "fields": [
+                "Concern|Describe your passion in regards to an actively ongoing project accepting volunteer contributions, including your own.",
+                "Issues|Describe the work you have done to further the goal of this volunteer project, that you are concerned for.",
+                "Care|Describe the type of care that is regularly needed or sought for, in order to stabilize and grow this project of passion further.",
+                "Contribute|Add details for any position open to new volunteers, concerning any assistance that is needed with this project.",
+                "Project|Add recruitment information to help this project gain new volunteer contributors."
+            ],
+            "profile_prompts": [
+                "Profile Information|Your Interfold Community Profile will be unlike any other profile on every other social site you have ever discovered. Built from the ground up literally to let you be in control of the data you'd like to share, however you wish at Any time. In a way that is forever and always truly your own. Prioritizing ideas that you brought to life first in a virtual format. Welcome to a unique design, where no two profiles will look exactly the same. This is the first of many other input areas you can use, or keep it simple with just one. Whatever you feel best keeps a record of interests of yours, you would like to enjoy with someone else.",
+                "Birthday|Add your birthday to your profile.",
+                "Gender|Female, Male, X, None Add your gender to your profile.",
+                "Picture|The photo you would like to set as your profile avatar and icon across the site.",
+                "Posts|In this part of your profile, you can link to any post that you would like to follow, including your own creations, or otherwise have an interest in contributing to.",
+                "Replies|In this part of your profile, you can link to any replies, including your own that you have made on posts you follow."
+            ],
+            "wizard_steps": [
+                "Outline|Use   concerns   to voice care for projects of passion, that volunteer contributors like yourself appreciate.",
+                "Structure|Select categories and supporting fields before publishing.",
+                "Review|Confirm attachments, collaborators, and privacy rules prior to launch."
+            ],
+            "css_tokens": [
+                "%",
+                "::after",
+                "::backdrop",
+                "::before",
+                "::file-selector-button",
+                "::first-letter",
+                "::first-line",
+                "::grammar-error",
+                "::highlight()",
+                "::marker",
+                "::placeholder",
+                "::selection"
+            ]
+        },
+        {
+            "id": 8,
+            "key": "create-debate",
+            "label": "Create Debate",
+            "format": "Engagement",
+            "dataset": "posts",
+            "description": "Use   debates   to have civil arguments with people about opposing views, while finding things in common that can make improvements to ideas, so that change can be implemented for the better.",
+            "categories": [
+                "Interfold Community",
+                "General Interactions",
+                "Greetings For Newcomers",
+                "Say Hello",
+                "Community Icebreakers",
+                "Say Goodbye"
+            ],
+            "fields": [
+                "Argument|Describe an attachment to purpose that you feel passionate about, enough to have a civil argument on, while keeping an open mind for opposition.",
+                "Debate|Describe what you are, and are not willing to address as talking points for this civil argument.",
+                "Aftermath|Describe how this debate is going, by periodically updating your point of view, as it, you and others exchange perspectives around this civil argument."
+            ],
+            "profile_prompts": [
+                "Profile Information|Your Interfold Community Profile will be unlike any other profile on every other social site you have ever discovered. Built from the ground up literally to let you be in control of the data you'd like to share, however you wish at Any time. In a way that is forever and always truly your own. Prioritizing ideas that you brought to life first in a virtual format. Welcome to a unique design, where no two profiles will look exactly the same. This is the first of many other input areas you can use, or keep it simple with just one. Whatever you feel best keeps a record of interests of yours, you would like to enjoy with someone else.",
+                "Birthday|Add your birthday to your profile.",
+                "Gender|Female, Male, X, None Add your gender to your profile.",
+                "Picture|The photo you would like to set as your profile avatar and icon across the site.",
+                "Posts|In this part of your profile, you can link to any post that you would like to follow, including your own creations, or otherwise have an interest in contributing to.",
+                "Replies|In this part of your profile, you can link to any replies, including your own that you have made on posts you follow."
+            ],
+            "wizard_steps": [
+                "Outline|Use   debates   to have civil arguments with people about opposing views, while finding things in common that can make improvements to ideas, so that change can be implemented for the better.",
+                "Structure|Select categories and supporting fields before publishing.",
+                "Review|Confirm attachments, collaborators, and privacy rules prior to launch."
+            ],
+            "css_tokens": [
+                "%",
+                "::after",
+                "::backdrop",
+                "::before",
+                "::file-selector-button",
+                "::first-letter",
+                "::first-line",
+                "::grammar-error",
+                "::highlight()",
+                "::marker",
+                "::placeholder",
+                "::selection"
+            ]
+        }
+    ],
+    "next_id": 9,
+    "metadata": {
+        "blueprint_count": 36,
+        "category_count": 241,
+        "profile_prompt_count": 19
+    }
+}

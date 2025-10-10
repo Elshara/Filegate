@@ -118,6 +118,13 @@ function fg_render_setup_page(array $data = []): void
         $automationStatusLabels[$statusValue] = ucwords(str_replace('_', ' ', $statusValue));
     }
 
+    $contentModuleDataset = $data['content_modules'] ?? ['records' => [], 'next_id' => 1];
+    if (!isset($contentModuleDataset['records']) || !is_array($contentModuleDataset['records'])) {
+        $contentModuleDataset['records'] = [];
+    }
+    $contentModuleRecords = $contentModuleDataset['records'];
+    $contentBlueprints = $data['content_blueprints'] ?? [];
+
     $automationTriggerOptions = $data['automation_triggers'] ?? ['user_registered', 'post_published', 'feature_request_submitted', 'bug_report_created'];
     if (!is_array($automationTriggerOptions) || empty($automationTriggerOptions)) {
         $automationTriggerOptions = ['user_registered'];
@@ -1128,6 +1135,274 @@ function fg_render_setup_page(array $data = []): void
     }
 
     $body .= '</div>';
+
+    $datasetOptions = [];
+    foreach ($datasets as $datasetKey => $definition) {
+        $datasetOptions[$datasetKey] = $definition['label'] ?? $datasetKey;
+    }
+
+    $body .= '<section class="content-module-manager">';
+    $body .= '<h2>Content Modules</h2>';
+    $body .= '<p>Design interdependent content types that reuse shared categories, field prompts, and styling tokens pulled from the XML blueprints.</p>';
+
+    if (empty($contentModuleRecords)) {
+        $body .= '<p class="notice info">No content modules are active yet. Import a blueprint or create one from scratch below.</p>';
+    }
+
+    foreach ($contentModuleRecords as $module) {
+        $moduleId = (int) ($module['id'] ?? 0);
+        $moduleLabel = trim((string) ($module['label'] ?? 'Content module'));
+        $moduleKey = (string) ($module['key'] ?? '');
+        $moduleDataset = (string) ($module['dataset'] ?? 'posts');
+        $moduleFormat = trim((string) ($module['format'] ?? ''));
+        $moduleDescription = trim((string) ($module['description'] ?? ''));
+        $moduleCategories = array_map('strval', $module['categories'] ?? []);
+        $moduleFields = $module['fields'] ?? [];
+        $moduleProfilePrompts = $module['profile_prompts'] ?? [];
+        $moduleWizardSteps = $module['wizard_steps'] ?? [];
+        $moduleCssTokens = $module['css_tokens'] ?? [];
+
+        $categoryText = htmlspecialchars(implode("\n", $moduleCategories));
+
+        $fieldLines = [];
+        foreach ($moduleFields as $field) {
+            if (is_array($field)) {
+                $label = trim((string) ($field['label'] ?? ''));
+                $description = trim((string) ($field['description'] ?? ''));
+                $fieldLines[] = htmlspecialchars($description === '' ? $label : $label . '|' . $description);
+            } else {
+                $fieldLines[] = htmlspecialchars((string) $field);
+            }
+        }
+
+        $profileLines = [];
+        foreach ($moduleProfilePrompts as $prompt) {
+            if (is_array($prompt)) {
+                $label = trim((string) ($prompt['label'] ?? ''));
+                $description = trim((string) ($prompt['description'] ?? ''));
+                $profileLines[] = htmlspecialchars($description === '' ? $label : $label . '|' . $description);
+            } else {
+                $profileLines[] = htmlspecialchars((string) $prompt);
+            }
+        }
+
+        $wizardLines = [];
+        foreach ($moduleWizardSteps as $step) {
+            if (is_array($step)) {
+                $title = trim((string) ($step['title'] ?? ''));
+                $prompt = trim((string) ($step['prompt'] ?? ''));
+                $wizardLines[] = htmlspecialchars($prompt === '' ? $title : $title . '|' . $prompt);
+            } else {
+                $wizardLines[] = htmlspecialchars((string) $step);
+            }
+        }
+
+        $cssTokensText = htmlspecialchars(implode("\n", array_map('strval', $moduleCssTokens)));
+
+        $body .= '<article class="content-module-card">';
+        $body .= '<header><h3>' . htmlspecialchars($moduleLabel) . '</h3><p class="module-key"><code>' . htmlspecialchars($moduleKey) . '</code></p></header>';
+        $body .= '<form method="post" action="/setup.php" class="content-module-form">';
+        $body .= '<input type="hidden" name="action" value="update_content_module">';
+        $body .= '<input type="hidden" name="module_id" value="' . htmlspecialchars((string) $moduleId) . '">';
+        $body .= '<div class="field-grid roadmap-basic-grid">';
+        $body .= '<label class="field"><span class="field-label">Label</span><span class="field-control"><input type="text" name="label" value="' . htmlspecialchars($moduleLabel) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Dataset</span><span class="field-control"><select name="dataset">';
+        $seenDataset = false;
+        foreach ($datasetOptions as $datasetKey => $datasetLabel) {
+            $selected = $datasetKey === $moduleDataset ? ' selected' : '';
+            if ($selected !== '') {
+                $seenDataset = true;
+            }
+            $body .= '<option value="' . htmlspecialchars($datasetKey) . '"' . $selected . '>' . htmlspecialchars((string) $datasetLabel) . '</option>';
+        }
+        if (!$seenDataset && $moduleDataset !== '') {
+            $body .= '<option value="' . htmlspecialchars($moduleDataset) . '" selected>' . htmlspecialchars(ucfirst($moduleDataset)) . '</option>';
+        }
+        $body .= '</select></span></label>';
+        $body .= '<label class="field"><span class="field-label">Format hint</span><span class="field-control"><input type="text" name="format" value="' . htmlspecialchars($moduleFormat) . '"></span></label>';
+        $body .= '</div>';
+        $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="3">' . htmlspecialchars($moduleDescription) . '</textarea></span></label>';
+        $body .= '<div class="field-grid content-module-grid">';
+        $body .= '<label class="field"><span class="field-label">Categories</span><span class="field-control"><textarea name="categories" rows="4">' . $categoryText . '</textarea></span><span class="field-description">One category per line.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Fields</span><span class="field-control"><textarea name="fields" rows="6">' . implode("\n", $fieldLines) . '</textarea></span><span class="field-description">Use <code>Label|Description</code> per line to describe sub-prompts.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Profile prompts</span><span class="field-control"><textarea name="profile_prompts" rows="6">' . implode("\n", $profileLines) . '</textarea></span><span class="field-description">Help members extend their profiles when this module is used.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Wizard steps</span><span class="field-control"><textarea name="wizard_steps" rows="5">' . implode("\n", $wizardLines) . '</textarea></span><span class="field-description">Step-by-step guidance (<code>Title|Prompt</code> per line).</span></label>';
+        $body .= '<label class="field"><span class="field-label">CSS tokens</span><span class="field-control"><textarea name="css_tokens" rows="4">' . $cssTokensText . '</textarea></span><span class="field-description">Reference tokens pulled from the CSS value library.</span></label>';
+        $body .= '</div>';
+        $body .= '<div class="action-row">';
+        $body .= '<button type="submit" class="button primary">Save module</button>';
+        $body .= '</div>';
+        $body .= '</form>';
+        $body .= '<form method="post" action="/setup.php" class="content-module-delete" onsubmit="return confirm(\'Delete this content module?\');">';
+        $body .= '<input type="hidden" name="action" value="delete_content_module">';
+        $body .= '<input type="hidden" name="module_id" value="' . htmlspecialchars((string) $moduleId) . '">';
+        $body .= '<button type="submit" class="button danger">Delete module</button>';
+        $body .= '</form>';
+        $body .= '</article>';
+    }
+
+    $body .= '<article class="content-module-card create">';
+    $body .= '<header><h3>Create new module</h3><p>Compose a new modular content type using the blueprint resources.</p></header>';
+    $body .= '<form method="post" action="/setup.php" class="content-module-form">';
+    $body .= '<input type="hidden" name="action" value="create_content_module">';
+    $body .= '<div class="field-grid roadmap-basic-grid">';
+    $body .= '<label class="field"><span class="field-label">Label</span><span class="field-control"><input type="text" name="label" value=""></span></label>';
+    $body .= '<label class="field"><span class="field-label">Dataset</span><span class="field-control"><select name="dataset">';
+    foreach ($datasetOptions as $datasetKey => $datasetLabel) {
+        $body .= '<option value="' . htmlspecialchars($datasetKey) . '">' . htmlspecialchars((string) $datasetLabel) . '</option>';
+    }
+    $body .= '</select></span></label>';
+    $body .= '<label class="field"><span class="field-label">Format hint</span><span class="field-control"><input type="text" name="format" value=""></span></label>';
+    $body .= '</div>';
+    $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="3"></textarea></span></label>';
+    $body .= '<div class="field-grid content-module-grid">';
+    $body .= '<label class="field"><span class="field-label">Categories</span><span class="field-control"><textarea name="categories" rows="4">' . htmlspecialchars(implode("\n", array_slice(array_map(static function ($category) {
+        return (string) ($category['title'] ?? $category);
+    }, $contentBlueprints['categories'] ?? []), 0, 6))) . '</textarea></span><span class="field-description">Seed with blueprint categories (one per line).</span></label>';
+    $body .= '<label class="field"><span class="field-label">Fields</span><span class="field-control"><textarea name="fields" rows="6"></textarea></span><span class="field-description">List <code>Label|Description</code> prompts to collect for each entry.</span></label>';
+    $body .= '<label class="field"><span class="field-label">Profile prompts</span><span class="field-control"><textarea name="profile_prompts" rows="6">' . htmlspecialchars(implode("\n", array_map(static function ($prompt) {
+        if (!is_array($prompt)) {
+            return (string) $prompt;
+        }
+        $label = trim((string) ($prompt['name'] ?? $prompt['label'] ?? ''));
+        $description = trim((string) ($prompt['description'] ?? ''));
+        return $description === '' ? $label : $label . '|' . $description;
+    }, array_slice($contentBlueprints['profile_fields'] ?? [], 0, 4)))) . '</textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">Wizard steps</span><span class="field-control"><textarea name="wizard_steps" rows="5">' . htmlspecialchars(implode("\n", array_map(static function ($title, $index) use ($contentBlueprints) {
+        $labels = $contentBlueprints['contexts']['labels'] ?? [];
+        $descriptions = $contentBlueprints['contexts']['descriptions'] ?? [];
+        $label = (string) ($labels[$index] ?? $title);
+        $prompt = trim((string) ($descriptions[$index] ?? ''));
+        return $prompt === '' ? $label : $label . '|' . $prompt;
+    }, array_slice($contentBlueprints['contexts']['labels'] ?? ['Outline', 'Structure', 'Publish'], 0, 3), array_keys(array_slice($contentBlueprints['contexts']['labels'] ?? ['Outline', 'Structure', 'Publish'], 0, 3))))) . '</textarea></span></label>';
+    $body .= '<label class="field"><span class="field-label">CSS tokens</span><span class="field-control"><textarea name="css_tokens" rows="4">' . htmlspecialchars(implode("\n", array_slice($contentBlueprints['css_values'] ?? [], 0, 8))) . '</textarea></span></label>';
+    $body .= '</div>';
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Create module</button>';
+    $body .= '</div>';
+    $body .= '</form>';
+    $body .= '</article>';
+
+    $moduleBlueprints = $contentBlueprints['module_blueprints'] ?? [];
+    if (!empty($moduleBlueprints)) {
+        $body .= '<aside class="content-blueprint-library">';
+        $body .= '<h3>Blueprint library</h3>';
+        $body .= '<p>Select a ready-made blueprint to seed a new module. Each blueprint bundles field prompts, suggested categories, and wizard copy.</p>';
+        foreach ($moduleBlueprints as $index => $blueprint) {
+            $label = trim((string) ($blueprint['title'] ?? 'Blueprint')); 
+            $format = trim((string) ($blueprint['format'] ?? ''));
+            $description = trim((string) ($blueprint['description'] ?? ''));
+            $fields = [];
+            foreach ($blueprint['fields'] ?? [] as $field) {
+                $fields[] = [
+                    'label' => trim((string) ($field['title'] ?? '')),
+                    'description' => trim((string) ($field['description'] ?? '')),
+                ];
+            }
+
+            $blueprintCategories = array_slice(array_map(static function ($category) {
+                return (string) ($category['title'] ?? $category);
+            }, $contentBlueprints['categories'] ?? []), 0, 6);
+
+            $profilePrompts = array_slice(array_map(static function ($prompt) {
+                if (!is_array($prompt)) {
+                    return ['label' => (string) $prompt, 'description' => ''];
+                }
+                return [
+                    'label' => trim((string) ($prompt['name'] ?? $prompt['label'] ?? '')),
+                    'description' => trim((string) ($prompt['description'] ?? '')),
+                ];
+            }, $contentBlueprints['profile_fields'] ?? []), 0, 4);
+
+            $wizardSteps = [];
+            $contextLabels = $contentBlueprints['contexts']['labels'] ?? [];
+            $contextDescriptions = $contentBlueprints['contexts']['descriptions'] ?? [];
+            foreach ($contextLabels as $stepIndex => $stepLabel) {
+                $wizardSteps[] = [
+                    'title' => (string) $stepLabel,
+                    'prompt' => trim((string) ($contextDescriptions[$stepIndex] ?? '')),
+                ];
+            }
+            if (empty($wizardSteps)) {
+                $wizardSteps = [
+                    ['title' => 'Outline', 'prompt' => $description],
+                    ['title' => 'Structure', 'prompt' => 'Collect supporting information for this module.'],
+                    ['title' => 'Publish', 'prompt' => 'Confirm privacy, notifications, and delivery options.'],
+                ];
+            }
+
+            $payload = [
+                'label' => $label,
+                'format' => $format,
+                'description' => $description,
+                'categories' => $blueprintCategories,
+                'fields' => $fields,
+                'profile_prompts' => $profilePrompts,
+                'wizard_steps' => $wizardSteps,
+                'css_tokens' => array_slice($contentBlueprints['css_values'] ?? [], 0, 8),
+            ];
+            $encodedPayload = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            if (!is_string($encodedPayload)) {
+                $encodedPayload = '{}';
+            }
+
+            $body .= '<article class="blueprint-card">';
+            $body .= '<header><h4>' . htmlspecialchars($label) . '</h4>';
+            if ($format !== '') {
+                $body .= '<p class="blueprint-format">Format: ' . htmlspecialchars($format) . '</p>';
+            }
+            $body .= '</header>';
+            if ($description !== '') {
+                $body .= '<p class="blueprint-description">' . htmlspecialchars($description) . '</p>';
+            }
+            if (!empty($fields)) {
+                $body .= '<ul class="blueprint-fields">';
+                foreach ($fields as $field) {
+                    $body .= '<li><strong>' . htmlspecialchars($field['label']) . '</strong>';
+                    if ($field['description'] !== '') {
+                        $body .= '<span> — ' . htmlspecialchars($field['description']) . '</span>';
+                    }
+                    $body .= '</li>';
+                }
+                $body .= '</ul>';
+            }
+            $body .= '<form method="post" action="/setup.php" class="blueprint-import">';
+            $body .= '<input type="hidden" name="action" value="adopt_content_blueprint">';
+            $body .= '<input type="hidden" name="blueprint" value="' . htmlspecialchars($encodedPayload, ENT_QUOTES) . '">';
+            $body .= '<button type="submit" class="button">Import module</button>';
+            $body .= '</form>';
+            $body .= '</article>';
+        }
+
+        $body .= '<details class="blueprint-reference">';
+        $body .= '<summary>Reference libraries</summary>';
+        $body .= '<div class="reference-columns">';
+        $body .= '<section><h4>Categories</h4><ul>';
+        foreach (array_slice($contentBlueprints['categories'] ?? [], 0, 12) as $category) {
+            if (is_array($category)) {
+                $body .= '<li><strong>' . htmlspecialchars((string) ($category['title'] ?? '')) . '</strong><span> — ' . htmlspecialchars((string) ($category['description'] ?? '')) . '</span></li>';
+            } else {
+                $body .= '<li>' . htmlspecialchars((string) $category) . '</li>';
+            }
+        }
+        $body .= '</ul></section>';
+        $body .= '<section><h4>CSS tokens</h4><ul>';
+        foreach (array_slice($contentBlueprints['css_values'] ?? [], 0, 20) as $token) {
+            $body .= '<li><code>' . htmlspecialchars((string) $token) . '</code></li>';
+        }
+        $body .= '</ul></section>';
+        $body .= '<section><h4>HTML elements</h4><ul>';
+        foreach (array_slice($contentBlueprints['html_elements'] ?? [], 0, 20) as $element) {
+            $body .= '<li><code>' . htmlspecialchars((string) $element) . '</code></li>';
+        }
+        $body .= '</ul></section>';
+        $body .= '</div>';
+        $body .= '<p class="reference-note">Full libraries live under <code>/assets/xml</code> if you need deeper exploration.</p>';
+        $body .= '</details>';
+        $body .= '</aside>';
+    }
+
+    $body .= '</section>';
 
     $body .= '<section class="pages-manager">';
     $body .= '<h2>Page Management</h2>';
