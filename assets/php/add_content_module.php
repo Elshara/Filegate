@@ -128,6 +128,32 @@ function fg_add_content_module(array $attributes): array
 
     $cssTokens = $lineParser($attributes['css_tokens'] ?? []);
 
+    $status = strtolower(trim((string) ($attributes['status'] ?? 'active')));
+    if (!in_array($status, ['active', 'draft', 'archived'], true)) {
+        $status = 'active';
+    }
+
+    $visibility = strtolower(trim((string) ($attributes['visibility'] ?? 'members')));
+    if (!in_array($visibility, ['everyone', 'members', 'admins'], true)) {
+        $visibility = 'members';
+    }
+
+    $allowedRolesInput = $lineParser($attributes['allowed_roles'] ?? []);
+    $allowedRoles = [];
+    foreach ($allowedRolesInput as $roleLine) {
+        $parts = preg_split('/[,]+/u', (string) $roleLine);
+        if ($parts === false) {
+            $parts = [$roleLine];
+        }
+        foreach ($parts as $part) {
+            $role = strtolower(trim((string) $part));
+            if ($role === '' || in_array($role, $allowedRoles, true)) {
+                continue;
+            }
+            $allowedRoles[] = $role;
+        }
+    }
+
     $module = [
         'id' => $id,
         'key' => $key,
@@ -140,6 +166,9 @@ function fg_add_content_module(array $attributes): array
         'profile_prompts' => $profilePrompts,
         'wizard_steps' => $wizardSteps,
         'css_tokens' => $cssTokens,
+        'status' => $status,
+        'visibility' => $visibility,
+        'allowed_roles' => $allowedRoles,
     ];
 
     $records[] = $module;

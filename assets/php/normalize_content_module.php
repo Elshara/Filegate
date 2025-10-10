@@ -26,6 +26,32 @@ function fg_normalize_content_module_definition(array $module): array
     $normalized['format'] = trim((string) ($module['format'] ?? ''));
     $normalized['stage'] = trim((string) ($module['stage'] ?? ''));
 
+    $status = strtolower(trim((string) ($module['status'] ?? 'active')));
+    if (!in_array($status, ['active', 'draft', 'archived'], true)) {
+        $status = 'active';
+    }
+    $normalized['status'] = $status;
+
+    $visibility = strtolower(trim((string) ($module['visibility'] ?? 'members')));
+    if (!in_array($visibility, ['everyone', 'members', 'admins'], true)) {
+        $visibility = 'members';
+    }
+    $normalized['visibility'] = $visibility;
+
+    $allowedRolesRaw = $module['allowed_roles'] ?? [];
+    if (is_string($allowedRolesRaw)) {
+        $allowedRolesRaw = preg_split('/\R+/u', $allowedRolesRaw) ?: [];
+    }
+    if (!is_array($allowedRolesRaw)) {
+        $allowedRolesRaw = [];
+    }
+    $allowedRoles = array_values(array_unique(array_filter(array_map(static function ($role) {
+        return strtolower(trim((string) $role));
+    }, $allowedRolesRaw), static function ($role) {
+        return $role !== '';
+    })));
+    $normalized['allowed_roles'] = $allowedRoles;
+
     foreach (['categories', 'profile_prompts', 'wizard_steps', 'css_tokens'] as $listKey) {
         $values = $module[$listKey] ?? [];
         if (!is_array($values)) {

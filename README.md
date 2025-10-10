@@ -131,6 +131,8 @@ Teams that rely on structured templates can open the **Guided content modules** 
 
 The module composer preloads the module description, category tags, and type label, then renders every blueprint field as a labelled textarea alongside optional wizard-stage selectors. Responses are stored directly with the post so the feed renders a dedicated module section—complete with field summaries, stage indicators, and reference prompts—without touching external APIs.
 
+Administrators manage module lifecycle directly from **Setup → Content Modules**. Status flags (`active`, `draft`, `archived`) control whether a module appears on the feed, while visibility scopes (`everyone`, `members`, `admins`) and optional role filters keep specialist composers limited to the right teams. Draft and archived modules stay available to editors through their saved snapshots, so in-progress work is never lost while configuration evolves.
+
 ## Managing datasets
 
 Administrators can expand the **Dataset Management** section on `/setup.php` to edit or upload replacements for any dataset in the manifest. The summary panel highlights each store’s nature, format, size, and last update time, and the inline editor routes writes to the correct `static` or `dynamic` directory automatically. When a supported dataset (such as `users`, `posts`, `uploads`, `notifications`, `settings`, or `asset_overrides`) exposes defaults, the **Reset to defaults** button regenerates the seeded payload without touching the shell.

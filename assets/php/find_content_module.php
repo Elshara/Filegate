@@ -3,13 +3,13 @@
 require_once __DIR__ . '/list_content_modules.php';
 require_once __DIR__ . '/normalize_content_module_key.php';
 
-function fg_find_content_module($identifier, ?string $dataset = null): ?array
+function fg_find_content_module($identifier, ?string $dataset = null, array $options = []): ?array
 {
     if ($identifier === null) {
         return null;
     }
 
-    $modules = fg_list_content_modules($dataset);
+    $modules = fg_list_content_modules($dataset, $options);
     if ($modules === []) {
         return null;
     }

@@ -1161,6 +1161,26 @@ function fg_render_setup_page(array $data = []): void
         $moduleProfilePrompts = $module['profile_prompts'] ?? [];
         $moduleWizardSteps = $module['wizard_steps'] ?? [];
         $moduleCssTokens = $module['css_tokens'] ?? [];
+        $moduleStatus = strtolower((string) ($module['status'] ?? 'active'));
+        if (!in_array($moduleStatus, ['active', 'draft', 'archived'], true)) {
+            $moduleStatus = 'active';
+        }
+        $moduleVisibility = strtolower((string) ($module['visibility'] ?? 'members'));
+        if (!in_array($moduleVisibility, ['everyone', 'members', 'admins'], true)) {
+            $moduleVisibility = 'members';
+        }
+        $moduleAllowedRaw = $module['allowed_roles'] ?? [];
+        if (is_string($moduleAllowedRaw)) {
+            $moduleAllowedRaw = preg_split('/\R+/u', $moduleAllowedRaw) ?: [];
+        }
+        if (!is_array($moduleAllowedRaw)) {
+            $moduleAllowedRaw = [];
+        }
+        $moduleAllowedRoles = array_values(array_unique(array_filter(array_map(static function ($role) {
+            return strtolower(trim((string) $role));
+        }, $moduleAllowedRaw), static function ($role) {
+            return $role !== '';
+        })));
 
         $categoryText = htmlspecialchars(implode("\n", $moduleCategories));
 
@@ -1199,8 +1219,10 @@ function fg_render_setup_page(array $data = []): void
 
         $cssTokensText = htmlspecialchars(implode("\n", array_map('strval', $moduleCssTokens)));
 
+        $statusLabel = ucfirst($moduleStatus);
+        $visibilityLabel = $moduleVisibility === 'everyone' ? 'Everyone' : ucfirst($moduleVisibility);
         $body .= '<article class="content-module-card">';
-        $body .= '<header><h3>' . htmlspecialchars($moduleLabel) . '</h3><p class="module-key"><code>' . htmlspecialchars($moduleKey) . '</code></p></header>';
+        $body .= '<header><h3>' . htmlspecialchars($moduleLabel) . '</h3><p class="module-key"><code>' . htmlspecialchars($moduleKey) . '</code> · Status: <span class="module-status status-' . htmlspecialchars($moduleStatus) . '">' . htmlspecialchars($statusLabel) . '</span> · Visibility: ' . htmlspecialchars($visibilityLabel) . '</p></header>';
         $body .= '<form method="post" action="/setup.php" class="content-module-form">';
         $body .= '<input type="hidden" name="action" value="update_content_module">';
         $body .= '<input type="hidden" name="module_id" value="' . htmlspecialchars((string) $moduleId) . '">';
@@ -1220,8 +1242,31 @@ function fg_render_setup_page(array $data = []): void
         }
         $body .= '</select></span></label>';
         $body .= '<label class="field"><span class="field-label">Format hint</span><span class="field-control"><input type="text" name="format" value="' . htmlspecialchars($moduleFormat) . '"></span></label>';
+        $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+        foreach (['active' => 'Active', 'draft' => 'Draft', 'archived' => 'Archived'] as $value => $labelOption) {
+            $selected = $moduleStatus === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($labelOption) . '</option>';
+        }
+        $body .= '</select></span><span class="field-description">Draft modules stay hidden from members until activated.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+        foreach (['everyone' => 'Everyone', 'members' => 'Members', 'admins' => 'Admins'] as $value => $labelOption) {
+            $selected = $moduleVisibility === $value ? ' selected' : '';
+            $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($labelOption) . '</option>';
+        }
+        $body .= '</select></span><span class="field-description">Control who can launch this module from the feed.</span></label>';
         $body .= '</div>';
         $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="3">' . htmlspecialchars($moduleDescription) . '</textarea></span></label>';
+        if (!empty($roles)) {
+            $body .= '<fieldset class="field"><span class="field-label">Allowed roles</span><span class="field-control">';
+            foreach ($roles as $roleKey => $roleDescription) {
+                $roleValue = strtolower((string) $roleKey);
+                $checked = in_array($roleValue, $moduleAllowedRoles, true) ? ' checked' : '';
+                $body .= '<label><input type="checkbox" name="allowed_roles[]" value="' . htmlspecialchars($roleValue) . '"' . $checked . '> ' . htmlspecialchars(ucfirst((string) $roleKey)) . '</label>';
+            }
+            $body .= '</span><span class="field-description">Leave empty to allow every role within the selected visibility.</span></fieldset>';
+        } else {
+            $body .= '<label class="field"><span class="field-label">Allowed roles</span><span class="field-control"><input type="text" name="allowed_roles" value="' . htmlspecialchars(implode(', ', $moduleAllowedRoles)) . '" placeholder="admin, moderator"></span><span class="field-description">Comma-separated role slugs to limit access.</span></label>';
+        }
         $body .= '<div class="field-grid content-module-grid">';
         $body .= '<label class="field"><span class="field-label">Categories</span><span class="field-control"><textarea name="categories" rows="4">' . $categoryText . '</textarea></span><span class="field-description">One category per line.</span></label>';
         $body .= '<label class="field"><span class="field-label">Fields</span><span class="field-control"><textarea name="fields" rows="6">' . implode("\n", $fieldLines) . '</textarea></span><span class="field-description">Use <code>Label|Description</code> per line to describe sub-prompts.</span></label>';
@@ -1253,8 +1298,30 @@ function fg_render_setup_page(array $data = []): void
     }
     $body .= '</select></span></label>';
     $body .= '<label class="field"><span class="field-label">Format hint</span><span class="field-control"><input type="text" name="format" value=""></span></label>';
+    $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+    foreach (['active' => 'Active', 'draft' => 'Draft', 'archived' => 'Archived'] as $value => $labelOption) {
+        $selected = $value === 'active' ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($labelOption) . '</option>';
+    }
+    $body .= '</select></span><span class="field-description">Draft modules stay hidden from members until you publish them.</span></label>';
+    $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+    foreach (['everyone' => 'Everyone', 'members' => 'Members', 'admins' => 'Admins'] as $value => $labelOption) {
+        $selected = $value === 'members' ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($labelOption) . '</option>';
+    }
+    $body .= '</select></span><span class="field-description">Restrict who can launch the module from the feed.</span></label>';
     $body .= '</div>';
     $body .= '<label class="field"><span class="field-label">Description</span><span class="field-control"><textarea name="description" rows="3"></textarea></span></label>';
+    if (!empty($roles)) {
+        $body .= '<fieldset class="field"><span class="field-label">Allowed roles</span><span class="field-control">';
+        foreach ($roles as $roleKey => $roleDescription) {
+            $roleValue = strtolower((string) $roleKey);
+            $body .= '<label><input type="checkbox" name="allowed_roles[]" value="' . htmlspecialchars($roleValue) . '"> ' . htmlspecialchars(ucfirst((string) $roleKey)) . '</label>';
+        }
+        $body .= '</span><span class="field-description">Leave empty to allow every role within the selected visibility.</span></fieldset>';
+    } else {
+        $body .= '<label class="field"><span class="field-label">Allowed roles</span><span class="field-control"><input type="text" name="allowed_roles" placeholder="admin, moderator"></span><span class="field-description">Comma-separated role slugs to limit access.</span></label>';
+    }
     $body .= '<div class="field-grid content-module-grid">';
     $body .= '<label class="field"><span class="field-label">Categories</span><span class="field-control"><textarea name="categories" rows="4">' . htmlspecialchars(implode("\n", array_slice(array_map(static function ($category) {
         return (string) ($category['title'] ?? $category);

@@ -28,7 +28,12 @@ function fg_public_post_controller(): void
     $post_id = isset($_GET['post']) ? (int) $_GET['post'] : 0;
     $post = $post_id ? fg_find_post_by_id($post_id) : null;
     $module_key = isset($_GET['module']) ? (string) $_GET['module'] : '';
-    $module = $module_key !== '' ? fg_find_content_module($module_key, 'posts') : null;
+    $moduleOptions = [
+        'viewer' => $user,
+        'enforce_visibility' => true,
+        'statuses' => ['active'],
+    ];
+    $module = $module_key !== '' ? fg_find_content_module($module_key, 'posts', $moduleOptions) : null;
     $max_uploads = (int) fg_get_setting('upload_limits', 5);
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -83,7 +88,19 @@ function fg_public_post_controller(): void
             }
         }
         if ($content_module_key !== '') {
-            $loaded_module = fg_find_content_module($content_module_key, $module_definition['dataset'] ?? 'posts');
+            $findOptions = [
+                'statuses' => ['active', 'draft', 'archived'],
+            ];
+            if (empty($_POST['post_id'])) {
+                $findOptions['viewer'] = $user;
+                $findOptions['enforce_visibility'] = true;
+                $findOptions['statuses'] = ['active'];
+            }
+            $loaded_module = fg_find_content_module(
+                $content_module_key,
+                $module_definition['dataset'] ?? 'posts',
+                $findOptions
+            );
             if ($loaded_module !== null) {
                 $module_definition = $loaded_module;
             }

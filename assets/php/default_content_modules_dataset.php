@@ -70,6 +70,9 @@ function fg_default_content_modules_dataset(): array
             'profile_prompts' => $profilePrompts,
             'wizard_steps' => $wizardSteps,
             'css_tokens' => $cssTokens,
+            'status' => 'active',
+            'visibility' => 'members',
+            'allowed_roles' => [],
         ];
 
         $nextId++;

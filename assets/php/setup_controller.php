@@ -1047,6 +1047,9 @@ function fg_public_setup_controller(): void
                     'profile_prompts' => $_POST['profile_prompts'] ?? [],
                     'wizard_steps' => $_POST['wizard_steps'] ?? [],
                     'css_tokens' => $_POST['css_tokens'] ?? [],
+                    'status' => $_POST['status'] ?? 'active',
+                    'visibility' => $_POST['visibility'] ?? 'members',
+                    'allowed_roles' => $_POST['allowed_roles'] ?? [],
                 ];
 
                 if ($action === 'adopt_content_blueprint') {

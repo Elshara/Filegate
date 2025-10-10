@@ -1258,7 +1258,11 @@ function fg_render_feed(array $viewer): string
     $html .= '</form></section>';
     $html .= '<section class="panel preview-panel" id="composer-preview" data-preview-output hidden><h2>Live preview</h2><div class="preview-body" data-preview-body><div class="preview-placeholder">Start writing to see your live preview, embeds, and statistics.</div></div><div class="preview-embeds" data-preview-embeds hidden></div><dl class="preview-statistics" data-preview-stats hidden></dl><ul class="preview-attachments" data-upload-list hidden></ul></section>';
 
-    $post_modules = fg_list_content_modules('posts');
+    $post_modules = fg_list_content_modules('posts', [
+        'viewer' => $viewer,
+        'enforce_visibility' => true,
+        'statuses' => ['active'],
+    ]);
     if (!empty($post_modules)) {
         $html .= '<section class="panel content-modules-panel">';
         $html .= '<h2>Guided content modules</h2>';
@@ -1279,12 +1283,38 @@ function fg_render_feed(array $viewer): string
             if (!is_array($wizard_steps)) {
                 $wizard_steps = [];
             }
+            $visibility = strtolower((string) ($module['visibility'] ?? 'members'));
+            $allowedRoles = $module['allowed_roles'] ?? [];
+            if (!is_array($allowedRoles)) {
+                $allowedRoles = [];
+            }
+            $allowedRoles = array_values(array_filter(array_map(static function ($role) {
+                return strtolower(trim((string) $role));
+            }, $allowedRoles), static function ($role) {
+                return $role !== '';
+            }));
+            $audienceBits = [];
+            if ($visibility === 'admins') {
+                $audienceBits[] = 'Admins only';
+            } elseif ($visibility === 'everyone') {
+                $audienceBits[] = 'Everyone';
+            } else {
+                $audienceBits[] = 'Members';
+            }
+            if (!empty($allowedRoles)) {
+                $audienceBits[] = 'Roles: ' . implode(', ', array_map(static function ($role) {
+                    return ucwords(str_replace('_', ' ', $role));
+                }, $allowedRoles));
+            }
             $html .= '<li class="content-module-card">';
             $html .= '<header><h3>' . htmlspecialchars($label) . '</h3>';
             if ($format !== '') {
                 $html .= '<p class="content-module-format">Format: ' . htmlspecialchars($format) . '</p>';
             }
             $html .= '</header>';
+            if (!empty($audienceBits)) {
+                $html .= '<p class="content-module-audience">' . htmlspecialchars(implode(' · ', $audienceBits)) . '</p>';
+            }
             if ($description !== '') {
                 $html .= '<p class="content-module-description">' . htmlspecialchars($description) . '</p>';
             }
