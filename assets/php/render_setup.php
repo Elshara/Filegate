@@ -1161,6 +1161,7 @@ function fg_render_setup_page(array $data = []): void
         $moduleProfilePrompts = $module['profile_prompts'] ?? [];
         $moduleWizardSteps = $module['wizard_steps'] ?? [];
         $moduleCssTokens = $module['css_tokens'] ?? [];
+        $moduleGuides = $module['guides'] ?? [];
         $moduleStatus = strtolower((string) ($module['status'] ?? 'active'));
         if (!in_array($moduleStatus, ['active', 'draft', 'archived'], true)) {
             $moduleStatus = 'active';
@@ -1214,6 +1215,36 @@ function fg_render_setup_page(array $data = []): void
                 $wizardLines[] = htmlspecialchars($prompt === '' ? $title : $title . '|' . $prompt);
             } else {
                 $wizardLines[] = htmlspecialchars((string) $step);
+            }
+        }
+
+        if (!is_array($moduleGuides)) {
+            $moduleGuides = [];
+        }
+
+        $guideSerializer = static function ($guide) {
+            if (is_array($guide)) {
+                $title = trim((string) ($guide['title'] ?? $guide['label'] ?? ''));
+                $prompt = trim((string) ($guide['prompt'] ?? $guide['description'] ?? ''));
+                return htmlspecialchars($prompt === '' ? $title : $title . '|' . $prompt);
+            }
+
+            return htmlspecialchars(trim((string) $guide));
+        };
+
+        $moduleMicroGuides = [];
+        foreach (($moduleGuides['micro'] ?? []) as $guide) {
+            $serialized = $guideSerializer($guide);
+            if ($serialized !== '') {
+                $moduleMicroGuides[] = $serialized;
+            }
+        }
+
+        $moduleMacroGuides = [];
+        foreach (($moduleGuides['macro'] ?? []) as $guide) {
+            $serialized = $guideSerializer($guide);
+            if ($serialized !== '') {
+                $moduleMacroGuides[] = $serialized;
             }
         }
 
@@ -1272,6 +1303,8 @@ function fg_render_setup_page(array $data = []): void
         $body .= '<label class="field"><span class="field-label">Fields</span><span class="field-control"><textarea name="fields" rows="6">' . implode("\n", $fieldLines) . '</textarea></span><span class="field-description">Use <code>Label|Description</code> per line to describe sub-prompts.</span></label>';
         $body .= '<label class="field"><span class="field-label">Profile prompts</span><span class="field-control"><textarea name="profile_prompts" rows="6">' . implode("\n", $profileLines) . '</textarea></span><span class="field-description">Help members extend their profiles when this module is used.</span></label>';
         $body .= '<label class="field"><span class="field-label">Wizard steps</span><span class="field-control"><textarea name="wizard_steps" rows="5">' . implode("\n", $wizardLines) . '</textarea></span><span class="field-description">Step-by-step guidance (<code>Title|Prompt</code> per line).</span></label>';
+        $body .= '<label class="field"><span class="field-label">Micro guides</span><span class="field-control"><textarea name="micro_guides" rows="4">' . implode("\n", $moduleMicroGuides) . '</textarea></span><span class="field-description">Short prompts for individual publishing steps (<code>Title|Prompt</code> per line).</span></label>';
+        $body .= '<label class="field"><span class="field-label">Macro guides</span><span class="field-control"><textarea name="macro_guides" rows="4">' . implode("\n", $moduleMacroGuides) . '</textarea></span><span class="field-description">High-level rollout instructions for teams (<code>Title|Prompt</code> per line).</span></label>';
         $body .= '<label class="field"><span class="field-label">CSS tokens</span><span class="field-control"><textarea name="css_tokens" rows="4">' . $cssTokensText . '</textarea></span><span class="field-description">Reference tokens pulled from the CSS value library.</span></label>';
         $body .= '</div>';
         $body .= '<div class="action-row">';
@@ -1322,26 +1355,52 @@ function fg_render_setup_page(array $data = []): void
     } else {
         $body .= '<label class="field"><span class="field-label">Allowed roles</span><span class="field-control"><input type="text" name="allowed_roles" placeholder="admin, moderator"></span><span class="field-description">Comma-separated role slugs to limit access.</span></label>';
     }
-    $body .= '<div class="field-grid content-module-grid">';
-    $body .= '<label class="field"><span class="field-label">Categories</span><span class="field-control"><textarea name="categories" rows="4">' . htmlspecialchars(implode("\n", array_slice(array_map(static function ($category) {
+    $defaultCategoryLines = array_slice(array_map(static function ($category) {
         return (string) ($category['title'] ?? $category);
-    }, $contentBlueprints['categories'] ?? []), 0, 6))) . '</textarea></span><span class="field-description">Seed with blueprint categories (one per line).</span></label>';
-    $body .= '<label class="field"><span class="field-label">Fields</span><span class="field-control"><textarea name="fields" rows="6"></textarea></span><span class="field-description">List <code>Label|Description</code> prompts to collect for each entry.</span></label>';
-    $body .= '<label class="field"><span class="field-label">Profile prompts</span><span class="field-control"><textarea name="profile_prompts" rows="6">' . htmlspecialchars(implode("\n", array_map(static function ($prompt) {
+    }, $contentBlueprints['categories'] ?? []), 0, 6);
+    $defaultProfileLines = array_slice(array_map(static function ($prompt) {
         if (!is_array($prompt)) {
             return (string) $prompt;
         }
         $label = trim((string) ($prompt['name'] ?? $prompt['label'] ?? ''));
         $description = trim((string) ($prompt['description'] ?? ''));
         return $description === '' ? $label : $label . '|' . $description;
-    }, array_slice($contentBlueprints['profile_fields'] ?? [], 0, 4)))) . '</textarea></span></label>';
-    $body .= '<label class="field"><span class="field-label">Wizard steps</span><span class="field-control"><textarea name="wizard_steps" rows="5">' . htmlspecialchars(implode("\n", array_map(static function ($title, $index) use ($contentBlueprints) {
-        $labels = $contentBlueprints['contexts']['labels'] ?? [];
-        $descriptions = $contentBlueprints['contexts']['descriptions'] ?? [];
-        $label = (string) ($labels[$index] ?? $title);
-        $prompt = trim((string) ($descriptions[$index] ?? ''));
-        return $prompt === '' ? $label : $label . '|' . $prompt;
-    }, array_slice($contentBlueprints['contexts']['labels'] ?? ['Outline', 'Structure', 'Publish'], 0, 3), array_keys(array_slice($contentBlueprints['contexts']['labels'] ?? ['Outline', 'Structure', 'Publish'], 0, 3))))) . '</textarea></span></label>';
+    }, $contentBlueprints['profile_fields'] ?? []), 0, 4);
+    $contextLabels = $contentBlueprints['contexts']['labels'] ?? ['Outline', 'Structure', 'Publish'];
+    $contextDescriptions = $contentBlueprints['contexts']['descriptions'] ?? [];
+    $defaultWizardLines = [];
+    foreach (array_slice($contextLabels, 0, 3, true) as $index => $title) {
+        $label = (string) $title;
+        $prompt = trim((string) ($contextDescriptions[$index] ?? ''));
+        $defaultWizardLines[] = $prompt === '' ? $label : $label . '|' . $prompt;
+    }
+    if (empty($defaultWizardLines)) {
+        $defaultWizardLines = ['Outline', 'Structure', 'Publish'];
+    }
+    $defaultMicroLines = [];
+    foreach (array_slice($contextLabels, 0, 4, true) as $index => $title) {
+        $label = (string) $title;
+        $prompt = trim((string) ($contextDescriptions[$index] ?? ''));
+        $defaultMicroLines[] = $prompt === '' ? $label : $label . '|' . $prompt;
+    }
+    if (empty($defaultMicroLines)) {
+        $defaultMicroLines = ['Outline', 'Structure', 'Publish', 'Review'];
+    }
+    $defaultMacroLines = [];
+    $macroCategories = array_slice($defaultCategoryLines, 0, 3);
+    if (!empty($macroCategories)) {
+        $defaultMacroLines[] = 'Align categories|' . implode(', ', $macroCategories) . ' make it easy to group related entries.';
+    }
+    $defaultMacroLines[] = 'Coordinate roles|Document who curates the module and which roles approve entries.';
+    $defaultMacroLines[] = 'Track outcomes|Note how teams will review module performance after publishing.';
+
+    $body .= '<div class="field-grid content-module-grid">';
+    $body .= '<label class="field"><span class="field-label">Categories</span><span class="field-control"><textarea name="categories" rows="4">' . htmlspecialchars(implode("\n", $defaultCategoryLines)) . '</textarea></span><span class="field-description">Seed with blueprint categories (one per line).</span></label>';
+    $body .= '<label class="field"><span class="field-label">Fields</span><span class="field-control"><textarea name="fields" rows="6"></textarea></span><span class="field-description">List <code>Label|Description</code> prompts to collect for each entry.</span></label>';
+    $body .= '<label class="field"><span class="field-label">Profile prompts</span><span class="field-control"><textarea name="profile_prompts" rows="6">' . htmlspecialchars(implode("\n", $defaultProfileLines)) . '</textarea></span><span class="field-description">Help members extend their profiles when this module is used.</span></label>';
+    $body .= '<label class="field"><span class="field-label">Wizard steps</span><span class="field-control"><textarea name="wizard_steps" rows="5">' . htmlspecialchars(implode("\n", $defaultWizardLines)) . '</textarea></span><span class="field-description">Step-by-step guidance (<code>Title|Prompt</code> per line).</span></label>';
+    $body .= '<label class="field"><span class="field-label">Micro guides</span><span class="field-control"><textarea name="micro_guides" rows="4">' . htmlspecialchars(implode("\n", $defaultMicroLines)) . '</textarea></span><span class="field-description">Short prompts for individual publishing steps (<code>Title|Prompt</code> per line).</span></label>';
+    $body .= '<label class="field"><span class="field-label">Macro guides</span><span class="field-control"><textarea name="macro_guides" rows="4">' . htmlspecialchars(implode("\n", $defaultMacroLines)) . '</textarea></span><span class="field-description">High-level rollout instructions for teams (<code>Title|Prompt</code> per line).</span></label>';
     $body .= '<label class="field"><span class="field-label">CSS tokens</span><span class="field-control"><textarea name="css_tokens" rows="4">' . htmlspecialchars(implode("\n", array_slice($contentBlueprints['css_values'] ?? [], 0, 8))) . '</textarea></span></label>';
     $body .= '</div>';
     $body .= '<div class="action-row">';
@@ -1398,6 +1457,38 @@ function fg_render_setup_page(array $data = []): void
                 ];
             }
 
+            $microGuides = [];
+            foreach ($contextLabels as $stepIndex => $stepLabel) {
+                $microGuides[] = [
+                    'title' => (string) $stepLabel,
+                    'prompt' => trim((string) ($contextDescriptions[$stepIndex] ?? '')),
+                ];
+            }
+            if (empty($microGuides)) {
+                $microGuides = [
+                    ['title' => 'Outline', 'prompt' => $description],
+                    ['title' => 'Structure', 'prompt' => 'Clarify the data members should gather before publishing.'],
+                    ['title' => 'Publish', 'prompt' => 'Note where this module appears and who maintains it.'],
+                ];
+            }
+
+            $macroGuides = [];
+            $categorySummary = array_slice($blueprintCategories, 0, 3);
+            if (!empty($categorySummary)) {
+                $macroGuides[] = [
+                    'title' => 'Align categories',
+                    'prompt' => 'Group entries under ' . implode(', ', $categorySummary) . ' to reinforce navigation.',
+                ];
+            }
+            $macroGuides[] = [
+                'title' => 'Coordinate roles',
+                'prompt' => 'List the roles that approve drafts and steward published entries.',
+            ];
+            $macroGuides[] = [
+                'title' => 'Track outcomes',
+                'prompt' => 'Decide which datasets capture follow-up actions once modules are published.',
+            ];
+
             $payload = [
                 'label' => $label,
                 'format' => $format,
@@ -1407,6 +1498,10 @@ function fg_render_setup_page(array $data = []): void
                 'profile_prompts' => $profilePrompts,
                 'wizard_steps' => $wizardSteps,
                 'css_tokens' => array_slice($contentBlueprints['css_values'] ?? [], 0, 8),
+                'guides' => [
+                    'micro' => $microGuides,
+                    'macro' => $macroGuides,
+                ],
             ];
             $encodedPayload = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             if (!is_string($encodedPayload)) {
@@ -1432,6 +1527,32 @@ function fg_render_setup_page(array $data = []): void
                     $body .= '</li>';
                 }
                 $body .= '</ul>';
+            }
+            if (!empty($microGuides) || !empty($macroGuides)) {
+                $body .= '<details class="blueprint-guides"><summary>Guidance</summary>';
+                if (!empty($microGuides)) {
+                    $body .= '<h5>Micro</h5><ul>';
+                    foreach ($microGuides as $guide) {
+                        $body .= '<li><strong>' . htmlspecialchars($guide['title']) . '</strong>';
+                        if ($guide['prompt'] !== '') {
+                            $body .= '<span> — ' . htmlspecialchars($guide['prompt']) . '</span>';
+                        }
+                        $body .= '</li>';
+                    }
+                    $body .= '</ul>';
+                }
+                if (!empty($macroGuides)) {
+                    $body .= '<h5>Macro</h5><ul>';
+                    foreach ($macroGuides as $guide) {
+                        $body .= '<li><strong>' . htmlspecialchars($guide['title']) . '</strong>';
+                        if ($guide['prompt'] !== '') {
+                            $body .= '<span> — ' . htmlspecialchars($guide['prompt']) . '</span>';
+                        }
+                        $body .= '</li>';
+                    }
+                    $body .= '</ul>';
+                }
+                $body .= '</details>';
             }
             $body .= '<form method="post" action="/setup.php" class="blueprint-import">';
             $body .= '<input type="hidden" name="action" value="adopt_content_blueprint">';

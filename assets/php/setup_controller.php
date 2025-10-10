@@ -1046,6 +1046,8 @@ function fg_public_setup_controller(): void
                     'fields' => $_POST['fields'] ?? [],
                     'profile_prompts' => $_POST['profile_prompts'] ?? [],
                     'wizard_steps' => $_POST['wizard_steps'] ?? [],
+                    'micro_guides' => $_POST['micro_guides'] ?? [],
+                    'macro_guides' => $_POST['macro_guides'] ?? [],
                     'css_tokens' => $_POST['css_tokens'] ?? [],
                     'status' => $_POST['status'] ?? 'active',
                     'visibility' => $_POST['visibility'] ?? 'members',
@@ -1091,6 +1093,50 @@ function fg_public_setup_controller(): void
                                 }
                                 return $title . '|' . $prompt;
                             }, $decoded['wizard_steps']);
+                        }
+                        if (!empty($decoded['guides']) && is_array($decoded['guides'])) {
+                            if (!empty($decoded['guides']['micro']) && is_array($decoded['guides']['micro'])) {
+                                $payload['micro_guides'] = array_map(static function ($guide): string {
+                                    if (is_array($guide)) {
+                                        $title = trim((string) ($guide['title'] ?? $guide['label'] ?? ''));
+                                        $prompt = trim((string) ($guide['prompt'] ?? $guide['description'] ?? ''));
+                                    } else {
+                                        $title = trim((string) $guide);
+                                        $prompt = '';
+                                    }
+                                    if ($title === '') {
+                                        return '';
+                                    }
+                                    if ($prompt === '') {
+                                        return $title;
+                                    }
+
+                                    return $title . '|' . $prompt;
+                                }, array_filter($decoded['guides']['micro'], static function ($guide) {
+                                    return $guide !== null && $guide !== '';
+                                }));
+                            }
+                            if (!empty($decoded['guides']['macro']) && is_array($decoded['guides']['macro'])) {
+                                $payload['macro_guides'] = array_map(static function ($guide): string {
+                                    if (is_array($guide)) {
+                                        $title = trim((string) ($guide['title'] ?? $guide['label'] ?? ''));
+                                        $prompt = trim((string) ($guide['prompt'] ?? $guide['description'] ?? ''));
+                                    } else {
+                                        $title = trim((string) $guide);
+                                        $prompt = '';
+                                    }
+                                    if ($title === '') {
+                                        return '';
+                                    }
+                                    if ($prompt === '') {
+                                        return $title;
+                                    }
+
+                                    return $title . '|' . $prompt;
+                                }, array_filter($decoded['guides']['macro'], static function ($guide) {
+                                    return $guide !== null && $guide !== '';
+                                }));
+                            }
                         }
                         if (!empty($decoded['css_tokens']) && is_array($decoded['css_tokens'])) {
                             $payload['css_tokens'] = $decoded['css_tokens'];

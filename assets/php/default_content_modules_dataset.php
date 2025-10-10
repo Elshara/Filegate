@@ -70,6 +70,36 @@ function fg_default_content_modules_dataset(): array
             'profile_prompts' => $profilePrompts,
             'wizard_steps' => $wizardSteps,
             'css_tokens' => $cssTokens,
+            'guides' => [
+                'micro' => [
+                    [
+                        'title' => 'Identify the goal',
+                        'prompt' => 'Summarise what this module should help members publish.',
+                    ],
+                    [
+                        'title' => 'Surface references',
+                        'prompt' => 'Link to categories, profile prompts, or assets members should review while drafting.',
+                    ],
+                    [
+                        'title' => 'Highlight next steps',
+                        'prompt' => 'Explain where published entries should appear and who should maintain them.',
+                    ],
+                ],
+                'macro' => [
+                    [
+                        'title' => 'Plan the workflow',
+                        'prompt' => 'Outline how this module connects to other datasets or follow-up actions.',
+                    ],
+                    [
+                        'title' => 'Coordinate roles',
+                        'prompt' => 'Describe which roles steward the module and how they collaborate during reviews.',
+                    ],
+                    [
+                        'title' => 'Measure success',
+                        'prompt' => 'List the signals or datasets to monitor once entries go live.',
+                    ],
+                ],
+            ],
             'status' => 'active',
             'visibility' => 'members',
             'allowed_roles' => [],

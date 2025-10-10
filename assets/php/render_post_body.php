@@ -50,6 +50,51 @@ function fg_render_post_body(array $post): string
             }
             $html .= '</ul>';
         }
+        $moduleGuides = $module_assignment['guides'] ?? [];
+        $microGuides = is_array($moduleGuides['micro'] ?? null) ? $moduleGuides['micro'] : [];
+        $macroGuides = is_array($moduleGuides['macro'] ?? null) ? $moduleGuides['macro'] : [];
+        if (!empty($microGuides) || !empty($macroGuides)) {
+            $html .= '<details class="post-module-guides"><summary>Guidance</summary>';
+            if (!empty($microGuides)) {
+                $html .= '<h3>Micro</h3><ul>';
+                foreach ($microGuides as $guide) {
+                    if (!is_array($guide)) {
+                        continue;
+                    }
+                    $title = trim((string) ($guide['title'] ?? ''));
+                    $prompt = trim((string) ($guide['prompt'] ?? ''));
+                    if ($title === '' && $prompt === '') {
+                        continue;
+                    }
+                    $html .= '<li>' . htmlspecialchars($title === '' ? $prompt : $title);
+                    if ($title !== '' && $prompt !== '') {
+                        $html .= '<span> — ' . htmlspecialchars($prompt) . '</span>';
+                    }
+                    $html .= '</li>';
+                }
+                $html .= '</ul>';
+            }
+            if (!empty($macroGuides)) {
+                $html .= '<h3>Macro</h3><ul>';
+                foreach ($macroGuides as $guide) {
+                    if (!is_array($guide)) {
+                        continue;
+                    }
+                    $title = trim((string) ($guide['title'] ?? ''));
+                    $prompt = trim((string) ($guide['prompt'] ?? ''));
+                    if ($title === '' && $prompt === '') {
+                        continue;
+                    }
+                    $html .= '<li>' . htmlspecialchars($title === '' ? $prompt : $title);
+                    if ($title !== '' && $prompt !== '') {
+                        $html .= '<span> — ' . htmlspecialchars($prompt) . '</span>';
+                    }
+                    $html .= '</li>';
+                }
+                $html .= '</ul>';
+            }
+            $html .= '</details>';
+        }
         if (!empty($module_assignment['fields'])) {
             $html .= '<dl class="post-module-fields">';
             foreach ($module_assignment['fields'] as $field) {

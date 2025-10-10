@@ -126,6 +126,60 @@ function fg_add_content_module(array $attributes): array
         ];
     }
 
+    $guideParser = static function (array $lines): array {
+        $guides = [];
+        foreach ($lines as $line) {
+            $parts = explode('|', (string) $line, 2);
+            $title = trim($parts[0] ?? '');
+            if ($title === '') {
+                continue;
+            }
+            $guides[] = [
+                'title' => $title,
+                'prompt' => trim($parts[1] ?? ''),
+            ];
+        }
+
+        return $guides;
+    };
+
+    $microGuides = $guideParser($lineParser($attributes['micro_guides'] ?? []));
+    $macroGuides = $guideParser($lineParser($attributes['macro_guides'] ?? []));
+
+    if (empty($microGuides)) {
+        $microGuides = [
+            [
+                'title' => 'Identify the goal',
+                'prompt' => 'Summarise what this module should help members publish.',
+            ],
+            [
+                'title' => 'Surface references',
+                'prompt' => 'Link to categories, profile prompts, or assets members should review while drafting.',
+            ],
+            [
+                'title' => 'Highlight next steps',
+                'prompt' => 'Explain where published entries should appear and who should maintain them.',
+            ],
+        ];
+    }
+
+    if (empty($macroGuides)) {
+        $macroGuides = [
+            [
+                'title' => 'Plan the workflow',
+                'prompt' => 'Outline how this module connects to other datasets or follow-up actions.',
+            ],
+            [
+                'title' => 'Coordinate roles',
+                'prompt' => 'Describe which roles steward the module and how they collaborate during reviews.',
+            ],
+            [
+                'title' => 'Measure success',
+                'prompt' => 'List the signals or datasets to monitor once entries go live.',
+            ],
+        ];
+    }
+
     $cssTokens = $lineParser($attributes['css_tokens'] ?? []);
 
     $status = strtolower(trim((string) ($attributes['status'] ?? 'active')));
@@ -166,6 +220,10 @@ function fg_add_content_module(array $attributes): array
         'profile_prompts' => $profilePrompts,
         'wizard_steps' => $wizardSteps,
         'css_tokens' => $cssTokens,
+        'guides' => [
+            'micro' => $microGuides,
+            'macro' => $macroGuides,
+        ],
         'status' => $status,
         'visibility' => $visibility,
         'allowed_roles' => $allowedRoles,

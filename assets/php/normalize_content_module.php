@@ -113,5 +113,83 @@ function fg_normalize_content_module_definition(array $module): array
     }
     $normalized['fields'] = $normalizedFields;
 
+    $guideNormalizer = static function ($guides): array {
+        if (is_array($guides)) {
+            $normalizedGuides = [];
+            foreach ($guides as $index => $guide) {
+                if (is_string($guide)) {
+                    $parts = explode('|', $guide, 2);
+                    $title = trim($parts[0] ?? '');
+                    if ($title === '') {
+                        $title = 'Guide ' . ($index + 1);
+                    }
+                    $prompt = trim($parts[1] ?? '');
+                    $normalizedGuides[] = [
+                        'title' => $title,
+                        'prompt' => $prompt,
+                    ];
+                } elseif (is_array($guide)) {
+                    $title = trim((string) ($guide['title'] ?? $guide['label'] ?? ''));
+                    if ($title === '') {
+                        $title = 'Guide ' . ($index + 1);
+                    }
+                    $prompt = trim((string) ($guide['prompt'] ?? $guide['description'] ?? ''));
+                    $normalizedGuides[] = [
+                        'title' => $title,
+                        'prompt' => $prompt,
+                    ];
+                }
+            }
+
+            return $normalizedGuides;
+        }
+
+        return [];
+    };
+
+    $guidesRaw = $module['guides'] ?? [];
+    if (!is_array($guidesRaw)) {
+        $guidesRaw = [];
+    }
+
+    $normalized['guides'] = [
+        'micro' => $guideNormalizer($guidesRaw['micro'] ?? ($module['micro_guides'] ?? [])),
+        'macro' => $guideNormalizer($guidesRaw['macro'] ?? ($module['macro_guides'] ?? [])),
+    ];
+
+    if (empty($normalized['guides']['micro'])) {
+        $normalized['guides']['micro'] = [
+            [
+                'title' => 'Identify the goal',
+                'prompt' => 'Summarise what this module should help members publish.',
+            ],
+            [
+                'title' => 'Surface references',
+                'prompt' => 'Link to categories, profile prompts, or assets members should review while drafting.',
+            ],
+            [
+                'title' => 'Highlight next steps',
+                'prompt' => 'Explain where published entries should appear and who should maintain them.',
+            ],
+        ];
+    }
+
+    if (empty($normalized['guides']['macro'])) {
+        $normalized['guides']['macro'] = [
+            [
+                'title' => 'Plan the workflow',
+                'prompt' => 'Outline how this module connects to other datasets or follow-up actions.',
+            ],
+            [
+                'title' => 'Coordinate roles',
+                'prompt' => 'Describe which roles steward the module and how they collaborate during reviews.',
+            ],
+            [
+                'title' => 'Measure success',
+                'prompt' => 'List the signals or datasets to monitor once entries go live.',
+            ],
+        ];
+    }
+
     return $normalized;
 }

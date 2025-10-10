@@ -142,6 +142,92 @@ function fg_update_content_module(int $moduleId, array $attributes): ?array
             $cssTokens = $record['css_tokens'];
         }
 
+        $guideParser = static function (array $lines): array {
+            $guides = [];
+            foreach ($lines as $line) {
+                $parts = explode('|', (string) $line, 2);
+                $title = trim($parts[0] ?? '');
+                if ($title === '') {
+                    continue;
+                }
+                $guides[] = [
+                    'title' => $title,
+                    'prompt' => trim($parts[1] ?? ''),
+                ];
+            }
+
+            return $guides;
+        };
+
+        $recordGuides = $record['guides'] ?? [];
+        if (!is_array($recordGuides)) {
+            $recordGuides = [];
+        }
+
+        $microLines = $lineParser($attributes['micro_guides'] ?? []);
+        if (empty($microLines) && isset($recordGuides['micro']) && is_array($recordGuides['micro'])) {
+            $microLines = array_map(static function ($guide) {
+                if (!is_array($guide)) {
+                    return '';
+                }
+                $title = trim((string) ($guide['title'] ?? ''));
+                $prompt = trim((string) ($guide['prompt'] ?? ''));
+                return $prompt === '' ? $title : $title . '|' . $prompt;
+            }, $recordGuides['micro']);
+        }
+        $microGuides = $guideParser($microLines);
+        if (empty($microGuides) && isset($recordGuides['micro']) && is_array($recordGuides['micro'])) {
+            $microGuides = $recordGuides['micro'];
+        }
+        if (empty($microGuides)) {
+            $microGuides = [
+                [
+                    'title' => 'Identify the goal',
+                    'prompt' => 'Summarise what this module should help members publish.',
+                ],
+                [
+                    'title' => 'Surface references',
+                    'prompt' => 'Link to categories, profile prompts, or assets members should review while drafting.',
+                ],
+                [
+                    'title' => 'Highlight next steps',
+                    'prompt' => 'Explain where published entries should appear and who should maintain them.',
+                ],
+            ];
+        }
+
+        $macroLines = $lineParser($attributes['macro_guides'] ?? []);
+        if (empty($macroLines) && isset($recordGuides['macro']) && is_array($recordGuides['macro'])) {
+            $macroLines = array_map(static function ($guide) {
+                if (!is_array($guide)) {
+                    return '';
+                }
+                $title = trim((string) ($guide['title'] ?? ''));
+                $prompt = trim((string) ($guide['prompt'] ?? ''));
+                return $prompt === '' ? $title : $title . '|' . $prompt;
+            }, $recordGuides['macro']);
+        }
+        $macroGuides = $guideParser($macroLines);
+        if (empty($macroGuides) && isset($recordGuides['macro']) && is_array($recordGuides['macro'])) {
+            $macroGuides = $recordGuides['macro'];
+        }
+        if (empty($macroGuides)) {
+            $macroGuides = [
+                [
+                    'title' => 'Plan the workflow',
+                    'prompt' => 'Outline how this module connects to other datasets or follow-up actions.',
+                ],
+                [
+                    'title' => 'Coordinate roles',
+                    'prompt' => 'Describe which roles steward the module and how they collaborate during reviews.',
+                ],
+                [
+                    'title' => 'Measure success',
+                    'prompt' => 'List the signals or datasets to monitor once entries go live.',
+                ],
+            ];
+        }
+
         $status = strtolower(trim((string) ($attributes['status'] ?? ($record['status'] ?? 'active'))));
         if (!in_array($status, ['active', 'draft', 'archived'], true)) {
             $status = strtolower(trim((string) ($record['status'] ?? 'active')));
@@ -186,6 +272,10 @@ function fg_update_content_module(int $moduleId, array $attributes): ?array
             'profile_prompts' => $profilePrompts,
             'wizard_steps' => $wizardSteps,
             'css_tokens' => $cssTokens,
+            'guides' => [
+                'micro' => $microGuides,
+                'macro' => $macroGuides,
+            ],
             'status' => $status,
             'visibility' => $visibility,
             'allowed_roles' => $allowedRoles,

@@ -308,6 +308,51 @@ function fg_public_post_controller(): void
             } elseif (!empty($module_assignment['stage'])) {
                 $body .= '<input type="hidden" name="content_module_stage" value="' . htmlspecialchars($module_assignment['stage']) . '">';
             }
+            $assignmentGuides = $module_assignment['guides'] ?? [];
+            $microGuides = is_array($assignmentGuides['micro'] ?? null) ? $assignmentGuides['micro'] : [];
+            $macroGuides = is_array($assignmentGuides['macro'] ?? null) ? $assignmentGuides['macro'] : [];
+            if (!empty($microGuides) || !empty($macroGuides)) {
+                $body .= '<details class="module-guides"><summary>Guidance</summary>';
+                if (!empty($microGuides)) {
+                    $body .= '<h3>Micro</h3><ul>';
+                    foreach ($microGuides as $guide) {
+                        if (!is_array($guide)) {
+                            continue;
+                        }
+                        $title = trim((string) ($guide['title'] ?? ''));
+                        $prompt = trim((string) ($guide['prompt'] ?? ''));
+                        if ($title === '' && $prompt === '') {
+                            continue;
+                        }
+                        $body .= '<li>' . htmlspecialchars($title === '' ? $prompt : $title);
+                        if ($title !== '' && $prompt !== '') {
+                            $body .= '<span> — ' . htmlspecialchars($prompt) . '</span>';
+                        }
+                        $body .= '</li>';
+                    }
+                    $body .= '</ul>';
+                }
+                if (!empty($macroGuides)) {
+                    $body .= '<h3>Macro</h3><ul>';
+                    foreach ($macroGuides as $guide) {
+                        if (!is_array($guide)) {
+                            continue;
+                        }
+                        $title = trim((string) ($guide['title'] ?? ''));
+                        $prompt = trim((string) ($guide['prompt'] ?? ''));
+                        if ($title === '' && $prompt === '') {
+                            continue;
+                        }
+                        $body .= '<li>' . htmlspecialchars($title === '' ? $prompt : $title);
+                        if ($title !== '' && $prompt !== '') {
+                            $body .= '<span> — ' . htmlspecialchars($prompt) . '</span>';
+                        }
+                        $body .= '</li>';
+                    }
+                    $body .= '</ul>';
+                }
+                $body .= '</details>';
+            }
             if (!empty($module_assignment['fields'])) {
                 $body .= '<fieldset class="module-fields"><legend>Module fields</legend>';
                 foreach ($module_assignment['fields'] as $field) {
@@ -411,6 +456,51 @@ function fg_public_post_controller(): void
                 $body .= '<li>' . htmlspecialchars($step) . '</li>';
             }
             $body .= '</ol>';
+        }
+        $moduleGuides = $normalized_module['guides'] ?? [];
+        $microGuides = is_array($moduleGuides['micro'] ?? null) ? $moduleGuides['micro'] : [];
+        $macroGuides = is_array($moduleGuides['macro'] ?? null) ? $moduleGuides['macro'] : [];
+        if (!empty($microGuides) || !empty($macroGuides)) {
+            $body .= '<details class="module-guides"><summary>Guidance</summary>';
+            if (!empty($microGuides)) {
+                $body .= '<h3>Micro</h3><ul>';
+                foreach ($microGuides as $guide) {
+                    if (!is_array($guide)) {
+                        continue;
+                    }
+                    $title = trim((string) ($guide['title'] ?? ''));
+                    $prompt = trim((string) ($guide['prompt'] ?? ''));
+                    if ($title === '' && $prompt === '') {
+                        continue;
+                    }
+                    $body .= '<li>' . htmlspecialchars($title === '' ? $prompt : $title);
+                    if ($title !== '' && $prompt !== '') {
+                        $body .= '<span> — ' . htmlspecialchars($prompt) . '</span>';
+                    }
+                    $body .= '</li>';
+                }
+                $body .= '</ul>';
+            }
+            if (!empty($macroGuides)) {
+                $body .= '<h3>Macro</h3><ul>';
+                foreach ($macroGuides as $guide) {
+                    if (!is_array($guide)) {
+                        continue;
+                    }
+                    $title = trim((string) ($guide['title'] ?? ''));
+                    $prompt = trim((string) ($guide['prompt'] ?? ''));
+                    if ($title === '' && $prompt === '') {
+                        continue;
+                    }
+                    $body .= '<li>' . htmlspecialchars($title === '' ? $prompt : $title);
+                    if ($title !== '' && $prompt !== '') {
+                        $body .= '<span> — ' . htmlspecialchars($prompt) . '</span>';
+                    }
+                    $body .= '</li>';
+                }
+                $body .= '</ul>';
+            }
+            $body .= '</details>';
         }
         $body .= '<form method="post" action="/post.php" enctype="multipart/form-data" class="post-composer" data-preview-target="#composer-preview" data-dataset-target="#composer-elements">';
         $body .= '<input type="hidden" name="content_module_key" value="' . htmlspecialchars($normalized_module['key']) . '">';

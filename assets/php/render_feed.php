@@ -1283,6 +1283,30 @@ function fg_render_feed(array $viewer): string
             if (!is_array($wizard_steps)) {
                 $wizard_steps = [];
             }
+            $moduleGuides = $module['guides'] ?? [];
+            if (!is_array($moduleGuides)) {
+                $moduleGuides = [];
+            }
+            $microGuides = [];
+            foreach (($moduleGuides['micro'] ?? []) as $guide) {
+                if (is_array($guide)) {
+                    $title = trim((string) ($guide['title'] ?? ''));
+                    $prompt = trim((string) ($guide['prompt'] ?? ''));
+                    $microGuides[] = [$title, $prompt];
+                } elseif (is_string($guide) && trim($guide) !== '') {
+                    $microGuides[] = [trim($guide), ''];
+                }
+            }
+            $macroGuides = [];
+            foreach (($moduleGuides['macro'] ?? []) as $guide) {
+                if (is_array($guide)) {
+                    $title = trim((string) ($guide['title'] ?? ''));
+                    $prompt = trim((string) ($guide['prompt'] ?? ''));
+                    $macroGuides[] = [$title, $prompt];
+                } elseif (is_string($guide) && trim($guide) !== '') {
+                    $macroGuides[] = [trim($guide), ''];
+                }
+            }
             $visibility = strtolower((string) ($module['visibility'] ?? 'members'));
             $allowedRoles = $module['allowed_roles'] ?? [];
             if (!is_array($allowedRoles)) {
@@ -1331,6 +1355,40 @@ function fg_render_feed(array $viewer): string
                     $html .= '<li>' . htmlspecialchars((string) $step) . '</li>';
                 }
                 $html .= '</ol>';
+            }
+            if (!empty($microGuides) || !empty($macroGuides)) {
+                $html .= '<details class="content-module-guides"><summary>Guidance</summary>';
+                if (!empty($microGuides)) {
+                    $html .= '<h4>Micro</h4><ul>';
+                    foreach ($microGuides as $guide) {
+                        [$title, $prompt] = $guide;
+                        if ($title === '' && $prompt === '') {
+                            continue;
+                        }
+                        $html .= '<li>' . htmlspecialchars($title === '' ? $prompt : $title);
+                        if ($title !== '' && $prompt !== '') {
+                            $html .= '<span> — ' . htmlspecialchars($prompt) . '</span>';
+                        }
+                        $html .= '</li>';
+                    }
+                    $html .= '</ul>';
+                }
+                if (!empty($macroGuides)) {
+                    $html .= '<h4>Macro</h4><ul>';
+                    foreach ($macroGuides as $guide) {
+                        [$title, $prompt] = $guide;
+                        if ($title === '' && $prompt === '') {
+                            continue;
+                        }
+                        $html .= '<li>' . htmlspecialchars($title === '' ? $prompt : $title);
+                        if ($title !== '' && $prompt !== '') {
+                            $html .= '<span> — ' . htmlspecialchars($prompt) . '</span>';
+                        }
+                        $html .= '</li>';
+                    }
+                    $html .= '</ul>';
+                }
+                $html .= '</details>';
             }
             $html .= '<p class="content-module-actions"><a class="button" href="/post.php?module=' . htmlspecialchars($module['key']) . '">Launch guided composer</a></p>';
             $html .= '</li>';
