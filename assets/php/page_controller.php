@@ -1,21 +1,21 @@
 <?php
 
-require_once __DIR__ . '/../global/bootstrap.php';
-require_once __DIR__ . '/../global/current_user.php';
-require_once __DIR__ . '/../global/load_pages.php';
-require_once __DIR__ . '/../global/filter_pages_for_user.php';
-require_once __DIR__ . '/../global/can_view_page.php';
-require_once __DIR__ . '/../global/find_page_by_slug.php';
-require_once __DIR__ . '/../global/guard_asset.php';
-require_once __DIR__ . '/../pages/render_page.php';
-require_once __DIR__ . '/../pages/render_page_list.php';
-require_once __DIR__ . '/../global/render_layout.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/current_user.php';
+require_once __DIR__ . '/load_pages.php';
+require_once __DIR__ . '/filter_pages_for_user.php';
+require_once __DIR__ . '/can_view_page.php';
+require_once __DIR__ . '/find_page_by_slug.php';
+require_once __DIR__ . '/guard_asset.php';
+require_once __DIR__ . '/render_page.php';
+require_once __DIR__ . '/render_page_list.php';
+require_once __DIR__ . '/render_layout.php';
 
 function fg_public_page_controller(): void
 {
     fg_bootstrap();
     $user = fg_current_user();
-    fg_guard_asset('assets/php/public/page_controller.php', [
+    fg_guard_asset('assets/php/page_controller.php', [
         'role' => $user['role'] ?? null,
         'user_id' => $user['id'] ?? null,
     ]);

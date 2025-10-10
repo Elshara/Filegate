@@ -2,7 +2,7 @@
 
 function fg_list_asset_files(): array
 {
-    $root = realpath(__DIR__ . '/../../..');
+    $root = realpath(__DIR__ . '/../..');
     if ($root === false) {
         return [];
     }

@@ -1,25 +1,25 @@
 <?php
 
-require_once __DIR__ . '/../global/bootstrap.php';
-require_once __DIR__ . '/../global/require_login.php';
-require_once __DIR__ . '/../global/add_post.php';
-require_once __DIR__ . '/../global/update_post.php';
-require_once __DIR__ . '/../global/find_post_by_id.php';
-require_once __DIR__ . '/../global/parse_collaborators.php';
-require_once __DIR__ . '/../global/render_layout.php';
-require_once __DIR__ . '/../global/store_upload.php';
-require_once __DIR__ . '/../global/get_setting.php';
-require_once __DIR__ . '/../global/load_template_options.php';
-require_once __DIR__ . '/../global/load_editor_options.php';
-require_once __DIR__ . '/../global/load_notification_channels.php';
-require_once __DIR__ . '/../global/update_upload_meta.php';
-require_once __DIR__ . '/../global/guard_asset.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/require_login.php';
+require_once __DIR__ . '/add_post.php';
+require_once __DIR__ . '/update_post.php';
+require_once __DIR__ . '/find_post_by_id.php';
+require_once __DIR__ . '/parse_collaborators.php';
+require_once __DIR__ . '/render_layout.php';
+require_once __DIR__ . '/store_upload.php';
+require_once __DIR__ . '/get_setting.php';
+require_once __DIR__ . '/load_template_options.php';
+require_once __DIR__ . '/load_editor_options.php';
+require_once __DIR__ . '/load_notification_channels.php';
+require_once __DIR__ . '/update_upload_meta.php';
+require_once __DIR__ . '/guard_asset.php';
 
 function fg_public_post_controller(): void
 {
     fg_bootstrap();
     $user = fg_require_login();
-    fg_guard_asset('assets/php/public/post_controller.php', [
+    fg_guard_asset('assets/php/post_controller.php', [
         'role' => $user['role'] ?? null,
         'user_id' => $user['id'] ?? null,
     ]);

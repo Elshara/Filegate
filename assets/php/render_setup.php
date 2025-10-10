@@ -1,7 +1,7 @@
 <?php
 
-require_once __DIR__ . '/../global/render_layout.php';
-require_once __DIR__ . '/../global/default_translations_dataset.php';
+require_once __DIR__ . '/render_layout.php';
+require_once __DIR__ . '/default_translations_dataset.php';
 
 function fg_render_setup_page(array $data = []): void
 {

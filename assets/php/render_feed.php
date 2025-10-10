@@ -1,23 +1,23 @@
 <?php
 
-require_once __DIR__ . '/../global/load_posts.php';
-require_once __DIR__ . '/../global/find_user_by_id.php';
-require_once __DIR__ . '/../global/get_setting.php';
-require_once __DIR__ . '/../global/render_post_body.php';
-require_once __DIR__ . '/../global/load_template_options.php';
-require_once __DIR__ . '/../global/load_editor_options.php';
-require_once __DIR__ . '/../global/load_notification_channels.php';
-require_once __DIR__ . '/../global/translate.php';
-require_once __DIR__ . '/../global/load_project_status.php';
-require_once __DIR__ . '/../global/load_changelog.php';
-require_once __DIR__ . '/../global/load_feature_requests.php';
-require_once __DIR__ . '/../global/load_bug_reports.php';
-require_once __DIR__ . '/../global/load_events.php';
-require_once __DIR__ . '/../global/load_automations.php';
-require_once __DIR__ . '/../global/default_automations_dataset.php';
-require_once __DIR__ . '/../global/filter_knowledge_articles.php';
-require_once __DIR__ . '/../global/list_knowledge_categories.php';
-require_once __DIR__ . '/../global/get_asset_parameter_value.php';
+require_once __DIR__ . '/load_posts.php';
+require_once __DIR__ . '/find_user_by_id.php';
+require_once __DIR__ . '/get_setting.php';
+require_once __DIR__ . '/render_post_body.php';
+require_once __DIR__ . '/load_template_options.php';
+require_once __DIR__ . '/load_editor_options.php';
+require_once __DIR__ . '/load_notification_channels.php';
+require_once __DIR__ . '/translate.php';
+require_once __DIR__ . '/load_project_status.php';
+require_once __DIR__ . '/load_changelog.php';
+require_once __DIR__ . '/load_feature_requests.php';
+require_once __DIR__ . '/load_bug_reports.php';
+require_once __DIR__ . '/load_events.php';
+require_once __DIR__ . '/load_automations.php';
+require_once __DIR__ . '/default_automations_dataset.php';
+require_once __DIR__ . '/filter_knowledge_articles.php';
+require_once __DIR__ . '/list_knowledge_categories.php';
+require_once __DIR__ . '/get_asset_parameter_value.php';
 
 function fg_render_feed(array $viewer): string
 {
@@ -1698,7 +1698,7 @@ function fg_render_feed(array $viewer): string
         'role' => $viewer['role'] ?? null,
         'user_id' => $viewer['id'] ?? null,
     ];
-    $knowledgeEnabled = fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'enabled', $knowledgeContext);
+    $knowledgeEnabled = fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'enabled', $knowledgeContext);
     $knowledgeArticles = [];
     $knowledgeCategories = [];
     if ($knowledgeEnabled) {
@@ -1709,7 +1709,7 @@ function fg_render_feed(array $viewer): string
         }
 
         $knowledgeArticles = fg_filter_knowledge_articles($viewer);
-        $defaultKnowledgeTag = trim((string) fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'default_tag', $knowledgeContext));
+        $defaultKnowledgeTag = trim((string) fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'default_tag', $knowledgeContext));
         if ($defaultKnowledgeTag !== '') {
             $filterTag = strtolower($defaultKnowledgeTag);
             $knowledgeArticles = array_values(array_filter($knowledgeArticles, static function (array $article) use ($filterTag) {
@@ -1722,7 +1722,7 @@ function fg_render_feed(array $viewer): string
         }
 
         $knowledgeLimitSetting = (int) fg_get_setting('knowledge_base_listing_limit', 5);
-        $knowledgeOverrideLimit = (int) fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'listing_limit', $knowledgeContext);
+        $knowledgeOverrideLimit = (int) fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'listing_limit', $knowledgeContext);
         $appliedLimit = $knowledgeOverrideLimit > 0 ? $knowledgeOverrideLimit : $knowledgeLimitSetting;
         if ($appliedLimit > 0) {
             $knowledgeArticles = array_slice($knowledgeArticles, 0, $appliedLimit);

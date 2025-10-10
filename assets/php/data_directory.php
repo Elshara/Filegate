@@ -4,8 +4,13 @@ function fg_data_directory(string $nature = 'dynamic', string $format = 'json'):
 {
     $nature = in_array($nature, ['static', 'dynamic'], true) ? $nature : 'dynamic';
     $format = in_array($format, ['json', 'xml'], true) ? $format : 'json';
-    $base = __DIR__ . '/../../' . $format;
+    $base = __DIR__ . '/../' . $format;
+    $legacy = $base . '/' . $nature;
 
-    return $base . '/' . $nature;
+    if (is_dir($legacy)) {
+        return $legacy;
+    }
+
+    return $base;
 }
 
