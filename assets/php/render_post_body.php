@@ -5,6 +5,7 @@ require_once __DIR__ . '/render_embed.php';
 require_once __DIR__ . '/get_setting.php';
 require_once __DIR__ . '/calculate_post_statistics.php';
 require_once __DIR__ . '/load_template_options.php';
+require_once __DIR__ . '/normalize_content_module.php';
 
 function fg_render_post_body(array $post): string
 {
@@ -25,6 +26,56 @@ function fg_render_post_body(array $post): string
 
     if (!empty($post['summary'])) {
         $html .= '<p class="post-summary">' . htmlspecialchars($post['summary']) . '</p>';
+    }
+
+    $module_assignment = null;
+    if (!empty($post['content_module']) && is_array($post['content_module'])) {
+        $module_assignment = fg_normalize_content_module_definition($post['content_module']);
+    }
+    if ($module_assignment !== null) {
+        $html .= '<section class="post-module" aria-label="Guided module">';
+        $html .= '<header class="post-module-header">';
+        $html .= '<h2>' . htmlspecialchars($module_assignment['label']) . '</h2>';
+        if (!empty($module_assignment['stage'])) {
+            $html .= '<p class="post-module-stage">Stage: ' . htmlspecialchars($module_assignment['stage']) . '</p>';
+        }
+        $html .= '</header>';
+        if (!empty($module_assignment['description'])) {
+            $html .= '<p class="post-module-description">' . htmlspecialchars($module_assignment['description']) . '</p>';
+        }
+        if (!empty($module_assignment['categories'])) {
+            $html .= '<ul class="post-module-categories" aria-label="Module categories">';
+            foreach ($module_assignment['categories'] as $category) {
+                $html .= '<li>' . htmlspecialchars($category) . '</li>';
+            }
+            $html .= '</ul>';
+        }
+        if (!empty($module_assignment['fields'])) {
+            $html .= '<dl class="post-module-fields">';
+            foreach ($module_assignment['fields'] as $field) {
+                $value = trim((string) ($field['value'] ?? ''));
+                if ($value === '') {
+                    continue;
+                }
+                $html .= '<div><dt>' . htmlspecialchars($field['label'] ?? '') . '</dt><dd>' . nl2br(htmlspecialchars($value)) . '</dd></div>';
+            }
+            $html .= '</dl>';
+        }
+        if (!empty($module_assignment['profile_prompts'])) {
+            $html .= '<details class="post-module-prompts"><summary>Profile prompts</summary><ul>';
+            foreach ($module_assignment['profile_prompts'] as $prompt) {
+                $html .= '<li>' . htmlspecialchars($prompt) . '</li>';
+            }
+            $html .= '</ul></details>';
+        }
+        if (!empty($module_assignment['css_tokens'])) {
+            $html .= '<details class="post-module-css"><summary>CSS tokens</summary><p>';
+            foreach ($module_assignment['css_tokens'] as $token) {
+                $html .= '<code>' . htmlspecialchars($token) . '</code> ';
+            }
+            $html .= '</p></details>';
+        }
+        $html .= '</section>';
     }
 
     if ($content !== '') {

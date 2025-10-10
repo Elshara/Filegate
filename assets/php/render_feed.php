@@ -18,6 +18,7 @@ require_once __DIR__ . '/default_automations_dataset.php';
 require_once __DIR__ . '/filter_knowledge_articles.php';
 require_once __DIR__ . '/list_knowledge_categories.php';
 require_once __DIR__ . '/get_asset_parameter_value.php';
+require_once __DIR__ . '/list_content_modules.php';
 
 function fg_render_feed(array $viewer): string
 {
@@ -1256,6 +1257,57 @@ function fg_render_feed(array $viewer): string
     $html .= '<button type="submit">Publish</button>';
     $html .= '</form></section>';
     $html .= '<section class="panel preview-panel" id="composer-preview" data-preview-output hidden><h2>Live preview</h2><div class="preview-body" data-preview-body><div class="preview-placeholder">Start writing to see your live preview, embeds, and statistics.</div></div><div class="preview-embeds" data-preview-embeds hidden></div><dl class="preview-statistics" data-preview-stats hidden></dl><ul class="preview-attachments" data-upload-list hidden></ul></section>';
+
+    $post_modules = fg_list_content_modules('posts');
+    if (!empty($post_modules)) {
+        $html .= '<section class="panel content-modules-panel">';
+        $html .= '<h2>Guided content modules</h2>';
+        $html .= '<p class="content-modules-intro">Launch guided composers for curated post types, complete with categories, field prompts, and wizard stages.</p>';
+        $html .= '<ul class="content-module-list">';
+        foreach ($post_modules as $module) {
+            if (!is_array($module)) {
+                continue;
+            }
+            $label = $module['label'] ?? ($module['key'] ?? 'Module');
+            $description = trim((string) ($module['description'] ?? ''));
+            $format = trim((string) ($module['format'] ?? ''));
+            $categories = $module['categories'] ?? [];
+            if (!is_array($categories)) {
+                $categories = [];
+            }
+            $wizard_steps = $module['wizard_steps'] ?? [];
+            if (!is_array($wizard_steps)) {
+                $wizard_steps = [];
+            }
+            $html .= '<li class="content-module-card">';
+            $html .= '<header><h3>' . htmlspecialchars($label) . '</h3>';
+            if ($format !== '') {
+                $html .= '<p class="content-module-format">Format: ' . htmlspecialchars($format) . '</p>';
+            }
+            $html .= '</header>';
+            if ($description !== '') {
+                $html .= '<p class="content-module-description">' . htmlspecialchars($description) . '</p>';
+            }
+            if (!empty($categories)) {
+                $html .= '<ul class="content-module-categories">';
+                foreach ($categories as $category) {
+                    $html .= '<li>' . htmlspecialchars((string) $category) . '</li>';
+                }
+                $html .= '</ul>';
+            }
+            if (!empty($wizard_steps)) {
+                $html .= '<ol class="content-module-steps">';
+                foreach ($wizard_steps as $step) {
+                    $html .= '<li>' . htmlspecialchars((string) $step) . '</li>';
+                }
+                $html .= '</ol>';
+            }
+            $html .= '<p class="content-module-actions"><a class="button" href="/post.php?module=' . htmlspecialchars($module['key']) . '">Launch guided composer</a></p>';
+            $html .= '</li>';
+        }
+        $html .= '</ul>';
+        $html .= '</section>';
+    }
 
     if (!empty($alerts)) {
         $html .= '<section class="panel feed-alerts">';

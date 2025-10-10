@@ -8,6 +8,7 @@ require_once __DIR__ . '/calculate_post_statistics.php';
 require_once __DIR__ . '/queue_notification.php';
 require_once __DIR__ . '/get_setting.php';
 require_once __DIR__ . '/find_user_by_id.php';
+require_once __DIR__ . '/normalize_content_module.php';
 
 function fg_add_post(array $post): array
 {
@@ -24,6 +25,22 @@ function fg_add_post(array $post): array
     $post['display_options'] = $post['display_options'] ?? ['show_statistics' => true, 'show_embeds' => true];
     $post['variables'] = $post['variables'] ?? [];
     $post['attachments'] = array_values($post['attachments'] ?? []);
+    if (!empty($post['content_module']) && is_array($post['content_module'])) {
+        $module_assignment = fg_normalize_content_module_definition($post['content_module']);
+        $normalized_fields = [];
+        foreach ($module_assignment['fields'] as $field) {
+            if (!is_array($field) || empty($field['key'])) {
+                continue;
+            }
+            $field['value'] = is_string($field['value'] ?? '') ? trim((string) $field['value']) : '';
+            $normalized_fields[] = $field;
+        }
+        $module_assignment['fields'] = $normalized_fields;
+        $module_assignment['stage'] = trim((string) ($module_assignment['stage'] ?? ''));
+        $post['content_module'] = $module_assignment;
+    } else {
+        unset($post['content_module']);
+    }
     $post['embeds'] = fg_collect_embeds($post['content']);
     $post['statistics'] = fg_calculate_post_statistics($post['content'], $post['embeds']);
     $post['created_at'] = $post['created_at'] ?? date(DATE_ATOM);
