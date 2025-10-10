@@ -1250,6 +1250,37 @@ function fg_render_setup_page(array $data = []): void
 
         $cssTokensText = htmlspecialchars(implode("\n", array_map('strval', $moduleCssTokens)));
 
+        $moduleRelationships = $module['relationships'] ?? [];
+        if (!is_array($moduleRelationships)) {
+            $moduleRelationships = [];
+        }
+        $moduleRelationshipLines = [];
+        foreach ($moduleRelationships as $relationship) {
+            if (!is_array($relationship)) {
+                continue;
+            }
+            $type = trim((string) ($relationship['type'] ?? 'related'));
+            if ($type === '') {
+                $type = 'related';
+            }
+            $target = trim((string) ($relationship['module_key'] ?? $relationship['module_reference'] ?? ''));
+            if ($target === '') {
+                continue;
+            }
+            $label = trim((string) ($relationship['module_label'] ?? ''));
+            $description = trim((string) ($relationship['description'] ?? ''));
+            $parts = [$type, $target];
+            if ($label !== '' && strcasecmp($label, $target) !== 0) {
+                $parts[] = $label;
+                if ($description !== '') {
+                    $parts[] = $description;
+                }
+            } elseif ($description !== '') {
+                $parts[] = $description;
+            }
+            $moduleRelationshipLines[] = htmlspecialchars(implode('|', $parts));
+        }
+
         $statusLabel = ucfirst($moduleStatus);
         $visibilityLabel = $moduleVisibility === 'everyone' ? 'Everyone' : ucfirst($moduleVisibility);
         $body .= '<article class="content-module-card">';
@@ -1305,6 +1336,7 @@ function fg_render_setup_page(array $data = []): void
         $body .= '<label class="field"><span class="field-label">Wizard steps</span><span class="field-control"><textarea name="wizard_steps" rows="5">' . implode("\n", $wizardLines) . '</textarea></span><span class="field-description">Step-by-step guidance (<code>Title|Prompt</code> per line).</span></label>';
         $body .= '<label class="field"><span class="field-label">Micro guides</span><span class="field-control"><textarea name="micro_guides" rows="4">' . implode("\n", $moduleMicroGuides) . '</textarea></span><span class="field-description">Short prompts for individual publishing steps (<code>Title|Prompt</code> per line).</span></label>';
         $body .= '<label class="field"><span class="field-label">Macro guides</span><span class="field-control"><textarea name="macro_guides" rows="4">' . implode("\n", $moduleMacroGuides) . '</textarea></span><span class="field-description">High-level rollout instructions for teams (<code>Title|Prompt</code> per line).</span></label>';
+        $body .= '<label class="field"><span class="field-label">Relationships</span><span class="field-control"><textarea name="relationships" rows="4">' . implode("\n", $moduleRelationshipLines) . '</textarea></span><span class="field-description">Map connected modules (<code>Type|Module key|Optional label|Optional description</code> per line).</span></label>';
         $body .= '<label class="field"><span class="field-label">CSS tokens</span><span class="field-control"><textarea name="css_tokens" rows="4">' . $cssTokensText . '</textarea></span><span class="field-description">Reference tokens pulled from the CSS value library.</span></label>';
         $body .= '</div>';
         $body .= '<div class="action-row">';
@@ -1398,6 +1430,7 @@ function fg_render_setup_page(array $data = []): void
     $body .= '<label class="field"><span class="field-label">Categories</span><span class="field-control"><textarea name="categories" rows="4">' . htmlspecialchars(implode("\n", $defaultCategoryLines)) . '</textarea></span><span class="field-description">Seed with blueprint categories (one per line).</span></label>';
     $body .= '<label class="field"><span class="field-label">Fields</span><span class="field-control"><textarea name="fields" rows="6"></textarea></span><span class="field-description">List <code>Label|Description</code> prompts to collect for each entry.</span></label>';
     $body .= '<label class="field"><span class="field-label">Profile prompts</span><span class="field-control"><textarea name="profile_prompts" rows="6">' . htmlspecialchars(implode("\n", $defaultProfileLines)) . '</textarea></span><span class="field-description">Help members extend their profiles when this module is used.</span></label>';
+    $body .= '<label class="field"><span class="field-label">Relationships</span><span class="field-control"><textarea name="relationships" rows="4" placeholder="related|create-article|Create Article|Summarise agreements in article form"></textarea></span><span class="field-description">Connect complementary modules (<code>Type|Module key|Optional label|Optional description</code> per line).</span></label>';
     $body .= '<label class="field"><span class="field-label">Wizard steps</span><span class="field-control"><textarea name="wizard_steps" rows="5">' . htmlspecialchars(implode("\n", $defaultWizardLines)) . '</textarea></span><span class="field-description">Step-by-step guidance (<code>Title|Prompt</code> per line).</span></label>';
     $body .= '<label class="field"><span class="field-label">Micro guides</span><span class="field-control"><textarea name="micro_guides" rows="4">' . htmlspecialchars(implode("\n", $defaultMicroLines)) . '</textarea></span><span class="field-description">Short prompts for individual publishing steps (<code>Title|Prompt</code> per line).</span></label>';
     $body .= '<label class="field"><span class="field-label">Macro guides</span><span class="field-control"><textarea name="macro_guides" rows="4">' . htmlspecialchars(implode("\n", $defaultMacroLines)) . '</textarea></span><span class="field-description">High-level rollout instructions for teams (<code>Title|Prompt</code> per line).</span></label>';

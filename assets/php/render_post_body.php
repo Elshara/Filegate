@@ -53,6 +53,10 @@ function fg_render_post_body(array $post): string
         $moduleGuides = $module_assignment['guides'] ?? [];
         $microGuides = is_array($moduleGuides['micro'] ?? null) ? $moduleGuides['micro'] : [];
         $macroGuides = is_array($moduleGuides['macro'] ?? null) ? $moduleGuides['macro'] : [];
+        $moduleRelationships = $module_assignment['relationships'] ?? [];
+        if (!is_array($moduleRelationships)) {
+            $moduleRelationships = [];
+        }
         if (!empty($microGuides) || !empty($macroGuides)) {
             $html .= '<details class="post-module-guides"><summary>Guidance</summary>';
             if (!empty($microGuides)) {
@@ -94,6 +98,33 @@ function fg_render_post_body(array $post): string
                 $html .= '</ul>';
             }
             $html .= '</details>';
+        }
+        if (!empty($moduleRelationships)) {
+            $html .= '<details class="post-module-relationships"><summary>Connected modules</summary><ul>';
+            foreach ($moduleRelationships as $relationship) {
+                if (!is_array($relationship)) {
+                    continue;
+                }
+                $type = trim((string) ($relationship['type'] ?? 'related'));
+                if ($type === '') {
+                    $type = 'related';
+                }
+                $targetKey = trim((string) ($relationship['module_key'] ?? $relationship['module_reference'] ?? ''));
+                if ($targetKey === '') {
+                    continue;
+                }
+                $targetLabel = trim((string) ($relationship['module_label'] ?? ''));
+                $description = trim((string) ($relationship['description'] ?? ''));
+                $html .= '<li><strong>' . htmlspecialchars(ucfirst($type)) . '</strong>: ' . htmlspecialchars($targetLabel !== '' ? $targetLabel : $targetKey);
+                if ($targetLabel !== '' && strcasecmp($targetLabel, $targetKey) !== 0) {
+                    $html .= ' <code>' . htmlspecialchars($targetKey) . '</code>';
+                }
+                if ($description !== '') {
+                    $html .= '<span> — ' . htmlspecialchars($description) . '</span>';
+                }
+                $html .= '</li>';
+            }
+            $html .= '</ul></details>';
         }
         if (!empty($module_assignment['fields'])) {
             $html .= '<dl class="post-module-fields">';

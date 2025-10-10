@@ -100,6 +100,7 @@ function fg_default_content_modules_dataset(): array
                     ],
                 ],
             ],
+            'relationships' => [],
             'status' => 'active',
             'visibility' => 'members',
             'allowed_roles' => [],

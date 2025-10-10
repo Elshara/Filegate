@@ -131,7 +131,11 @@ Teams that rely on structured templates can open the **Guided content modules** 
 
 The module composer preloads the module description, category tags, and type label, then renders every blueprint field as a labelled textarea alongside optional wizard-stage selectors. Micro guides spotlight individual publishing steps while macro guides outline team-level rollouts, so authors understand both immediate tasks and the broader workflow before publishing. Responses are stored directly with the post so the feed renders a dedicated module section—complete with field summaries, stage indicators, guidance summaries, and reference prompts—without touching external APIs.
 
+Modules can also reference one another through relationship mappings. Each relationship records the connection type (`related`, `supports`, `records`, and so on), a target module key, an optional human-friendly label, and guidance about how the two entries collaborate. The feed, module composer, and published posts surface these connections so teams can hop between prerequisite templates, follow-up workflows, and companion formats without leaving Filegate.
+
 Administrators manage module lifecycle directly from **Setup → Content Modules**. Status flags (`active`, `draft`, `archived`) control whether a module appears on the feed, while visibility scopes (`everyone`, `members`, `admins`) and optional role filters keep specialist composers limited to the right teams. The setup dashboard now accepts granular micro and macro guide copy—either handwritten or imported from the XML blueprint library—so operators can codify both immediate prompts and long-form rollout checklists alongside module metadata. Draft and archived modules stay available to editors through their saved snapshots, so in-progress work is never lost while configuration evolves.
+
+The creation and edit forms include a **Relationships** textarea that accepts `Type|Module key|Optional label|Optional description` entries—one per line. Filegate normalises each entry, ensuring module keys stay canonical while still preserving descriptive labels and notes. Leave the field empty to skip relationship mapping, or capture multiple lines to expose a full web of related templates in the UI.
 
 ## Managing datasets
 

@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/load_content_modules.php';
 require_once __DIR__ . '/save_content_modules.php';
+require_once __DIR__ . '/normalize_content_module.php';
 
 function fg_update_content_module(int $moduleId, array $attributes): ?array
 {
@@ -142,6 +143,41 @@ function fg_update_content_module(int $moduleId, array $attributes): ?array
             $cssTokens = $record['css_tokens'];
         }
 
+        $relationshipsInput = $attributes['relationships'] ?? [];
+        if (!is_array($relationshipsInput)) {
+            $relationshipsInput = [$relationshipsInput];
+        }
+        $relationshipLines = $lineParser($relationshipsInput);
+        if (empty($relationshipLines) && isset($record['relationships']) && is_array($record['relationships'])) {
+            $relationshipLines = array_map(static function ($relationship): string {
+                if (!is_array($relationship)) {
+                    return '';
+                }
+                $type = trim((string) ($relationship['type'] ?? 'related'));
+                if ($type === '') {
+                    $type = 'related';
+                }
+                $target = trim((string) ($relationship['module_key'] ?? $relationship['module_reference'] ?? ''));
+                if ($target === '') {
+                    return '';
+                }
+                $label = trim((string) ($relationship['module_label'] ?? ''));
+                $description = trim((string) ($relationship['description'] ?? ''));
+                $parts = [$type, $target];
+                if ($label !== '' && strcasecmp($label, $target) !== 0) {
+                    $parts[] = $label;
+                    if ($description !== '') {
+                        $parts[] = $description;
+                    }
+                } elseif ($description !== '') {
+                    $parts[] = $description;
+                }
+
+                return implode('|', $parts);
+            }, $record['relationships']);
+        }
+        $relationships = fg_normalize_content_module_relationships(empty($relationshipLines) ? ($record['relationships'] ?? []) : $relationshipLines);
+
         $guideParser = static function (array $lines): array {
             $guides = [];
             foreach ($lines as $line) {
@@ -276,6 +312,7 @@ function fg_update_content_module(int $moduleId, array $attributes): ?array
                 'micro' => $microGuides,
                 'macro' => $macroGuides,
             ],
+            'relationships' => $relationships,
             'status' => $status,
             'visibility' => $visibility,
             'allowed_roles' => $allowedRoles,

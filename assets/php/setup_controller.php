@@ -1049,6 +1049,7 @@ function fg_public_setup_controller(): void
                     'micro_guides' => $_POST['micro_guides'] ?? [],
                     'macro_guides' => $_POST['macro_guides'] ?? [],
                     'css_tokens' => $_POST['css_tokens'] ?? [],
+                    'relationships' => $_POST['relationships'] ?? [],
                     'status' => $_POST['status'] ?? 'active',
                     'visibility' => $_POST['visibility'] ?? 'members',
                     'allowed_roles' => $_POST['allowed_roles'] ?? [],
@@ -1140,6 +1141,38 @@ function fg_public_setup_controller(): void
                         }
                         if (!empty($decoded['css_tokens']) && is_array($decoded['css_tokens'])) {
                             $payload['css_tokens'] = $decoded['css_tokens'];
+                        }
+                        if (!empty($decoded['relationships'])) {
+                            $relationships = $decoded['relationships'];
+                            if (is_array($relationships)) {
+                                $payload['relationships'] = array_map(static function ($relationship): string {
+                                    if (is_array($relationship)) {
+                                        $type = trim((string) ($relationship['type'] ?? 'related'));
+                                        if ($type === '') {
+                                            $type = 'related';
+                                        }
+                                        $target = trim((string) ($relationship['module_key'] ?? $relationship['module_reference'] ?? ''));
+                                        if ($target === '') {
+                                            return '';
+                                        }
+                                        $label = trim((string) ($relationship['module_label'] ?? ''));
+                                        $description = trim((string) ($relationship['description'] ?? ''));
+                                        $parts = [$type, $target];
+                                        if ($label !== '' && strcasecmp($label, $target) !== 0) {
+                                            $parts[] = $label;
+                                            if ($description !== '') {
+                                                $parts[] = $description;
+                                            }
+                                        } elseif ($description !== '') {
+                                            $parts[] = $description;
+                                        }
+
+                                        return implode('|', $parts);
+                                    }
+
+                                    return (string) $relationship;
+                                }, $relationships);
+                            }
                         }
                     }
                 }

@@ -2,6 +2,146 @@
 
 require_once __DIR__ . '/normalize_content_module_key.php';
 
+function fg_normalize_content_module_relationships($relationships): array
+{
+    $normalized = [];
+    $seen = [];
+
+    $register = static function (array $payload) use (&$normalized, &$seen): void {
+        $type = strtolower(trim((string) ($payload['type'] ?? 'related')));
+        if ($type === '') {
+            $type = 'related';
+        }
+
+        $moduleKey = trim((string) ($payload['module_key'] ?? ''));
+        if ($moduleKey === '') {
+            return;
+        }
+
+        $dedupeKey = $type . '|' . $moduleKey;
+        if (isset($seen[$dedupeKey])) {
+            return;
+        }
+        $seen[$dedupeKey] = true;
+
+        $moduleLabel = trim((string) ($payload['module_label'] ?? ''));
+        $moduleReference = trim((string) ($payload['module_reference'] ?? ''));
+        if ($moduleReference === '') {
+            $moduleReference = $moduleLabel !== '' ? $moduleLabel : $moduleKey;
+        }
+        if ($moduleLabel === '') {
+            $moduleLabel = $moduleReference !== '' ? $moduleReference : $moduleKey;
+        }
+
+        $normalized[] = [
+            'type' => $type,
+            'module_key' => $moduleKey,
+            'module_label' => $moduleLabel,
+            'module_reference' => $moduleReference,
+            'description' => trim((string) ($payload['description'] ?? '')),
+        ];
+    };
+
+    $processLine = static function (string $line) use (&$register): void {
+        $line = trim($line);
+        if ($line === '') {
+            return;
+        }
+
+        $parts = explode('|', $line);
+        $parts = array_map(static function ($part) {
+            return trim((string) $part);
+        }, $parts);
+
+        $type = array_shift($parts);
+        if ($type === null || $type === '') {
+            $type = 'related';
+        }
+
+        $moduleReference = array_shift($parts);
+        if (!is_string($moduleReference)) {
+            return;
+        }
+        $moduleReference = trim($moduleReference);
+        if ($moduleReference === '') {
+            return;
+        }
+
+        $moduleLabel = '';
+        $description = '';
+
+        if (count($parts) === 1) {
+            $description = trim((string) ($parts[0] ?? ''));
+        } elseif (count($parts) >= 2) {
+            $moduleLabel = trim((string) array_shift($parts));
+            $description = trim(implode('|', $parts));
+        }
+
+        $moduleKey = fg_normalize_content_module_key($moduleReference);
+        if ($moduleKey === '' && $moduleLabel !== '') {
+            $moduleKey = fg_normalize_content_module_key($moduleLabel);
+        }
+        if ($moduleKey === '') {
+            return;
+        }
+
+        $register([
+            'type' => $type,
+            'module_key' => $moduleKey,
+            'module_label' => $moduleLabel,
+            'module_reference' => $moduleReference,
+            'description' => $description,
+        ]);
+    };
+
+    if (is_array($relationships)) {
+        foreach ($relationships as $entry) {
+            if (is_string($entry)) {
+                $processLine($entry);
+                continue;
+            }
+
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            if (isset($entry['line']) && is_string($entry['line'])) {
+                $processLine($entry['line']);
+                continue;
+            }
+
+            $type = $entry['type'] ?? $entry['relationship'] ?? $entry['kind'] ?? 'related';
+            $moduleReference = $entry['module_reference'] ?? $entry['module_label'] ?? $entry['label'] ?? '';
+            $moduleKeySource = $entry['module_key'] ?? $entry['module'] ?? $entry['key'] ?? $entry['target'] ?? '';
+            if (!is_string($moduleKeySource) || trim($moduleKeySource) === '') {
+                $moduleKeySource = $moduleReference;
+            }
+            $moduleKey = fg_normalize_content_module_key((string) $moduleKeySource);
+            if ($moduleKey === '' && is_string($moduleReference) && trim($moduleReference) !== '') {
+                $moduleKey = fg_normalize_content_module_key((string) $moduleReference);
+            }
+            if ($moduleKey === '') {
+                continue;
+            }
+
+            $register([
+                'type' => $type,
+                'module_key' => $moduleKey,
+                'module_label' => $entry['module_label'] ?? $entry['label'] ?? $moduleReference ?? '',
+                'module_reference' => $moduleReference ?? $moduleKeySource,
+                'description' => $entry['description'] ?? $entry['notes'] ?? $entry['summary'] ?? '',
+            ]);
+        }
+    } else {
+        $lines = preg_split('/\R+/u', (string) $relationships) ?: [];
+        foreach ($lines as $line) {
+            $processLine($line);
+        }
+    }
+
+    return $normalized;
+}
+
 function fg_normalize_content_module_definition(array $module): array
 {
     $normalized = $module;
@@ -156,6 +296,9 @@ function fg_normalize_content_module_definition(array $module): array
         'micro' => $guideNormalizer($guidesRaw['micro'] ?? ($module['micro_guides'] ?? [])),
         'macro' => $guideNormalizer($guidesRaw['macro'] ?? ($module['macro_guides'] ?? [])),
     ];
+
+    $relationshipSources = $module['relationships'] ?? ($module['related_modules'] ?? []);
+    $normalized['relationships'] = fg_normalize_content_module_relationships($relationshipSources);
 
     if (empty($normalized['guides']['micro'])) {
         $normalized['guides']['micro'] = [

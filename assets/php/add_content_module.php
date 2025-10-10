@@ -3,6 +3,7 @@
 require_once __DIR__ . '/load_content_modules.php';
 require_once __DIR__ . '/save_content_modules.php';
 require_once __DIR__ . '/normalize_content_module_key.php';
+require_once __DIR__ . '/normalize_content_module.php';
 
 function fg_add_content_module(array $attributes): array
 {
@@ -182,6 +183,10 @@ function fg_add_content_module(array $attributes): array
 
     $cssTokens = $lineParser($attributes['css_tokens'] ?? []);
 
+    $relationshipsInput = $attributes['relationships'] ?? [];
+    $relationshipLines = $lineParser($relationshipsInput);
+    $relationships = fg_normalize_content_module_relationships($relationshipLines);
+
     $status = strtolower(trim((string) ($attributes['status'] ?? 'active')));
     if (!in_array($status, ['active', 'draft', 'archived'], true)) {
         $status = 'active';
@@ -224,6 +229,7 @@ function fg_add_content_module(array $attributes): array
             'micro' => $microGuides,
             'macro' => $macroGuides,
         ],
+        'relationships' => $relationships,
         'status' => $status,
         'visibility' => $visibility,
         'allowed_roles' => $allowedRoles,

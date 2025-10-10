@@ -46,6 +46,22 @@
                 "::marker",
                 "::placeholder",
                 "::selection"
+            ],
+            "relationships": [
+                {
+                    "type": "follow-up",
+                    "module_key": "create-article",
+                    "module_label": "Create Article",
+                    "module_reference": "create-article",
+                    "description": "Publish recap posts once agreements are signed."
+                },
+                {
+                    "type": "references",
+                    "module_key": "create-concern",
+                    "module_label": "Create Concern",
+                    "module_reference": "create-concern",
+                    "description": "Link agreements to the concerns they resolve."
+                }
             ]
         },
         {
@@ -93,6 +109,22 @@
                 "::marker",
                 "::placeholder",
                 "::selection"
+            ],
+            "relationships": [
+                {
+                    "type": "supports",
+                    "module_key": "create-agreement",
+                    "module_label": "Create Agreement",
+                    "module_reference": "create-agreement",
+                    "description": "Document context and progress for active agreements."
+                },
+                {
+                    "type": "promotes",
+                    "module_key": "create-debate",
+                    "module_label": "Create Debate",
+                    "module_reference": "create-debate",
+                    "description": "Summarise debate takeaways for broader audiences."
+                }
             ]
         },
         {
@@ -140,6 +172,15 @@
                 "::marker",
                 "::placeholder",
                 "::selection"
+            ],
+            "relationships": [
+                {
+                    "type": "alternate",
+                    "module_key": "create-article",
+                    "module_label": "Create Article",
+                    "module_reference": "create-article",
+                    "description": "Offer an audio version alongside written updates."
+                }
             ]
         },
         {
@@ -186,6 +227,15 @@
                 "::marker",
                 "::placeholder",
                 "::selection"
+            ],
+            "relationships": [
+                {
+                    "type": "publishes",
+                    "module_key": "create-article",
+                    "module_label": "Create Article",
+                    "module_reference": "create-article",
+                    "description": "Feature evergreen articles as reference pages."
+                }
             ]
         },
         {
@@ -233,6 +283,15 @@
                 "::marker",
                 "::placeholder",
                 "::selection"
+            ],
+            "relationships": [
+                {
+                    "type": "embeds",
+                    "module_key": "create-audio",
+                    "module_label": "Create Audio",
+                    "module_reference": "create-audio",
+                    "description": "Pair interviews or podcasts with profile biographies."
+                }
             ]
         },
         {
@@ -279,6 +338,22 @@
                 "::marker",
                 "::placeholder",
                 "::selection"
+            ],
+            "relationships": [
+                {
+                    "type": "organises",
+                    "module_key": "create-article",
+                    "module_label": "Create Article",
+                    "module_reference": "create-article",
+                    "description": "Group articles under shared taxonomies."
+                },
+                {
+                    "type": "organises",
+                    "module_key": "create-agreement",
+                    "module_label": "Create Agreement",
+                    "module_reference": "create-agreement",
+                    "description": "Highlight agreements by initiative or program."
+                }
             ]
         },
         {
@@ -329,6 +404,22 @@
                 "::marker",
                 "::placeholder",
                 "::selection"
+            ],
+            "relationships": [
+                {
+                    "type": "escalates",
+                    "module_key": "create-agreement",
+                    "module_label": "Create Agreement",
+                    "module_reference": "create-agreement",
+                    "description": "Capture agreements that resolve logged concerns."
+                },
+                {
+                    "type": "inspires",
+                    "module_key": "create-debate",
+                    "module_label": "Create Debate",
+                    "module_reference": "create-debate",
+                    "description": "Launch debates to explore responses to shared concerns."
+                }
             ]
         },
         {
@@ -377,6 +468,22 @@
                 "::marker",
                 "::placeholder",
                 "::selection"
+            ],
+            "relationships": [
+                {
+                    "type": "tracks",
+                    "module_key": "create-concern",
+                    "module_label": "Create Concern",
+                    "module_reference": "create-concern",
+                    "description": "Reference the concern that kicked off the debate."
+                },
+                {
+                    "type": "records",
+                    "module_key": "create-article",
+                    "module_label": "Create Article",
+                    "module_reference": "create-article",
+                    "description": "Summarise debate outcomes as published articles."
+                }
             ]
         }
     ],

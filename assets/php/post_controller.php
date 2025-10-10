@@ -311,6 +311,10 @@ function fg_public_post_controller(): void
             $assignmentGuides = $module_assignment['guides'] ?? [];
             $microGuides = is_array($assignmentGuides['micro'] ?? null) ? $assignmentGuides['micro'] : [];
             $macroGuides = is_array($assignmentGuides['macro'] ?? null) ? $assignmentGuides['macro'] : [];
+            $assignmentRelationships = $module_assignment['relationships'] ?? [];
+            if (!is_array($assignmentRelationships)) {
+                $assignmentRelationships = [];
+            }
             if (!empty($microGuides) || !empty($macroGuides)) {
                 $body .= '<details class="module-guides"><summary>Guidance</summary>';
                 if (!empty($microGuides)) {
@@ -352,6 +356,33 @@ function fg_public_post_controller(): void
                     $body .= '</ul>';
                 }
                 $body .= '</details>';
+            }
+            if (!empty($assignmentRelationships)) {
+                $body .= '<details class="module-relationships"><summary>Connected modules</summary><ul>';
+                foreach ($assignmentRelationships as $relationship) {
+                    if (!is_array($relationship)) {
+                        continue;
+                    }
+                    $type = trim((string) ($relationship['type'] ?? 'related'));
+                    if ($type === '') {
+                        $type = 'related';
+                    }
+                    $targetKey = trim((string) ($relationship['module_key'] ?? $relationship['module_reference'] ?? ''));
+                    if ($targetKey === '') {
+                        continue;
+                    }
+                    $targetLabel = trim((string) ($relationship['module_label'] ?? ''));
+                    $description = trim((string) ($relationship['description'] ?? ''));
+                    $body .= '<li><strong>' . htmlspecialchars(ucfirst($type)) . '</strong>: ' . htmlspecialchars($targetLabel !== '' ? $targetLabel : $targetKey);
+                    if ($targetLabel !== '' && strcasecmp($targetLabel, $targetKey) !== 0) {
+                        $body .= ' <code>' . htmlspecialchars($targetKey) . '</code>';
+                    }
+                    if ($description !== '') {
+                        $body .= '<span> — ' . htmlspecialchars($description) . '</span>';
+                    }
+                    $body .= '</li>';
+                }
+                $body .= '</ul></details>';
             }
             if (!empty($module_assignment['fields'])) {
                 $body .= '<fieldset class="module-fields"><legend>Module fields</legend>';
@@ -460,6 +491,10 @@ function fg_public_post_controller(): void
         $moduleGuides = $normalized_module['guides'] ?? [];
         $microGuides = is_array($moduleGuides['micro'] ?? null) ? $moduleGuides['micro'] : [];
         $macroGuides = is_array($moduleGuides['macro'] ?? null) ? $moduleGuides['macro'] : [];
+        $moduleRelationships = $normalized_module['relationships'] ?? [];
+        if (!is_array($moduleRelationships)) {
+            $moduleRelationships = [];
+        }
         if (!empty($microGuides) || !empty($macroGuides)) {
             $body .= '<details class="module-guides"><summary>Guidance</summary>';
             if (!empty($microGuides)) {
@@ -501,6 +536,33 @@ function fg_public_post_controller(): void
                 $body .= '</ul>';
             }
             $body .= '</details>';
+        }
+        if (!empty($moduleRelationships)) {
+            $body .= '<details class="module-relationships"><summary>Connected modules</summary><ul>';
+            foreach ($moduleRelationships as $relationship) {
+                if (!is_array($relationship)) {
+                    continue;
+                }
+                $type = trim((string) ($relationship['type'] ?? 'related'));
+                if ($type === '') {
+                    $type = 'related';
+                }
+                $targetKey = trim((string) ($relationship['module_key'] ?? $relationship['module_reference'] ?? ''));
+                if ($targetKey === '') {
+                    continue;
+                }
+                $targetLabel = trim((string) ($relationship['module_label'] ?? ''));
+                $description = trim((string) ($relationship['description'] ?? ''));
+                $body .= '<li><strong>' . htmlspecialchars(ucfirst($type)) . '</strong>: ' . htmlspecialchars($targetLabel !== '' ? $targetLabel : $targetKey);
+                if ($targetLabel !== '' && strcasecmp($targetLabel, $targetKey) !== 0) {
+                    $body .= ' <code>' . htmlspecialchars($targetKey) . '</code>';
+                }
+                if ($description !== '') {
+                    $body .= '<span> — ' . htmlspecialchars($description) . '</span>';
+                }
+                $body .= '</li>';
+            }
+            $body .= '</ul></details>';
         }
         $body .= '<form method="post" action="/post.php" enctype="multipart/form-data" class="post-composer" data-preview-target="#composer-preview" data-dataset-target="#composer-elements">';
         $body .= '<input type="hidden" name="content_module_key" value="' . htmlspecialchars($normalized_module['key']) . '">';
