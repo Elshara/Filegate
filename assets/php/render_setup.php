@@ -1218,6 +1218,41 @@ function fg_render_setup_page(array $data = []): void
             }
         }
 
+        $taskLines = [];
+        $moduleTasks = $module['tasks'] ?? [];
+        if (!is_array($moduleTasks)) {
+            $moduleTasks = [];
+        }
+        foreach ($moduleTasks as $task) {
+            if (is_array($task)) {
+                $label = trim((string) ($task['label'] ?? ($task['title'] ?? '')));
+                if ($label === '') {
+                    continue;
+                }
+                $description = trim((string) ($task['description'] ?? ($task['prompt'] ?? '')));
+                $status = strtolower(trim((string) ($task['status'] ?? $task['state'] ?? '')));
+                $completed = !empty($task['completed']);
+                if (!$completed && $status !== '') {
+                    $completed = in_array($status, ['complete', 'completed', 'done', 'finished'], true);
+                }
+                $parts = [$label];
+                if ($description !== '') {
+                    $parts[] = $description;
+                }
+                if ($completed) {
+                    $parts[] = 'complete';
+                }
+                $taskLines[] = htmlspecialchars(implode('|', array_filter($parts, static function ($part) {
+                    return $part !== '';
+                })));
+            } else {
+                $line = trim((string) $task);
+                if ($line !== '') {
+                    $taskLines[] = htmlspecialchars($line);
+                }
+            }
+        }
+
         if (!is_array($moduleGuides)) {
             $moduleGuides = [];
         }
@@ -1332,6 +1367,7 @@ function fg_render_setup_page(array $data = []): void
         $body .= '<div class="field-grid content-module-grid">';
         $body .= '<label class="field"><span class="field-label">Categories</span><span class="field-control"><textarea name="categories" rows="4">' . $categoryText . '</textarea></span><span class="field-description">One category per line.</span></label>';
         $body .= '<label class="field"><span class="field-label">Fields</span><span class="field-control"><textarea name="fields" rows="6">' . implode("\n", $fieldLines) . '</textarea></span><span class="field-description">Use <code>Label|Description</code> per line to describe sub-prompts.</span></label>';
+        $body .= '<label class="field"><span class="field-label">Checklist</span><span class="field-control"><textarea name="tasks" rows="5">' . implode("\n", $taskLines) . '</textarea></span><span class="field-description">Capture repeatable steps (<code>Task|Optional description|complete</code> per line).</span></label>';
         $body .= '<label class="field"><span class="field-label">Profile prompts</span><span class="field-control"><textarea name="profile_prompts" rows="6">' . implode("\n", $profileLines) . '</textarea></span><span class="field-description">Help members extend their profiles when this module is used.</span></label>';
         $body .= '<label class="field"><span class="field-label">Wizard steps</span><span class="field-control"><textarea name="wizard_steps" rows="5">' . implode("\n", $wizardLines) . '</textarea></span><span class="field-description">Step-by-step guidance (<code>Title|Prompt</code> per line).</span></label>';
         $body .= '<label class="field"><span class="field-label">Micro guides</span><span class="field-control"><textarea name="micro_guides" rows="4">' . implode("\n", $moduleMicroGuides) . '</textarea></span><span class="field-description">Short prompts for individual publishing steps (<code>Title|Prompt</code> per line).</span></label>';
@@ -1426,9 +1462,16 @@ function fg_render_setup_page(array $data = []): void
     $defaultMacroLines[] = 'Coordinate roles|Document who curates the module and which roles approve entries.';
     $defaultMacroLines[] = 'Track outcomes|Note how teams will review module performance after publishing.';
 
+    $defaultTaskLines = [
+        'Draft outline|Capture the intended structure before writing.',
+        'Link supporting modules|Reference related workflows members should review.',
+        'Schedule follow-up|Note when to revisit or expand the entry.'
+    ];
+
     $body .= '<div class="field-grid content-module-grid">';
     $body .= '<label class="field"><span class="field-label">Categories</span><span class="field-control"><textarea name="categories" rows="4">' . htmlspecialchars(implode("\n", $defaultCategoryLines)) . '</textarea></span><span class="field-description">Seed with blueprint categories (one per line).</span></label>';
     $body .= '<label class="field"><span class="field-label">Fields</span><span class="field-control"><textarea name="fields" rows="6"></textarea></span><span class="field-description">List <code>Label|Description</code> prompts to collect for each entry.</span></label>';
+    $body .= '<label class="field"><span class="field-label">Checklist</span><span class="field-control"><textarea name="tasks" rows="5">' . htmlspecialchars(implode("\n", $defaultTaskLines)) . '</textarea></span><span class="field-description">Outline repeatable steps (<code>Task|Optional description|complete</code> per line).</span></label>';
     $body .= '<label class="field"><span class="field-label">Profile prompts</span><span class="field-control"><textarea name="profile_prompts" rows="6">' . htmlspecialchars(implode("\n", $defaultProfileLines)) . '</textarea></span><span class="field-description">Help members extend their profiles when this module is used.</span></label>';
     $body .= '<label class="field"><span class="field-label">Relationships</span><span class="field-control"><textarea name="relationships" rows="4" placeholder="related|create-article|Create Article|Summarise agreements in article form"></textarea></span><span class="field-description">Connect complementary modules (<code>Type|Module key|Optional label|Optional description</code> per line).</span></label>';
     $body .= '<label class="field"><span class="field-label">Wizard steps</span><span class="field-control"><textarea name="wizard_steps" rows="5">' . htmlspecialchars(implode("\n", $defaultWizardLines)) . '</textarea></span><span class="field-description">Step-by-step guidance (<code>Title|Prompt</code> per line).</span></label>';

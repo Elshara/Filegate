@@ -1044,6 +1044,7 @@ function fg_public_setup_controller(): void
                     'description' => $_POST['description'] ?? '',
                     'categories' => $_POST['categories'] ?? [],
                     'fields' => $_POST['fields'] ?? [],
+                    'tasks' => $_POST['tasks'] ?? [],
                     'profile_prompts' => $_POST['profile_prompts'] ?? [],
                     'wizard_steps' => $_POST['wizard_steps'] ?? [],
                     'micro_guides' => $_POST['micro_guides'] ?? [],
@@ -1074,6 +1075,37 @@ function fg_public_setup_controller(): void
                                 }
                                 return $label . '|' . $description;
                             }, $decoded['fields']);
+                        }
+                        $blueprintTasks = [];
+                        if (!empty($decoded['tasks']) && is_array($decoded['tasks'])) {
+                            $blueprintTasks = $decoded['tasks'];
+                        } elseif (!empty($decoded['checklists']) && is_array($decoded['checklists'])) {
+                            $blueprintTasks = $decoded['checklists'];
+                        } elseif (!empty($decoded['checklist']) && is_array($decoded['checklist'])) {
+                            $blueprintTasks = $decoded['checklist'];
+                        }
+
+                        if (!empty($blueprintTasks)) {
+                            $payload['tasks'] = array_map(static function ($task): string {
+                                if (is_array($task)) {
+                                    $label = trim((string) ($task['label'] ?? ($task['title'] ?? '')));
+                                    $description = trim((string) ($task['description'] ?? ($task['prompt'] ?? '')));
+                                    $completed = !empty($task['completed']) || in_array(strtolower(trim((string) ($task['status'] ?? $task['state'] ?? ''))), ['complete', 'completed', 'done', 'finished'], true);
+                                    $parts = [$label];
+                                    if ($description !== '') {
+                                        $parts[] = $description;
+                                    }
+                                    if ($completed) {
+                                        $parts[] = 'complete';
+                                    }
+
+                                    return implode('|', array_filter($parts, static function ($part) {
+                                        return $part !== '';
+                                    }));
+                                }
+
+                                return (string) $task;
+                            }, $decoded['tasks']);
                         }
                         if (!empty($decoded['profile_prompts']) && is_array($decoded['profile_prompts'])) {
                             $payload['profile_prompts'] = array_map(static function (array $prompt): string {

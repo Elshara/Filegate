@@ -126,6 +126,28 @@ function fg_render_post_body(array $post): string
             }
             $html .= '</ul></details>';
         }
+        if (!empty($module_assignment['tasks'])) {
+            $html .= '<section class="post-module-tasks" aria-label="Module checklist"><h3>Checklist</h3><ul>';
+            foreach ($module_assignment['tasks'] as $task) {
+                if (!is_array($task)) {
+                    continue;
+                }
+                $taskLabel = trim((string) ($task['label'] ?? ''));
+                if ($taskLabel === '') {
+                    continue;
+                }
+                $taskDescription = trim((string) ($task['description'] ?? ''));
+                $isCompleted = !empty($task['completed']);
+                $stateLabel = $isCompleted ? 'Completed' : 'Pending';
+                $stateClass = $isCompleted ? 'complete' : 'pending';
+                $html .= '<li class="task-' . htmlspecialchars($stateClass) . '"><span class="task-label">' . htmlspecialchars($taskLabel) . '</span>';
+                if ($taskDescription !== '') {
+                    $html .= '<span class="task-description">' . htmlspecialchars($taskDescription) . '</span>';
+                }
+                $html .= '<span class="task-state">' . htmlspecialchars($stateLabel) . '</span></li>';
+            }
+            $html .= '</ul></section>';
+        }
         if (!empty($module_assignment['fields'])) {
             $html .= '<dl class="post-module-fields">';
             foreach ($module_assignment['fields'] as $field) {

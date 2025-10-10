@@ -67,6 +67,11 @@ function fg_default_content_modules_dataset(): array
             'description' => trim((string) ($blueprint['description'] ?? '')),
             'categories' => array_slice($categories, 0, 6),
             'fields' => $fieldBlueprints,
+            'tasks' => [
+                'Outline objective|Summarise what this entry should deliver before drafting.',
+                'Collect references|Link supporting modules, datasets, or assets contributors should review.',
+                'Assign follow-up|Note who reviews the entry next and when the team should revisit it.'
+            ],
             'profile_prompts' => $profilePrompts,
             'wizard_steps' => $wizardSteps,
             'css_tokens' => $cssTokens,

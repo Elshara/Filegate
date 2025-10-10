@@ -145,6 +145,29 @@ function fg_public_post_controller(): void
             }
             $module_definition['stage'] = $stage_input;
 
+            $tasks_input = $_POST['content_module_tasks'] ?? [];
+            if (!is_array($tasks_input)) {
+                $tasks_input = [];
+            }
+            $completed_task_keys = [];
+            foreach ($tasks_input as $task_key => $value) {
+                if (!is_string($task_key) || trim($task_key) === '') {
+                    continue;
+                }
+                $completed_task_keys[] = (string) $task_key;
+            }
+            if (!isset($module_definition['tasks']) || !is_array($module_definition['tasks'])) {
+                $module_definition['tasks'] = [];
+            }
+            foreach ($module_definition['tasks'] as &$task_entry) {
+                $taskKey = (string) ($task_entry['key'] ?? '');
+                if ($taskKey === '') {
+                    $taskKey = fg_normalize_content_module_key((string) ($task_entry['label'] ?? ''));
+                }
+                $task_entry['completed'] = in_array($taskKey, $completed_task_keys, true);
+            }
+            unset($task_entry);
+
             $payload['content_module'] = $module_definition;
         }
 
@@ -282,6 +305,14 @@ function fg_public_post_controller(): void
                 }
             }
             unset($snapshot_field);
+            if (isset($module_snapshot['tasks']) && is_array($module_snapshot['tasks'])) {
+                foreach ($module_snapshot['tasks'] as &$snapshot_task) {
+                    if (is_array($snapshot_task)) {
+                        $snapshot_task['completed'] = false;
+                    }
+                }
+                unset($snapshot_task);
+            }
             $module_snapshot['stage'] = '';
             $module_snapshot_json = htmlspecialchars(json_encode($module_snapshot, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
             $body .= '<input type="hidden" name="content_module_key" value="' . htmlspecialchars($module_assignment['key']) . '">';
@@ -384,6 +415,26 @@ function fg_public_post_controller(): void
                 }
                 $body .= '</ul></details>';
             }
+            if (!empty($module_assignment['tasks'])) {
+                $body .= '<fieldset class="module-tasks"><legend>Module checklist</legend><ul>';
+                foreach ($module_assignment['tasks'] as $task) {
+                    if (!is_array($task)) {
+                        continue;
+                    }
+                    $taskLabel = trim((string) ($task['label'] ?? ''));
+                    if ($taskLabel === '') {
+                        continue;
+                    }
+                    $taskDescription = trim((string) ($task['description'] ?? ''));
+                    $checked = !empty($task['completed']) ? ' checked' : '';
+                    $body .= '<li><label><input type="checkbox" name="content_module_tasks[' . htmlspecialchars((string) ($task['key'] ?? fg_normalize_content_module_key($taskLabel))) . ']" value="1"' . $checked . '> ' . htmlspecialchars($taskLabel);
+                    if ($taskDescription !== '') {
+                        $body .= '<small>' . htmlspecialchars($taskDescription) . '</small>';
+                    }
+                    $body .= '</label></li>';
+                }
+                $body .= '</ul></fieldset>';
+            }
             if (!empty($module_assignment['fields'])) {
                 $body .= '<fieldset class="module-fields"><legend>Module fields</legend>';
                 foreach ($module_assignment['fields'] as $field) {
@@ -469,6 +520,14 @@ function fg_public_post_controller(): void
             }
         }
         unset($snapshot_field);
+        if (isset($module_snapshot['tasks']) && is_array($module_snapshot['tasks'])) {
+            foreach ($module_snapshot['tasks'] as &$snapshot_task) {
+                if (is_array($snapshot_task)) {
+                    $snapshot_task['completed'] = false;
+                }
+            }
+            unset($snapshot_task);
+        }
         $module_snapshot['stage'] = '';
         $module_snapshot_json = htmlspecialchars(json_encode($module_snapshot, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
 
@@ -584,6 +643,26 @@ function fg_public_post_controller(): void
                 $body .= '<option value="' . htmlspecialchars($stage) . '"' . $selected . '>' . htmlspecialchars($stage) . '</option>';
             }
             $body .= '</select></label>';
+        }
+        if (!empty($normalized_module['tasks'])) {
+            $body .= '<fieldset class="module-tasks"><legend>Module checklist</legend><ul>';
+            foreach ($normalized_module['tasks'] as $task) {
+                if (!is_array($task)) {
+                    continue;
+                }
+                $taskLabel = trim((string) ($task['label'] ?? ''));
+                if ($taskLabel === '') {
+                    continue;
+                }
+                $taskDescription = trim((string) ($task['description'] ?? ''));
+                $taskKey = (string) ($task['key'] ?? fg_normalize_content_module_key($taskLabel));
+                $body .= '<li><label><input type="checkbox" name="content_module_tasks[' . htmlspecialchars($taskKey) . ']" value="1"> ' . htmlspecialchars($taskLabel);
+                if ($taskDescription !== '') {
+                    $body .= '<small>' . htmlspecialchars($taskDescription) . '</small>';
+                }
+                $body .= '</label></li>';
+            }
+            $body .= '</ul></fieldset>';
         }
         if (!empty($normalized_module['fields'])) {
             $body .= '<fieldset class="module-fields"><legend>Module fields</legend>';

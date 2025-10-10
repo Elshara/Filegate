@@ -62,6 +62,23 @@
                     "module_reference": "create-concern",
                     "description": "Link agreements to the concerns they resolve."
                 }
+            ],
+            "tasks": [
+                {
+                    "label": "Document commitments",
+                    "description": "List the responsibilities each participant agrees to uphold.",
+                    "completed": false
+                },
+                {
+                    "label": "Share supporting modules",
+                    "description": "Link any follow-on templates authors should consult when drafting.",
+                    "completed": false
+                },
+                {
+                    "label": "Confirm review cadence",
+                    "description": "Capture when the agreement should be revisited and by whom.",
+                    "completed": false
+                }
             ]
         },
         {

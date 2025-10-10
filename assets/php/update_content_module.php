@@ -82,6 +82,49 @@ function fg_update_content_module(int $moduleId, array $attributes): ?array
             $fields = $record['fields'];
         }
 
+        $tasksInput = $lineParser($attributes['tasks'] ?? []);
+        if (empty($tasksInput) && isset($record['tasks']) && is_array($record['tasks'])) {
+            $tasksInput = array_map(static function ($task) {
+                if (!is_array($task)) {
+                    return '';
+                }
+                $label = trim((string) ($task['label'] ?? ''));
+                $description = trim((string) ($task['description'] ?? ''));
+                $completed = !empty($task['completed']);
+                $parts = [$label];
+                if ($description !== '') {
+                    $parts[] = $description;
+                }
+                if ($completed) {
+                    $parts[] = 'complete';
+                }
+
+                return implode('|', array_filter($parts, static function ($part) {
+                    return $part !== '';
+                }));
+            }, $record['tasks']);
+        }
+
+        $tasks = [];
+        foreach ($tasksInput as $taskLine) {
+            $parts = explode('|', $taskLine, 3);
+            $taskLabel = trim($parts[0] ?? '');
+            if ($taskLabel === '') {
+                continue;
+            }
+            $taskDescription = trim($parts[1] ?? '');
+            $statusHint = strtolower(trim((string) ($parts[2] ?? '')));
+            $completed = in_array($statusHint, ['1', 'true', 'yes', 'y', 'on', 'complete', 'completed', 'done', 'finished', 'checked'], true);
+            $tasks[] = [
+                'label' => $taskLabel,
+                'description' => $taskDescription,
+                'completed' => $completed,
+            ];
+        }
+        if (empty($tasks) && isset($record['tasks']) && is_array($record['tasks'])) {
+            $tasks = $record['tasks'];
+        }
+
         $profileInput = $lineParser($attributes['profile_prompts'] ?? []);
         if (empty($profileInput) && isset($record['profile_prompts']) && is_array($record['profile_prompts'])) {
             $profileInput = array_map(static function ($prompt) {
@@ -305,6 +348,7 @@ function fg_update_content_module(int $moduleId, array $attributes): ?array
             'description' => $description,
             'categories' => $categories,
             'fields' => $fields,
+            'tasks' => $tasks,
             'profile_prompts' => $profilePrompts,
             'wizard_steps' => $wizardSteps,
             'css_tokens' => $cssTokens,

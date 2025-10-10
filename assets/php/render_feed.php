@@ -1283,6 +1283,29 @@ function fg_render_feed(array $viewer): string
             if (!is_array($wizard_steps)) {
                 $wizard_steps = [];
             }
+            $moduleTasksRaw = $module['tasks'] ?? [];
+            if (!is_array($moduleTasksRaw)) {
+                $moduleTasksRaw = [];
+            }
+            $moduleTasks = [];
+            foreach ($moduleTasksRaw as $task) {
+                if (is_array($task)) {
+                    $taskLabel = trim((string) ($task['label'] ?? ''));
+                    $taskDescription = trim((string) ($task['description'] ?? ''));
+                    if ($taskLabel === '' && $taskDescription === '') {
+                        continue;
+                    }
+                    $moduleTasks[] = [$taskLabel !== '' ? $taskLabel : $taskDescription, $taskDescription];
+                } elseif (is_string($task) && trim($task) !== '') {
+                    $parts = explode('|', $task, 2);
+                    $taskLabel = trim($parts[0]);
+                    $taskDescription = trim($parts[1] ?? '');
+                    if ($taskLabel === '' && $taskDescription === '') {
+                        continue;
+                    }
+                    $moduleTasks[] = [$taskLabel !== '' ? $taskLabel : $taskDescription, $taskDescription];
+                }
+            }
             $moduleGuides = $module['guides'] ?? [];
             if (!is_array($moduleGuides)) {
                 $moduleGuides = [];
@@ -1359,6 +1382,20 @@ function fg_render_feed(array $viewer): string
                     $html .= '<li>' . htmlspecialchars((string) $step) . '</li>';
                 }
                 $html .= '</ol>';
+            }
+            if (!empty($moduleTasks)) {
+                $html .= '<details class="content-module-tasks"><summary>Checklist</summary><ul>';
+                foreach ($moduleTasks as [$taskLabel, $taskDescription]) {
+                    if ($taskLabel === '' && $taskDescription === '') {
+                        continue;
+                    }
+                    $html .= '<li>' . htmlspecialchars($taskLabel !== '' ? $taskLabel : $taskDescription);
+                    if ($taskDescription !== '' && strcasecmp($taskDescription, $taskLabel) !== 0) {
+                        $html .= '<span> — ' . htmlspecialchars($taskDescription) . '</span>';
+                    }
+                    $html .= '</li>';
+                }
+                $html .= '</ul></details>';
             }
             if (!empty($microGuides) || !empty($macroGuides)) {
                 $html .= '<details class="content-module-guides"><summary>Guidance</summary>';

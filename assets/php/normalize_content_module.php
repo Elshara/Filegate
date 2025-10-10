@@ -253,6 +253,95 @@ function fg_normalize_content_module_definition(array $module): array
     }
     $normalized['fields'] = $normalizedFields;
 
+    $taskSource = $module['tasks'] ?? ($module['checklists'] ?? []);
+    if (is_string($taskSource)) {
+        $taskSource = preg_split('/\R+/u', $taskSource) ?: [];
+    }
+    if (!is_array($taskSource)) {
+        $taskSource = [];
+    }
+
+    $toBool = static function ($value): bool {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        $string = strtolower(trim((string) $value));
+        if ($string === '') {
+            return false;
+        }
+
+        return in_array($string, ['1', 'true', 'yes', 'y', 'on', 'complete', 'completed', 'done', 'finished', 'checked'], true);
+    };
+
+    $normalizedTasks = [];
+    $taskKeyCounts = [];
+    foreach ($taskSource as $index => $task) {
+        $label = '';
+        $description = '';
+        $completed = false;
+        $keyCandidate = '';
+
+        if (is_string($task)) {
+            $parts = explode('|', $task);
+            $label = trim((string) ($parts[0] ?? ''));
+            if ($label === '') {
+                $label = 'Task ' . ($index + 1);
+            }
+
+            if (count($parts) >= 2) {
+                $description = trim((string) ($parts[1] ?? ''));
+            }
+            if (count($parts) >= 3) {
+                $completed = $toBool($parts[2] ?? '');
+            }
+        } elseif (is_array($task)) {
+            $label = trim((string) ($task['label'] ?? $task['title'] ?? ''));
+            if ($label === '') {
+                $label = 'Task ' . ($index + 1);
+            }
+            $description = trim((string) ($task['description'] ?? $task['prompt'] ?? $task['notes'] ?? ''));
+            $keyCandidate = (string) ($task['key'] ?? $task['task_key'] ?? $task['identifier'] ?? '');
+            if (isset($task['completed'])) {
+                $completed = $toBool($task['completed']);
+            } elseif (isset($task['default'])) {
+                $completed = $toBool($task['default']);
+            } elseif (isset($task['status'])) {
+                $completed = $toBool($task['status']);
+            } elseif (isset($task['state'])) {
+                $completed = $toBool($task['state']);
+            }
+        } else {
+            continue;
+        }
+
+        if ($keyCandidate === '') {
+            $keyCandidate = $label;
+        }
+        $key = fg_normalize_content_module_key($keyCandidate);
+        if ($key === '') {
+            $key = fg_normalize_content_module_key($label);
+        }
+        if ($key === '') {
+            $key = 'task-' . ($index + 1);
+        }
+
+        if (isset($taskKeyCounts[$key])) {
+            $taskKeyCounts[$key]++;
+            $key .= '-' . $taskKeyCounts[$key];
+        } else {
+            $taskKeyCounts[$key] = 1;
+        }
+
+        $normalizedTasks[] = [
+            'key' => $key,
+            'label' => $label,
+            'description' => $description,
+            'completed' => $completed,
+        ];
+    }
+    $normalized['tasks'] = $normalizedTasks;
+
     $guideNormalizer = static function ($guides): array {
         if (is_array($guides)) {
             $normalizedGuides = [];

@@ -84,6 +84,24 @@ function fg_add_content_module(array $attributes): array
         ];
     }
 
+    $tasksInput = $lineParser($attributes['tasks'] ?? []);
+    $tasks = [];
+    foreach ($tasksInput as $taskLine) {
+        $parts = explode('|', $taskLine, 3);
+        $taskLabel = trim($parts[0] ?? '');
+        if ($taskLabel === '') {
+            continue;
+        }
+        $taskDescription = trim($parts[1] ?? '');
+        $statusHint = strtolower(trim((string) ($parts[2] ?? '')));
+        $completed = in_array($statusHint, ['1', 'true', 'yes', 'y', 'on', 'complete', 'completed', 'done', 'finished', 'checked'], true);
+        $tasks[] = [
+            'label' => $taskLabel,
+            'description' => $taskDescription,
+            'completed' => $completed,
+        ];
+    }
+
     $profileInput = $lineParser($attributes['profile_prompts'] ?? []);
     $profilePrompts = [];
     foreach ($profileInput as $profileLine) {
@@ -222,6 +240,7 @@ function fg_add_content_module(array $attributes): array
         'description' => $description,
         'categories' => $categories,
         'fields' => $fields,
+        'tasks' => $tasks,
         'profile_prompts' => $profilePrompts,
         'wizard_steps' => $wizardSteps,
         'css_tokens' => $cssTokens,
