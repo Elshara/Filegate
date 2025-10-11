@@ -1,16 +1,16 @@
 <?php
 
-require_once __DIR__ . '/../global/bootstrap.php';
-require_once __DIR__ . '/../global/require_login.php';
-require_once __DIR__ . '/../global/load_uploads.php';
-require_once __DIR__ . '/../global/find_post_by_id.php';
-require_once __DIR__ . '/../global/guard_asset.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/require_login.php';
+require_once __DIR__ . '/load_uploads.php';
+require_once __DIR__ . '/find_post_by_id.php';
+require_once __DIR__ . '/guard_asset.php';
 
 function fg_public_media_controller(): void
 {
     fg_bootstrap();
     $user = fg_require_login();
-    fg_guard_asset('assets/php/public/media_controller.php', [
+    fg_guard_asset('assets/php/media_controller.php', [
         'role' => $user['role'] ?? null,
         'user_id' => $user['id'] ?? null,
     ]);

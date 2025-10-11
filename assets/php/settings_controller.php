@@ -1,29 +1,29 @@
 <?php
 
-require_once __DIR__ . '/../global/bootstrap.php';
-require_once __DIR__ . '/../global/require_login.php';
-require_once __DIR__ . '/../global/update_setting.php';
-require_once __DIR__ . '/../global/delegate_setting.php';
-require_once __DIR__ . '/../global/list_datasets.php';
-require_once __DIR__ . '/../global/save_json.php';
-require_once __DIR__ . '/../global/render_layout.php';
-require_once __DIR__ . '/../global/parse_allowed_list.php';
-require_once __DIR__ . '/../global/normalize_setting_value.php';
-require_once __DIR__ . '/../global/get_setting.php';
-require_once __DIR__ . '/../global/load_asset_configurations.php';
-require_once __DIR__ . '/../global/update_asset_override.php';
-require_once __DIR__ . '/../global/clear_asset_override.php';
-require_once __DIR__ . '/../global/guard_asset.php';
-require_once __DIR__ . '/../global/update_user_theme.php';
-require_once __DIR__ . '/../global/clear_user_theme.php';
-require_once __DIR__ . '/../global/update_user_locale.php';
-require_once __DIR__ . '/../pages/render_settings.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/require_login.php';
+require_once __DIR__ . '/update_setting.php';
+require_once __DIR__ . '/delegate_setting.php';
+require_once __DIR__ . '/list_datasets.php';
+require_once __DIR__ . '/save_json.php';
+require_once __DIR__ . '/render_layout.php';
+require_once __DIR__ . '/parse_allowed_list.php';
+require_once __DIR__ . '/normalize_setting_value.php';
+require_once __DIR__ . '/get_setting.php';
+require_once __DIR__ . '/load_asset_configurations.php';
+require_once __DIR__ . '/update_asset_override.php';
+require_once __DIR__ . '/clear_asset_override.php';
+require_once __DIR__ . '/guard_asset.php';
+require_once __DIR__ . '/update_user_theme.php';
+require_once __DIR__ . '/clear_user_theme.php';
+require_once __DIR__ . '/update_user_locale.php';
+require_once __DIR__ . '/render_settings.php';
 
 function fg_public_settings_controller(): void
 {
     fg_bootstrap();
     $user = fg_require_login();
-    fg_guard_asset('assets/php/public/settings_controller.php', [
+    fg_guard_asset('assets/php/settings_controller.php', [
         'role' => $user['role'] ?? null,
         'user_id' => $user['id'] ?? null,
     ]);

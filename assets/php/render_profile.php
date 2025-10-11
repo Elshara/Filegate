@@ -1,9 +1,9 @@
 <?php
 
-require_once __DIR__ . '/../global/load_posts.php';
-require_once __DIR__ . '/../global/sanitize_html.php';
-require_once __DIR__ . '/../global/render_post_body.php';
-require_once __DIR__ . '/../global/load_notification_channels.php';
+require_once __DIR__ . '/load_posts.php';
+require_once __DIR__ . '/sanitize_html.php';
+require_once __DIR__ . '/render_post_body.php';
+require_once __DIR__ . '/load_notification_channels.php';
 
 function fg_render_profile_page(array $viewer, array $profile_user): string
 {

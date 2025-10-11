@@ -1,10 +1,10 @@
 <?php
 
-require_once __DIR__ . '/../global/render_layout.php';
-require_once __DIR__ . '/../global/load_translations.php';
-require_once __DIR__ . '/../global/resolve_locale.php';
-require_once __DIR__ . '/../global/get_setting.php';
-require_once __DIR__ . '/../global/translate.php';
+require_once __DIR__ . '/render_layout.php';
+require_once __DIR__ . '/load_translations.php';
+require_once __DIR__ . '/resolve_locale.php';
+require_once __DIR__ . '/get_setting.php';
+require_once __DIR__ . '/translate.php';
 
 function fg_render_register_page(array $context = []): void
 {

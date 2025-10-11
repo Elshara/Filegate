@@ -1,10 +1,10 @@
 <?php
 
-require_once __DIR__ . '/../global/filter_knowledge_articles.php';
-require_once __DIR__ . '/../global/sanitize_html.php';
-require_once __DIR__ . '/../global/translate.php';
-require_once __DIR__ . '/../global/get_asset_parameter_value.php';
-require_once __DIR__ . '/../global/list_knowledge_categories.php';
+require_once __DIR__ . '/filter_knowledge_articles.php';
+require_once __DIR__ . '/sanitize_html.php';
+require_once __DIR__ . '/translate.php';
+require_once __DIR__ . '/get_asset_parameter_value.php';
+require_once __DIR__ . '/list_knowledge_categories.php';
 
 function fg_render_knowledge_base(
     array $viewer,
@@ -18,17 +18,17 @@ function fg_render_knowledge_base(
         'role' => $viewer['role'] ?? null,
         'user_id' => $viewer['id'] ?? null,
     ];
-    $enabled = fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'enabled', $context);
+    $enabled = fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'enabled', $context);
     if (!$enabled) {
         return '<p class="notice error">The knowledge base is currently disabled.</p>';
     }
 
-    $defaultTagFilter = trim((string) fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'default_tag', $context));
-    $defaultCategorySlug = trim((string) fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'default_category', $context));
-    $showTagCloud = fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'show_tag_cloud', $context);
-    $listingOverride = (int) fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'listing_limit', $context);
-    $enableSearch = fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'enable_search', $context);
-    $enableCategoryFilter = fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'enable_category_filter', $context);
+    $defaultTagFilter = trim((string) fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'default_tag', $context));
+    $defaultCategorySlug = trim((string) fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'default_category', $context));
+    $showTagCloud = fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'show_tag_cloud', $context);
+    $listingOverride = (int) fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'listing_limit', $context);
+    $enableSearch = fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'enable_search', $context);
+    $enableCategoryFilter = fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'enable_category_filter', $context);
 
     $categories = fg_list_knowledge_categories($viewer);
     $categoryIndex = [];

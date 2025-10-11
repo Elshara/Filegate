@@ -1,18 +1,18 @@
 <?php
 
-require_once __DIR__ . '/../global/bootstrap.php';
-require_once __DIR__ . '/../global/current_user.php';
-require_once __DIR__ . '/../global/guard_asset.php';
-require_once __DIR__ . '/../global/filter_knowledge_articles.php';
-require_once __DIR__ . '/../global/list_knowledge_categories.php';
-require_once __DIR__ . '/../pages/render_knowledge_base.php';
-require_once __DIR__ . '/../global/render_layout.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/current_user.php';
+require_once __DIR__ . '/guard_asset.php';
+require_once __DIR__ . '/filter_knowledge_articles.php';
+require_once __DIR__ . '/list_knowledge_categories.php';
+require_once __DIR__ . '/render_knowledge_base.php';
+require_once __DIR__ . '/render_layout.php';
 
 function fg_public_knowledge_controller(): void
 {
     fg_bootstrap();
     $user = fg_current_user();
-    fg_guard_asset('assets/php/public/knowledge_controller.php', [
+    fg_guard_asset('assets/php/knowledge_controller.php', [
         'role' => $user['role'] ?? null,
         'user_id' => $user['id'] ?? null,
     ]);

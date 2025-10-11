@@ -17,6 +17,12 @@
         "nature": "dynamic",
         "expose_via_api": false
     },
+    "content_modules": {
+        "label": "Content Modules",
+        "description": "Modular content type definitions built from blueprint libraries.",
+        "nature": "dynamic",
+        "expose_via_api": false
+    },
     "settings": {
         "label": "Settings",
         "description": "Delegated configuration entries defining application branding and behavior.",

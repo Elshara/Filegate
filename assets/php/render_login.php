@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../global/render_layout.php';
+require_once __DIR__ . '/render_layout.php';
 
 function fg_render_login_page(array $context = []): void
 {

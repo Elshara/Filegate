@@ -1,22 +1,22 @@
 <?php
 
-require_once __DIR__ . '/../global/bootstrap.php';
-require_once __DIR__ . '/../global/find_user_by_username.php';
-require_once __DIR__ . '/../global/hash_password.php';
-require_once __DIR__ . '/../global/upsert_user.php';
-require_once __DIR__ . '/../global/log_in_user.php';
-require_once __DIR__ . '/../global/current_user.php';
-require_once __DIR__ . '/../global/load_users.php';
-require_once __DIR__ . '/../global/get_setting.php';
-require_once __DIR__ . '/../global/load_translations.php';
-require_once __DIR__ . '/../pages/render_register.php';
-require_once __DIR__ . '/../global/guard_asset.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/find_user_by_username.php';
+require_once __DIR__ . '/hash_password.php';
+require_once __DIR__ . '/upsert_user.php';
+require_once __DIR__ . '/log_in_user.php';
+require_once __DIR__ . '/current_user.php';
+require_once __DIR__ . '/load_users.php';
+require_once __DIR__ . '/get_setting.php';
+require_once __DIR__ . '/load_translations.php';
+require_once __DIR__ . '/render_register.php';
+require_once __DIR__ . '/guard_asset.php';
 
 function fg_public_register_controller(): void
 {
     fg_bootstrap();
     $current = fg_current_user();
-    fg_guard_asset('assets/php/public/register_controller.php', [
+    fg_guard_asset('assets/php/register_controller.php', [
         'role' => $current['role'] ?? null,
         'user_id' => $current['id'] ?? null,
     ]);

@@ -1,18 +1,18 @@
 <?php
 
-require_once __DIR__ . '/../global/bootstrap.php';
-require_once __DIR__ . '/../global/require_login.php';
-require_once __DIR__ . '/../global/toggle_like.php';
-require_once __DIR__ . '/../global/is_ajax_request.php';
-require_once __DIR__ . '/../global/render_json_response.php';
-require_once __DIR__ . '/../global/find_post_by_id.php';
-require_once __DIR__ . '/../global/guard_asset.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/require_login.php';
+require_once __DIR__ . '/toggle_like.php';
+require_once __DIR__ . '/is_ajax_request.php';
+require_once __DIR__ . '/render_json_response.php';
+require_once __DIR__ . '/find_post_by_id.php';
+require_once __DIR__ . '/guard_asset.php';
 
 function fg_public_toggle_like_controller(): void
 {
     fg_bootstrap();
     $user = fg_require_login();
-    fg_guard_asset('assets/php/public/toggle_like_controller.php', [
+    fg_guard_asset('assets/php/toggle_like_controller.php', [
         'role' => $user['role'] ?? null,
         'user_id' => $user['id'] ?? null,
     ]);

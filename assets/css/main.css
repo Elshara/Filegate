@@ -3455,3 +3455,93 @@ input[type="submit"]:hover {
     border-color: rgba(59, 130, 246, 0.35);
     background: rgba(59, 130, 246, 0.08);
 }
+
+.module-tasks ul,
+.post-module-tasks ul,
+.content-module-tasks ul {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.module-tasks li,
+.post-module-tasks li,
+.content-module-tasks li {
+  background: rgba(32, 44, 62, 0.05);
+  border: 1px solid rgba(32, 44, 62, 0.08);
+  border-radius: 0.85rem;
+  padding: 0.75rem 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.module-tasks li label {
+  display: grid;
+  gap: 0.35rem;
+  align-items: flex-start;
+}
+
+.module-tasks .task-label,
+.post-module-tasks .task-label,
+.content-module-tasks .task-label {
+  font-weight: 600;
+}
+
+.module-tasks .task-description,
+.post-module-tasks .task-description,
+.content-module-tasks .task-description {
+  display: block;
+  color: #4a5973;
+}
+
+.module-tasks .task-state,
+.post-module-tasks .task-state,
+.content-module-tasks .task-state {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1d8a61;
+}
+
+.module-tasks .task-meta,
+.post-module-tasks .task-meta,
+.content-module-tasks .task-meta,
+.module-tasks .task-notes,
+.post-module-tasks .task-notes,
+.content-module-tasks .task-notes {
+  display: block;
+  font-size: 0.85rem;
+  color: #52617a;
+}
+
+.task-complete {
+  border-color: rgba(33, 118, 88, 0.35);
+  background: rgba(33, 118, 88, 0.08);
+}
+
+.task-overdue {
+  border-color: rgba(179, 38, 30, 0.4);
+  background: rgba(179, 38, 30, 0.08);
+}
+
+.task-due-soon {
+  border-color: rgba(179, 107, 0, 0.4);
+  background: rgba(179, 107, 0, 0.08);
+}
+
+.task-state-overdue,
+.task-overdue .task-state {
+  color: #b3261e;
+}
+
+.task-state-due_soon,
+.task-state-due-soon,
+.task-due-soon .task-state {
+  color: #c97a15;
+}
+
+.task-complete .task-state,
+.task-state-complete {
+  color: #1d8a61;
+}
