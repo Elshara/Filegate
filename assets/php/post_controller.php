@@ -26,6 +26,14 @@ function fg_public_post_controller(): void
         'role' => $user['role'] ?? null,
         'user_id' => $user['id'] ?? null,
     ]);
+    $taskToday = strtotime('today');
+    if ($taskToday === false) {
+        $taskToday = strtotime(date('Y-m-d'));
+    }
+    if ($taskToday === false) {
+        $taskToday = time();
+    }
+    $taskSoonThreshold = $taskToday + (3 * 86400);
     $post_id = isset($_GET['post']) ? (int) $_GET['post'] : 0;
     $post = $post_id ? fg_find_post_by_id($post_id) : null;
     $module_key = isset($_GET['module']) ? (string) $_GET['module'] : '';
@@ -436,10 +444,45 @@ function fg_public_post_controller(): void
                         continue;
                     }
                     $taskDescription = trim((string) ($task['description'] ?? ''));
+                    $taskKey = (string) ($task['key'] ?? fg_normalize_content_module_key($taskLabel));
                     $checked = !empty($task['completed']) ? ' checked' : '';
-                    $body .= '<li><label><input type="checkbox" name="content_module_tasks[' . htmlspecialchars((string) ($task['key'] ?? fg_normalize_content_module_key($taskLabel))) . ']" value="1"' . $checked . '> ' . htmlspecialchars($taskLabel);
+                    $owner = trim((string) ($task['owner'] ?? ''));
+                    $dueDisplay = trim((string) ($task['due_display'] ?? ($task['due_date'] ?? '')));
+                    $priorityLabel = trim((string) ($task['priority_label'] ?? ($task['priority'] ?? '')));
+                    $notes = trim((string) ($task['notes'] ?? ''));
+                    $dueTimestamp = isset($task['due_timestamp']) && is_numeric($task['due_timestamp']) ? (int) $task['due_timestamp'] : null;
+                    $stateClass = !empty($task['completed']) ? 'complete' : 'pending';
+                    $stateLabel = !empty($task['completed']) ? 'Completed' : 'Pending';
+                    if (empty($task['completed']) && $dueTimestamp !== null) {
+                        if ($dueTimestamp < $taskToday) {
+                            $stateClass = 'overdue';
+                            $stateLabel = 'Overdue';
+                        } elseif ($dueTimestamp <= $taskSoonThreshold) {
+                            $stateClass = 'due-soon';
+                            $stateLabel = 'Due soon';
+                        }
+                    }
+                    $metaBits = [];
+                    if ($owner !== '') {
+                        $metaBits[] = 'Owner: ' . $owner;
+                    }
+                    if ($dueDisplay !== '') {
+                        $metaBits[] = 'Due: ' . $dueDisplay;
+                    }
+                    if ($priorityLabel !== '') {
+                        $metaBits[] = $priorityLabel;
+                    }
+
+                    $body .= '<li class="task-' . htmlspecialchars($stateClass) . '"><label><input type="checkbox" name="content_module_tasks[' . htmlspecialchars($taskKey) . ']" value="1"' . $checked . '> <span class="task-label">' . htmlspecialchars($taskLabel) . '</span>';
                     if ($taskDescription !== '') {
-                        $body .= '<small>' . htmlspecialchars($taskDescription) . '</small>';
+                        $body .= '<small class="task-description">' . htmlspecialchars($taskDescription) . '</small>';
+                    }
+                    $body .= '<span class="task-state">' . htmlspecialchars($stateLabel) . '</span>';
+                    if (!empty($metaBits)) {
+                        $body .= '<small class="task-meta">' . htmlspecialchars(implode(' · ', $metaBits)) . '</small>';
+                    }
+                    if ($notes !== '') {
+                        $body .= '<small class="task-notes">' . htmlspecialchars($notes) . '</small>';
                     }
                     $body .= '</label></li>';
                 }
@@ -674,9 +717,44 @@ function fg_public_post_controller(): void
                 }
                 $taskDescription = trim((string) ($task['description'] ?? ''));
                 $taskKey = (string) ($task['key'] ?? fg_normalize_content_module_key($taskLabel));
-                $body .= '<li><label><input type="checkbox" name="content_module_tasks[' . htmlspecialchars($taskKey) . ']" value="1"> ' . htmlspecialchars($taskLabel);
+                $owner = trim((string) ($task['owner'] ?? ''));
+                $dueDisplay = trim((string) ($task['due_display'] ?? ($task['due_date'] ?? '')));
+                $priorityLabel = trim((string) ($task['priority_label'] ?? ($task['priority'] ?? '')));
+                $notes = trim((string) ($task['notes'] ?? ''));
+                $dueTimestamp = isset($task['due_timestamp']) && is_numeric($task['due_timestamp']) ? (int) $task['due_timestamp'] : null;
+                $completed = !empty($task['completed']);
+                $stateClass = $completed ? 'complete' : 'pending';
+                $stateLabel = $completed ? 'Completed' : 'Pending';
+                if (!$completed && $dueTimestamp !== null) {
+                    if ($dueTimestamp < $taskToday) {
+                        $stateClass = 'overdue';
+                        $stateLabel = 'Overdue';
+                    } elseif ($dueTimestamp <= $taskSoonThreshold) {
+                        $stateClass = 'due-soon';
+                        $stateLabel = 'Due soon';
+                    }
+                }
+                $metaBits = [];
+                if ($owner !== '') {
+                    $metaBits[] = 'Owner: ' . $owner;
+                }
+                if ($dueDisplay !== '') {
+                    $metaBits[] = 'Due: ' . $dueDisplay;
+                }
+                if ($priorityLabel !== '') {
+                    $metaBits[] = $priorityLabel;
+                }
+
+                $body .= '<li class="task-' . htmlspecialchars($stateClass) . '"><label><input type="checkbox" name="content_module_tasks[' . htmlspecialchars($taskKey) . ']" value="1"> <span class="task-label">' . htmlspecialchars($taskLabel) . '</span>';
                 if ($taskDescription !== '') {
-                    $body .= '<small>' . htmlspecialchars($taskDescription) . '</small>';
+                    $body .= '<small class="task-description">' . htmlspecialchars($taskDescription) . '</small>';
+                }
+                $body .= '<span class="task-state">' . htmlspecialchars($stateLabel) . '</span>';
+                if (!empty($metaBits)) {
+                    $body .= '<small class="task-meta">' . htmlspecialchars(implode(' · ', $metaBits)) . '</small>';
+                }
+                if ($notes !== '') {
+                    $body .= '<small class="task-notes">' . htmlspecialchars($notes) . '</small>';
                 }
                 $body .= '</label></li>';
             }

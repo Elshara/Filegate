@@ -88,19 +88,45 @@ function fg_add_content_module(array $attributes): array
     $tasksInput = $lineParser($attributes['tasks'] ?? []);
     $tasks = [];
     foreach ($tasksInput as $taskLine) {
-        $parts = explode('|', $taskLine, 3);
-        $taskLabel = trim($parts[0] ?? '');
+        $parts = array_map(static function ($segment) {
+            return trim((string) $segment);
+        }, explode('|', (string) $taskLine));
+        $taskLabel = $parts[0] ?? '';
         if ($taskLabel === '') {
             continue;
         }
-        $taskDescription = trim($parts[1] ?? '');
+
+        $taskDescription = $parts[1] ?? '';
         $statusHint = strtolower(trim((string) ($parts[2] ?? '')));
+        $owner = $parts[3] ?? '';
+        $dueRaw = $parts[4] ?? '';
+        $priorityRaw = $parts[5] ?? '';
+        $notes = '';
+        if (count($parts) > 6) {
+            $notes = trim(implode('|', array_slice($parts, 6)));
+        }
+
         $completed = in_array($statusHint, ['1', 'true', 'yes', 'y', 'on', 'complete', 'completed', 'done', 'finished', 'checked'], true);
-        $tasks[] = [
+
+        $taskEntry = [
             'label' => $taskLabel,
             'description' => $taskDescription,
             'completed' => $completed,
         ];
+        if ($owner !== '') {
+            $taskEntry['owner'] = $owner;
+        }
+        if ($dueRaw !== '') {
+            $taskEntry['due_date'] = $dueRaw;
+        }
+        if ($priorityRaw !== '') {
+            $taskEntry['priority'] = $priorityRaw;
+        }
+        if ($notes !== '') {
+            $taskEntry['notes'] = $notes;
+        }
+
+        $tasks[] = $taskEntry;
     }
 
     $profileInput = $lineParser($attributes['profile_prompts'] ?? []);

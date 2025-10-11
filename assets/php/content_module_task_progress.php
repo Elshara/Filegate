@@ -14,20 +14,43 @@ function fg_content_module_task_progress($tasks): array
     $completedCount = 0;
     $totalWeight = 0.0;
     $completedWeight = 0.0;
+    $overdueCount = 0;
+    $dueSoonCount = 0;
+    $overdueWeight = 0.0;
+    $dueSoonWeight = 0.0;
+
+    $todayStart = strtotime('today');
+    if ($todayStart === false) {
+        $todayStart = strtotime(date('Y-m-d'));
+    }
+    if ($todayStart === false) {
+        $todayStart = time();
+    }
+    $soonThreshold = $todayStart + (3 * 86400);
 
     foreach ($tasks as $task) {
         $label = '';
         $description = '';
         $completed = false;
         $weight = 1.0;
+        $dueTimestamp = null;
 
         if (is_string($task)) {
-            $parts = explode('|', $task, 3);
-            $label = trim((string) ($parts[0] ?? ''));
-            $description = trim((string) ($parts[1] ?? ''));
+            $parts = array_map(static function ($segment) {
+                return trim((string) $segment);
+            }, explode('|', $task));
+            $label = $parts[0] ?? '';
+            $description = $parts[1] ?? '';
             $statusHint = strtolower(trim((string) ($parts[2] ?? '')));
             if ($statusHint !== '') {
                 $completed = in_array($statusHint, ['1', 'true', 'yes', 'y', 'on', 'complete', 'completed', 'done', 'finished', 'checked'], true);
+            }
+            $dueCandidate = $parts[4] ?? '';
+            if ($dueCandidate !== '') {
+                $parsedDue = strtotime($dueCandidate);
+                if ($parsedDue !== false) {
+                    $dueTimestamp = $parsedDue;
+                }
             }
         } elseif (is_array($task)) {
             $label = trim((string) ($task['label'] ?? $task['title'] ?? ''));
@@ -52,6 +75,16 @@ function fg_content_module_task_progress($tasks): array
             } elseif (isset($task['value'])) {
                 $weight = (float) $task['value'];
             }
+
+            if (isset($task['due_timestamp']) && is_numeric($task['due_timestamp'])) {
+                $dueTimestamp = (int) $task['due_timestamp'];
+            } elseif (!empty($task['due_date']) || !empty($task['due']) || !empty($task['deadline'])) {
+                $dueCandidate = (string) ($task['due_date'] ?? $task['due'] ?? $task['deadline']);
+                $parsedDue = strtotime($dueCandidate);
+                if ($parsedDue !== false) {
+                    $dueTimestamp = $parsedDue;
+                }
+            }
         } else {
             continue;
         }
@@ -70,6 +103,16 @@ function fg_content_module_task_progress($tasks): array
         if ($completed) {
             $completedCount++;
             $completedWeight += $weight;
+        } else {
+            if ($dueTimestamp !== null) {
+                if ($dueTimestamp < $todayStart) {
+                    $overdueCount++;
+                    $overdueWeight += $weight;
+                } elseif ($dueTimestamp <= $soonThreshold) {
+                    $dueSoonCount++;
+                    $dueSoonWeight += $weight;
+                }
+            }
         }
     }
 
@@ -94,18 +137,37 @@ function fg_content_module_task_progress($tasks): array
         $state = 'empty';
         $statusLabel = 'No checklist items';
         $summary = 'Add checklist tasks to guide contributors.';
-    } elseif ($completedCount === 0) {
-        $state = 'not_started';
-        $statusLabel = 'Not started';
-        $summary = sprintf('0 of %d task%s complete.', $totalCount, $totalCount === 1 ? '' : 's');
     } elseif ($completedCount >= $totalCount) {
         $state = 'complete';
         $statusLabel = 'Checklist complete';
         $summary = sprintf('All %d task%s complete.', $totalCount, $totalCount === 1 ? '' : 's');
     } else {
-        $state = 'in_progress';
-        $statusLabel = 'In progress';
-        $summary = sprintf('%d of %d task%s complete (%s).', $completedCount, $totalCount, $totalCount === 1 ? '' : 's', $percentLabel);
+        $progressSummary = sprintf('%d of %d task%s complete (%s)', $completedCount, $totalCount, $totalCount === 1 ? '' : 's', $percentLabel);
+        $statusBits = [];
+
+        if ($overdueCount > 0) {
+            $state = 'overdue';
+            $statusLabel = 'Overdue';
+            $statusBits[] = sprintf('%d overdue', $overdueCount);
+        } elseif ($dueSoonCount > 0) {
+            $state = 'due_soon';
+            $statusLabel = 'Due soon';
+            $statusBits[] = sprintf('%d due soon', $dueSoonCount);
+        } elseif ($completedCount === 0) {
+            $state = 'not_started';
+            $statusLabel = 'Not started';
+        } else {
+            $state = 'in_progress';
+            $statusLabel = 'In progress';
+        }
+
+        if ($completedCount === 0 && empty($statusBits)) {
+            $summary = sprintf('0 of %d task%s complete.', $totalCount, $totalCount === 1 ? '' : 's');
+        } elseif (!empty($statusBits)) {
+            $summary = implode(' · ', $statusBits) . ' · ' . $progressSummary . '.';
+        } else {
+            $summary = $progressSummary . '.';
+        }
     }
 
     return [
@@ -115,6 +177,10 @@ function fg_content_module_task_progress($tasks): array
         'total_weight' => $totalWeight,
         'completed_weight' => $completedWeight,
         'pending_weight' => $pendingWeight,
+        'overdue' => $overdueCount,
+        'overdue_weight' => $overdueWeight,
+        'due_soon' => $dueSoonCount,
+        'due_soon_weight' => $dueSoonWeight,
         'percent_complete' => $percentRounded,
         'percent_label' => $percentLabel,
         'state' => $state,

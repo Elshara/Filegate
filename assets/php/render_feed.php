@@ -20,6 +20,7 @@ require_once __DIR__ . '/list_knowledge_categories.php';
 require_once __DIR__ . '/get_asset_parameter_value.php';
 require_once __DIR__ . '/list_content_modules.php';
 require_once __DIR__ . '/content_module_task_progress.php';
+require_once __DIR__ . '/content_module_usage_summary.php';
 
 function fg_render_feed(array $viewer): string
 {
@@ -1265,9 +1266,89 @@ function fg_render_feed(array $viewer): string
         'statuses' => ['active'],
     ]);
     if (!empty($post_modules)) {
+        $taskToday = strtotime('today');
+        if ($taskToday === false) {
+            $taskToday = strtotime(date('Y-m-d'));
+        }
+        if ($taskToday === false) {
+            $taskToday = time();
+        }
+        $taskSoonThreshold = $taskToday + (3 * 86400);
         $html .= '<section class="panel content-modules-panel">';
         $html .= '<h2>Guided content modules</h2>';
         $html .= '<p class="content-modules-intro">Launch guided composers for curated post types, complete with categories, field prompts, and wizard stages.</p>';
+        $moduleUsage = fg_content_module_usage_summary([
+            'modules' => $post_modules,
+            'posts' => ['records' => $records],
+        ]);
+        $moduleUsageTotals = $moduleUsage['totals'] ?? [];
+        $moduleUsageEntries = $moduleUsage['modules'] ?? [];
+        if (!is_array($moduleUsageEntries)) {
+            $moduleUsageEntries = [];
+        }
+        $trackedPosts = (int) ($moduleUsageTotals['posts'] ?? 0);
+        $completedPosts = (int) ($moduleUsageTotals['posts_completed'] ?? 0);
+        $overduePosts = (int) ($moduleUsageTotals['posts_overdue'] ?? 0);
+        $dueSoonPosts = (int) ($moduleUsageTotals['posts_due_soon'] ?? 0);
+
+        $averageCompletionAccumulator = 0.0;
+        $averageCompletionModules = 0;
+        foreach ($moduleUsageEntries as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+            $averageCompletionAccumulator += (float) ($entry['percent_average'] ?? 0.0);
+            $averageCompletionModules++;
+        }
+        $averageCompletion = $averageCompletionModules > 0 ? $averageCompletionAccumulator / $averageCompletionModules : 0.0;
+        $averageCompletion = max(0.0, min(100.0, $averageCompletion));
+        $averageCompletionLabel = rtrim(rtrim(sprintf('%.1f', $averageCompletion), '0'), '.');
+        if ($averageCompletionLabel === '') {
+            $averageCompletionLabel = '0';
+        }
+        $averageCompletionLabel .= '%';
+
+        $attentionModules = array_values(array_filter($moduleUsageEntries, static function ($entry) {
+            return is_array($entry) && in_array($entry['attention_state'] ?? '', ['overdue', 'due_soon'], true);
+        }));
+
+        $html .= '<div class="content-module-summary">';
+        $html .= '<p class="content-module-overview">' . htmlspecialchars(number_format($trackedPosts)) . ' guided ' . ($trackedPosts === 1 ? 'post' : 'posts') . ' · ' . htmlspecialchars(number_format($completedPosts)) . ' complete · Average completion ' . htmlspecialchars($averageCompletionLabel) . '</p>';
+        if ($overduePosts > 0 || $dueSoonPosts > 0) {
+            $attentionBits = [];
+            if ($overduePosts > 0) {
+                $attentionBits[] = htmlspecialchars(number_format($overduePosts)) . ' overdue';
+            }
+            if ($dueSoonPosts > 0) {
+                $attentionBits[] = htmlspecialchars(number_format($dueSoonPosts)) . ' due soon';
+            }
+            $html .= '<p class="content-module-alert-summary">' . implode(' · ', $attentionBits) . '</p>';
+        } elseif ($trackedPosts > 0) {
+            $html .= '<p class="content-module-alert-summary ok">All tracked checklists are on schedule.</p>';
+        }
+        if (!empty($attentionModules)) {
+            $html .= '<ul class="content-module-alert-list">';
+            $attentionPreview = array_slice($attentionModules, 0, 3);
+            foreach ($attentionPreview as $entry) {
+                if (!is_array($entry)) {
+                    continue;
+                }
+                $stateClass = 'state-' . htmlspecialchars($entry['attention_state'] ?? 'idle');
+                $html .= '<li class="content-module-alert-item ' . $stateClass . '">';
+                $html .= '<strong>' . htmlspecialchars($entry['label'] ?? $entry['key'] ?? 'Module') . '</strong>';
+                $html .= '<span class="content-module-alert-status">' . htmlspecialchars($entry['attention_label'] ?? '') . '</span>';
+                if (!empty($entry['last_activity_display'])) {
+                    $html .= '<span class="content-module-alert-meta">Updated ' . htmlspecialchars($entry['last_activity_display']) . '</span>';
+                }
+                $html .= '</li>';
+            }
+            if (count($attentionModules) > count($attentionPreview)) {
+                $remaining = count($attentionModules) - count($attentionPreview);
+                $html .= '<li class="content-module-alert-item more">+' . htmlspecialchars(number_format($remaining)) . ' more module' . ($remaining === 1 ? '' : 's') . ' need attention</li>';
+            }
+            $html .= '</ul>';
+        }
+        $html .= '</div>';
         $html .= '<ul class="content-module-list">';
         foreach ($post_modules as $module) {
             if (!is_array($module)) {
@@ -1290,22 +1371,55 @@ function fg_render_feed(array $viewer): string
             }
             $moduleTasks = [];
             foreach ($moduleTasksRaw as $task) {
-                if (is_array($task)) {
-                    $taskLabel = trim((string) ($task['label'] ?? ''));
-                    $taskDescription = trim((string) ($task['description'] ?? ''));
-                    if ($taskLabel === '' && $taskDescription === '') {
-                        continue;
-                    }
-                    $moduleTasks[] = [$taskLabel !== '' ? $taskLabel : $taskDescription, $taskDescription];
-                } elseif (is_string($task) && trim($task) !== '') {
-                    $parts = explode('|', $task, 2);
-                    $taskLabel = trim($parts[0]);
-                    $taskDescription = trim($parts[1] ?? '');
-                    if ($taskLabel === '' && $taskDescription === '') {
-                        continue;
-                    }
-                    $moduleTasks[] = [$taskLabel !== '' ? $taskLabel : $taskDescription, $taskDescription];
+                if (!is_array($task)) {
+                    continue;
                 }
+                $taskLabel = trim((string) ($task['label'] ?? ''));
+                if ($taskLabel === '') {
+                    continue;
+                }
+                $taskDescription = trim((string) ($task['description'] ?? ''));
+                $owner = trim((string) ($task['owner'] ?? ''));
+                $dueDisplay = trim((string) ($task['due_display'] ?? ($task['due_date'] ?? '')));
+                $priorityLabel = trim((string) ($task['priority_label'] ?? ($task['priority'] ?? '')));
+                $notes = trim((string) ($task['notes'] ?? ''));
+                $completed = !empty($task['completed']);
+                $dueTimestamp = isset($task['due_timestamp']) && is_numeric($task['due_timestamp']) ? (int) $task['due_timestamp'] : null;
+
+                $state = 'pending';
+                $stateLabel = 'Pending';
+                if ($completed) {
+                    $state = 'complete';
+                    $stateLabel = 'Completed';
+                } elseif ($dueTimestamp !== null) {
+                    if ($dueTimestamp < $taskToday) {
+                        $state = 'overdue';
+                        $stateLabel = 'Overdue';
+                    } elseif ($dueTimestamp <= $taskSoonThreshold) {
+                        $state = 'due-soon';
+                        $stateLabel = 'Due soon';
+                    }
+                }
+
+                $metaBits = [];
+                if ($owner !== '') {
+                    $metaBits[] = 'Owner: ' . $owner;
+                }
+                if ($dueDisplay !== '') {
+                    $metaBits[] = 'Due: ' . $dueDisplay;
+                }
+                if ($priorityLabel !== '') {
+                    $metaBits[] = $priorityLabel;
+                }
+
+                $moduleTasks[] = [
+                    'label' => $taskLabel,
+                    'description' => $taskDescription,
+                    'state' => $state,
+                    'state_label' => $stateLabel,
+                    'meta' => $metaBits,
+                    'notes' => $notes,
+                ];
             }
             $moduleGuides = $module['guides'] ?? [];
             if (!is_array($moduleGuides)) {
@@ -1393,13 +1507,36 @@ function fg_render_feed(array $viewer): string
             }
             if (!empty($moduleTasks)) {
                 $html .= '<details class="content-module-tasks"><summary>Checklist</summary><ul>';
-                foreach ($moduleTasks as [$taskLabel, $taskDescription]) {
+                foreach ($moduleTasks as $task) {
+                    if (!is_array($task)) {
+                        continue;
+                    }
+                    $taskLabel = trim((string) ($task['label'] ?? ''));
+                    $taskDescription = trim((string) ($task['description'] ?? ''));
                     if ($taskLabel === '' && $taskDescription === '') {
                         continue;
                     }
-                    $html .= '<li>' . htmlspecialchars($taskLabel !== '' ? $taskLabel : $taskDescription);
+                    $stateClass = trim((string) ($task['state'] ?? 'pending'));
+                    $stateLabel = trim((string) ($task['state_label'] ?? ucfirst($stateClass)));
+                    $html .= '<li class="task-' . htmlspecialchars($stateClass) . '"><span class="task-label">' . htmlspecialchars($taskLabel !== '' ? $taskLabel : $taskDescription) . '</span>';
                     if ($taskDescription !== '' && strcasecmp($taskDescription, $taskLabel) !== 0) {
-                        $html .= '<span> — ' . htmlspecialchars($taskDescription) . '</span>';
+                        $html .= '<span class="task-description">' . htmlspecialchars($taskDescription) . '</span>';
+                    }
+                    $html .= '<span class="task-state">' . htmlspecialchars($stateLabel) . '</span>';
+                    $metaBits = $task['meta'] ?? [];
+                    if (is_array($metaBits)) {
+                        $metaBits = array_values(array_filter(array_map(static function ($bit) {
+                            return trim((string) $bit);
+                        }, $metaBits), static function ($bit) {
+                            return $bit !== '';
+                        }));
+                        if (!empty($metaBits)) {
+                            $html .= '<small class="task-meta">' . htmlspecialchars(implode(' · ', $metaBits)) . '</small>';
+                        }
+                    }
+                    $notes = trim((string) ($task['notes'] ?? ''));
+                    if ($notes !== '') {
+                        $html .= '<small class="task-notes">' . htmlspecialchars($notes) . '</small>';
                     }
                     $html .= '</li>';
                 }

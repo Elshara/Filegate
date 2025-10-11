@@ -60,9 +60,28 @@ function fg_default_content_modules_dataset(): array
         ];
 
         $tasks = [
-            'Outline objective|Summarise what this entry should deliver before drafting.',
-            'Collect references|Link supporting modules, datasets, or assets contributors should review.',
-            'Assign follow-up|Note who reviews the entry next and when the team should revisit it.'
+            [
+                'label' => 'Outline objective',
+                'description' => 'Summarise what this entry should deliver before drafting.',
+                'owner' => 'Editors',
+                'due_date' => '2024-07-01',
+                'priority' => 'high',
+            ],
+            [
+                'label' => 'Collect references',
+                'description' => 'Link supporting modules, datasets, or assets contributors should review.',
+                'owner' => 'Researchers',
+                'due_date' => '2024-07-03',
+                'priority' => 'medium',
+                'notes' => 'Cross-check blueprint library before sharing.',
+            ],
+            [
+                'label' => 'Assign follow-up',
+                'description' => 'Note who reviews the entry next and when the team should revisit it.',
+                'owner' => 'Coordinators',
+                'due_date' => '2024-07-05',
+                'priority' => 'normal',
+            ],
         ];
 
         $moduleRecords[] = [

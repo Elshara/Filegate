@@ -135,9 +135,15 @@ Modules can also reference one another through relationship mappings. Each relat
 
 Administrators may capture reusable checklists for each module so authors can mark important steps as they publish. Checklist items appear as inline tasks in the guided composer, persist on the post for later editing, and surface on the feed with completion states. Each surface now summarises progress with contextual badges (for example, *Not started*, *In progress*, or *Checklist complete*) plus completion counts so teams can scan status at a glance. Members can store their progress without editing flat files while administrators update task defaults directly from the setup dashboard, which shows the same summaries for every module card.
 
+Checklist tasks now accept optional ownership, due dates, priorities, and notes so administrators can coordinate responsibilities alongside guidance. The setup dashboard and blueprint importer accept the extended `Task|Description|complete|Owner|Due date|Priority|Notes` syntax, and every surface—from the composer to the feed and published posts—highlights due-soon or overdue items with colour-coded badges and metadata.
+
 Administrators manage module lifecycle directly from **Setup → Content Modules**. Status flags (`active`, `draft`, `archived`) control whether a module appears on the feed, while visibility scopes (`everyone`, `members`, `admins`) and optional role filters keep specialist composers limited to the right teams. The setup dashboard now accepts granular micro and macro guide copy—either handwritten or imported from the XML blueprint library—so operators can codify both immediate prompts and long-form rollout checklists alongside module metadata. Draft and archived modules stay available to editors through their saved snapshots, so in-progress work is never lost while configuration evolves.
 
 The creation and edit forms include a **Relationships** textarea that accepts `Type|Module key|Optional label|Optional description` entries—one per line. Filegate normalises each entry, ensuring module keys stay canonical while still preserving descriptive labels and notes. Leave the field empty to skip relationship mapping, or capture multiple lines to expose a full web of related templates in the UI.
+
+Setup also provides a real-time **Checklist coverage** overview that aggregates every post using a guided module. Administrators can review tracked module counts, average completion, overdue and due-soon posts, and recently updated templates without opening the datasets directly. Modules that need attention—because a post is overdue or approaching its due date—are summarised in a follow-up list so teams can jump straight to the right workflow.
+
+Members see the same analytics on the home feed. The guided modules panel now highlights the total number of active checklists, average completion across all guided posts, and a short list of modules that are overdue or due soon. These summaries update automatically as posts are saved, keeping everyone aligned on publishing progress without leaving Filegate.
 
 ## Managing datasets
 

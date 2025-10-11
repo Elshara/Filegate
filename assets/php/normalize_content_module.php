@@ -275,6 +275,33 @@ function fg_normalize_content_module_definition(array $module): array
         return in_array($string, ['1', 'true', 'yes', 'y', 'on', 'complete', 'completed', 'done', 'finished', 'checked'], true);
     };
 
+    $priorityAliases = [
+        'std' => 'normal',
+        'standard' => 'normal',
+        'medium' => 'medium',
+        'med' => 'medium',
+        'mid' => 'medium',
+        'moderate' => 'medium',
+        'hi' => 'high',
+        'high' => 'high',
+        'urgent' => 'urgent',
+        'critical' => 'critical',
+        'blocker' => 'critical',
+        'p1' => 'critical',
+        'p2' => 'high',
+        'p3' => 'medium',
+        'p4' => 'low',
+    ];
+
+    $priorityLabels = [
+        'low' => 'Low priority',
+        'normal' => 'Normal priority',
+        'medium' => 'Medium priority',
+        'high' => 'High priority',
+        'urgent' => 'Urgent priority',
+        'critical' => 'Critical priority',
+    ];
+
     $normalizedTasks = [];
     $taskKeyCounts = [];
     foreach ($taskSource as $index => $task) {
@@ -282,19 +309,31 @@ function fg_normalize_content_module_definition(array $module): array
         $description = '';
         $completed = false;
         $keyCandidate = '';
+        $owner = '';
+        $dueRaw = '';
+        $dueTimestamp = null;
+        $priorityRaw = '';
+        $notes = '';
+        $weight = 1.0;
 
         if (is_string($task)) {
-            $parts = explode('|', $task);
-            $label = trim((string) ($parts[0] ?? ''));
+            $parts = array_map(static function ($segment) {
+                return trim((string) $segment);
+            }, explode('|', $task));
+            $label = $parts[0] ?? '';
             if ($label === '') {
                 $label = 'Task ' . ($index + 1);
             }
-
-            if (count($parts) >= 2) {
-                $description = trim((string) ($parts[1] ?? ''));
+            $description = $parts[1] ?? '';
+            $statusHint = $parts[2] ?? '';
+            if ($statusHint !== '') {
+                $completed = $toBool($statusHint);
             }
-            if (count($parts) >= 3) {
-                $completed = $toBool($parts[2] ?? '');
+            $owner = $parts[3] ?? '';
+            $dueRaw = $parts[4] ?? '';
+            $priorityRaw = $parts[5] ?? '';
+            if (count($parts) > 6) {
+                $notes = trim(implode('|', array_slice($parts, 6)));
             }
         } elseif (is_array($task)) {
             $label = trim((string) ($task['label'] ?? $task['title'] ?? ''));
@@ -311,6 +350,20 @@ function fg_normalize_content_module_definition(array $module): array
                 $completed = $toBool($task['status']);
             } elseif (isset($task['state'])) {
                 $completed = $toBool($task['state']);
+            }
+            $owner = trim((string) ($task['owner'] ?? $task['assignee'] ?? $task['assigned_to'] ?? ''));
+            $dueRaw = trim((string) ($task['due_date'] ?? $task['due'] ?? $task['deadline'] ?? ''));
+            if (isset($task['due_timestamp']) && is_numeric($task['due_timestamp'])) {
+                $dueTimestamp = (int) $task['due_timestamp'];
+            }
+            $priorityRaw = trim((string) ($task['priority'] ?? $task['importance'] ?? ''));
+            $notes = trim((string) ($task['notes'] ?? $task['note'] ?? ''));
+            if (isset($task['weight'])) {
+                $weight = (float) $task['weight'];
+            } elseif (isset($task['points'])) {
+                $weight = (float) $task['points'];
+            } elseif (isset($task['value'])) {
+                $weight = (float) $task['value'];
             }
         } else {
             continue;
@@ -334,11 +387,61 @@ function fg_normalize_content_module_definition(array $module): array
             $taskKeyCounts[$key] = 1;
         }
 
+        if (!is_finite($weight) || $weight <= 0) {
+            $weight = 1.0;
+        }
+
+        $owner = trim($owner);
+
+        $priority = '';
+        $priorityLabel = '';
+        $priorityKey = strtolower(trim($priorityRaw));
+        if ($priorityKey !== '') {
+            $priorityKey = str_replace(['priority', 'prio', 'level'], '', $priorityKey);
+            $priorityKey = trim($priorityKey);
+            if ($priorityKey === '') {
+                $priorityKey = strtolower(trim($priorityRaw));
+            }
+            if (isset($priorityAliases[$priorityKey])) {
+                $priorityKey = $priorityAliases[$priorityKey];
+            }
+            if (isset($priorityLabels[$priorityKey])) {
+                $priority = $priorityKey;
+                $priorityLabel = $priorityLabels[$priorityKey];
+            } elseif ($priorityRaw !== '') {
+                $priority = trim((string) $priorityRaw);
+                $priorityLabel = ucfirst($priority);
+            }
+        }
+
+        $dueDate = '';
+        $dueDisplay = '';
+        if ($dueTimestamp === null && $dueRaw !== '') {
+            $parsed = strtotime($dueRaw);
+            if ($parsed !== false) {
+                $dueTimestamp = $parsed;
+            }
+        }
+        if ($dueTimestamp !== null) {
+            $dueDate = date('Y-m-d', $dueTimestamp);
+            $dueDisplay = date('M j, Y', $dueTimestamp);
+        } elseif ($dueRaw !== '') {
+            $dueDisplay = $dueRaw;
+        }
+
         $normalizedTasks[] = [
             'key' => $key,
             'label' => $label,
             'description' => $description,
             'completed' => $completed,
+            'owner' => $owner,
+            'due_date' => $dueDate,
+            'due_display' => $dueDisplay,
+            'due_timestamp' => $dueTimestamp,
+            'priority' => $priority,
+            'priority_label' => $priorityLabel,
+            'notes' => $notes,
+            'weight' => $weight,
         ];
     }
     $normalized['tasks'] = $normalizedTasks;

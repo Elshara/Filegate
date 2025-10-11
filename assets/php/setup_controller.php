@@ -80,6 +80,7 @@ require_once __DIR__ . '/add_content_module.php';
 require_once __DIR__ . '/update_content_module.php';
 require_once __DIR__ . '/delete_content_module.php';
 require_once __DIR__ . '/load_content_blueprints.php';
+require_once __DIR__ . '/content_module_usage_summary.php';
 require_once __DIR__ . '/load_automations.php';
 require_once __DIR__ . '/default_automations_dataset.php';
 require_once __DIR__ . '/add_automation.php';
@@ -219,6 +220,9 @@ function fg_public_setup_controller(): void
     }
 
     $contentBlueprints = fg_load_content_blueprints();
+    $contentModuleUsage = fg_content_module_usage_summary([
+        'statuses' => ['active', 'draft', 'archived'],
+    ]);
 
     try {
         $automations = fg_load_automations();
@@ -2341,6 +2345,7 @@ function fg_public_setup_controller(): void
         'knowledge_default_category' => $knowledgeDefaultCategoryId,
         'content_modules' => $contentModules,
         'content_blueprints' => $contentBlueprints,
+        'content_module_usage' => $contentModuleUsage,
         'feature_request_statuses' => $featureRequestStatusOptions,
         'feature_request_priorities' => $featureRequestPriorityOptions,
         'feature_request_policy' => $featureRequestPolicy,

@@ -30,6 +30,14 @@ function fg_render_post_body(array $post): string
     }
 
     $module_assignment = null;
+    $taskToday = strtotime('today');
+    if ($taskToday === false) {
+        $taskToday = strtotime(date('Y-m-d'));
+    }
+    if ($taskToday === false) {
+        $taskToday = time();
+    }
+    $taskSoonThreshold = $taskToday + (3 * 86400);
     if (!empty($post['content_module']) && is_array($post['content_module'])) {
         $module_assignment = fg_normalize_content_module_definition($post['content_module']);
     }
@@ -146,14 +154,46 @@ function fg_render_post_body(array $post): string
                     continue;
                 }
                 $taskDescription = trim((string) ($task['description'] ?? ''));
+                $owner = trim((string) ($task['owner'] ?? ''));
+                $dueDisplay = trim((string) ($task['due_display'] ?? ($task['due_date'] ?? '')));
+                $priorityLabel = trim((string) ($task['priority_label'] ?? ($task['priority'] ?? '')));
+                $notes = trim((string) ($task['notes'] ?? ''));
+                $dueTimestamp = isset($task['due_timestamp']) && is_numeric($task['due_timestamp']) ? (int) $task['due_timestamp'] : null;
                 $isCompleted = !empty($task['completed']);
                 $stateLabel = $isCompleted ? 'Completed' : 'Pending';
                 $stateClass = $isCompleted ? 'complete' : 'pending';
+                if (!$isCompleted && $dueTimestamp !== null) {
+                    if ($dueTimestamp < $taskToday) {
+                        $stateClass = 'overdue';
+                        $stateLabel = 'Overdue';
+                    } elseif ($dueTimestamp <= $taskSoonThreshold) {
+                        $stateClass = 'due-soon';
+                        $stateLabel = 'Due soon';
+                    }
+                }
+                $metaBits = [];
+                if ($owner !== '') {
+                    $metaBits[] = 'Owner: ' . $owner;
+                }
+                if ($dueDisplay !== '') {
+                    $metaBits[] = 'Due: ' . $dueDisplay;
+                }
+                if ($priorityLabel !== '') {
+                    $metaBits[] = $priorityLabel;
+                }
+
                 $html .= '<li class="task-' . htmlspecialchars($stateClass) . '"><span class="task-label">' . htmlspecialchars($taskLabel) . '</span>';
                 if ($taskDescription !== '') {
                     $html .= '<span class="task-description">' . htmlspecialchars($taskDescription) . '</span>';
                 }
-                $html .= '<span class="task-state">' . htmlspecialchars($stateLabel) . '</span></li>';
+                $html .= '<span class="task-state">' . htmlspecialchars($stateLabel) . '</span>';
+                if (!empty($metaBits)) {
+                    $html .= '<small class="task-meta">' . htmlspecialchars(implode(' · ', $metaBits)) . '</small>';
+                }
+                if ($notes !== '') {
+                    $html .= '<small class="task-notes">' . htmlspecialchars($notes) . '</small>';
+                }
+                $html .= '</li>';
             }
             $html .= '</ul></section>';
         }

@@ -67,17 +67,28 @@
                 {
                     "label": "Document commitments",
                     "description": "List the responsibilities each participant agrees to uphold.",
-                    "completed": false
+                    "completed": false,
+                    "owner": "Community team",
+                    "due_date": "2024-07-01",
+                    "priority": "high",
+                    "notes": "Outline both parties before drafting signatures."
                 },
                 {
                     "label": "Share supporting modules",
                     "description": "Link any follow-on templates authors should consult when drafting.",
-                    "completed": false
+                    "completed": false,
+                    "owner": "Knowledge base",
+                    "due_date": "2024-07-03",
+                    "priority": "medium"
                 },
                 {
                     "label": "Confirm review cadence",
                     "description": "Capture when the agreement should be revisited and by whom.",
-                    "completed": false
+                    "completed": false,
+                    "owner": "Operations",
+                    "due_date": "2024-07-05",
+                    "priority": "normal",
+                    "notes": "Add the next audit window so coordinators can follow up."
                 }
             ]
         },

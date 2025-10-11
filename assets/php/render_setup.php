@@ -3,6 +3,7 @@
 require_once __DIR__ . '/render_layout.php';
 require_once __DIR__ . '/default_translations_dataset.php';
 require_once __DIR__ . '/content_module_task_progress.php';
+require_once __DIR__ . '/normalize_content_module.php';
 
 function fg_render_setup_page(array $data = []): void
 {
@@ -125,6 +126,18 @@ function fg_render_setup_page(array $data = []): void
     }
     $contentModuleRecords = $contentModuleDataset['records'];
     $contentBlueprints = $data['content_blueprints'] ?? [];
+    $contentModuleUsage = $data['content_module_usage'] ?? ['modules' => [], 'totals' => []];
+    if (!is_array($contentModuleUsage)) {
+        $contentModuleUsage = ['modules' => [], 'totals' => []];
+    }
+    $contentModuleUsageModules = $contentModuleUsage['modules'] ?? [];
+    if (!is_array($contentModuleUsageModules)) {
+        $contentModuleUsageModules = [];
+    }
+    $contentModuleUsageTotals = $contentModuleUsage['totals'] ?? [];
+    if (!is_array($contentModuleUsageTotals)) {
+        $contentModuleUsageTotals = [];
+    }
 
     $automationTriggerOptions = $data['automation_triggers'] ?? ['user_registered', 'post_published', 'feature_request_submitted', 'bug_report_created'];
     if (!is_array($automationTriggerOptions) || empty($automationTriggerOptions)) {
@@ -1146,12 +1159,96 @@ function fg_render_setup_page(array $data = []): void
     $body .= '<h2>Content Modules</h2>';
     $body .= '<p>Design interdependent content types that reuse shared categories, field prompts, and styling tokens pulled from the XML blueprints.</p>';
 
+    if (!empty($contentModuleUsageModules)) {
+        $trackedModules = (int) ($contentModuleUsageTotals['modules'] ?? count($contentModuleUsageModules));
+        $trackedPosts = (int) ($contentModuleUsageTotals['posts'] ?? 0);
+        $completedPosts = (int) ($contentModuleUsageTotals['posts_completed'] ?? 0);
+        $overduePosts = (int) ($contentModuleUsageTotals['posts_overdue'] ?? 0);
+        $dueSoonPosts = (int) ($contentModuleUsageTotals['posts_due_soon'] ?? 0);
+        $totalTasks = (int) ($contentModuleUsageTotals['tasks'] ?? 0);
+        $completedTasks = (int) ($contentModuleUsageTotals['tasks_completed'] ?? 0);
+        $pendingTasks = (int) ($contentModuleUsageTotals['tasks_pending'] ?? max(0, $totalTasks - $completedTasks));
+
+        $completionAccumulator = 0.0;
+        $completionModules = 0;
+        foreach ($contentModuleUsageModules as $usageEntry) {
+            if (!is_array($usageEntry)) {
+                continue;
+            }
+            $completionAccumulator += (float) ($usageEntry['percent_average'] ?? 0.0);
+            $completionModules++;
+        }
+        $averageCompletion = $completionModules > 0 ? $completionAccumulator / $completionModules : 0.0;
+        $averageCompletion = max(0.0, min(100.0, $averageCompletion));
+        $averageCompletionLabel = rtrim(rtrim(sprintf('%.1f', $averageCompletion), '0'), '.');
+        if ($averageCompletionLabel === '') {
+            $averageCompletionLabel = '0';
+        }
+        $averageCompletionLabel .= '%';
+
+        $attentionModules = array_values(array_filter($contentModuleUsageModules, static function ($entry) {
+            return is_array($entry) && in_array($entry['attention_state'] ?? '', ['overdue', 'due_soon'], true);
+        }));
+
+        $body .= '<div class="content-module-usage-summary">';
+        $body .= '<h3>Checklist coverage</h3>';
+        $body .= '<p class="content-module-usage-intro">Track module adoption and outstanding work without leaving the setup dashboard.</p>';
+        $body .= '<ul class="content-module-usage-metrics">';
+        $body .= '<li><span class="metric-value">' . htmlspecialchars(number_format($trackedModules)) . '</span><span class="metric-label">Modules tracked</span></li>';
+        $body .= '<li><span class="metric-value">' . htmlspecialchars(number_format($trackedPosts)) . '</span><span class="metric-label">Guided posts</span><span class="metric-detail">' . htmlspecialchars(number_format($completedPosts)) . ' complete</span></li>';
+        $body .= '<li><span class="metric-value">' . htmlspecialchars($averageCompletionLabel) . '</span><span class="metric-label">Average completion</span></li>';
+        if ($totalTasks > 0) {
+            $body .= '<li><span class="metric-value">' . htmlspecialchars(number_format($completedTasks)) . ' / ' . htmlspecialchars(number_format($totalTasks)) . '</span><span class="metric-label">Checklist items checked off</span></li>';
+        }
+        if ($overduePosts > 0 || $dueSoonPosts > 0) {
+            $attentionLabelParts = [];
+            if ($overduePosts > 0) {
+                $attentionLabelParts[] = htmlspecialchars(number_format($overduePosts)) . ' overdue';
+            }
+            if ($dueSoonPosts > 0) {
+                $attentionLabelParts[] = htmlspecialchars(number_format($dueSoonPosts)) . ' due soon';
+            }
+            $body .= '<li><span class="metric-value warning">' . implode(' · ', $attentionLabelParts) . '</span><span class="metric-label">Needs attention</span></li>';
+        } elseif ($pendingTasks > 0) {
+            $body .= '<li><span class="metric-value">' . htmlspecialchars(number_format($pendingTasks)) . '</span><span class="metric-label">Open checklist items</span></li>';
+        }
+        $body .= '</ul>';
+
+        if (!empty($attentionModules)) {
+            $body .= '<div class="content-module-usage-alerts">';
+            $body .= '<h4>Follow-up priorities</h4>';
+            $body .= '<ul>';
+            $attentionDisplay = array_slice($attentionModules, 0, 5);
+            foreach ($attentionDisplay as $usageEntry) {
+                if (!is_array($usageEntry)) {
+                    continue;
+                }
+                $stateClass = 'state-' . htmlspecialchars($usageEntry['attention_state'] ?? 'idle');
+                $body .= '<li class="content-module-usage-alert ' . $stateClass . '">';
+                $body .= '<strong>' . htmlspecialchars($usageEntry['label'] ?? $usageEntry['key'] ?? 'Module') . '</strong>';
+                $body .= '<span class="attention-status">' . htmlspecialchars($usageEntry['attention_label'] ?? '') . '</span>';
+                if (!empty($usageEntry['last_activity_display'])) {
+                    $body .= '<span class="attention-meta">Updated ' . htmlspecialchars($usageEntry['last_activity_display']) . '</span>';
+                }
+                $body .= '</li>';
+            }
+            if (count($attentionModules) > count($attentionDisplay)) {
+                $remaining = count($attentionModules) - count($attentionDisplay);
+                $body .= '<li class="content-module-usage-alert more">+' . htmlspecialchars(number_format($remaining)) . ' more module' . ($remaining === 1 ? '' : 's') . ' need attention</li>';
+            }
+            $body .= '</ul>';
+            $body .= '</div>';
+        }
+        $body .= '</div>';
+    }
+
     if (empty($contentModuleRecords)) {
         $body .= '<p class="notice info">No content modules are active yet. Import a blueprint or create one from scratch below.</p>';
     }
 
     foreach ($contentModuleRecords as $module) {
         $moduleId = (int) ($module['id'] ?? 0);
+        $normalizedModule = fg_normalize_content_module_definition($module);
         $moduleLabel = trim((string) ($module['label'] ?? 'Content module'));
         $moduleKey = (string) ($module['key'] ?? '');
         $moduleDataset = (string) ($module['dataset'] ?? 'posts');
@@ -1220,39 +1317,39 @@ function fg_render_setup_page(array $data = []): void
         }
 
         $taskLines = [];
-        $moduleTasks = $module['tasks'] ?? [];
-        if (!is_array($moduleTasks)) {
-            $moduleTasks = [];
+        $normalizedTasks = $normalizedModule['tasks'] ?? [];
+        if (!is_array($normalizedTasks)) {
+            $normalizedTasks = [];
         }
-        $taskProgress = fg_content_module_task_progress($moduleTasks);
-        foreach ($moduleTasks as $task) {
-            if (is_array($task)) {
-                $label = trim((string) ($task['label'] ?? ($task['title'] ?? '')));
-                if ($label === '') {
-                    continue;
-                }
-                $description = trim((string) ($task['description'] ?? ($task['prompt'] ?? '')));
-                $status = strtolower(trim((string) ($task['status'] ?? $task['state'] ?? '')));
-                $completed = !empty($task['completed']);
-                if (!$completed && $status !== '') {
-                    $completed = in_array($status, ['complete', 'completed', 'done', 'finished'], true);
-                }
-                $parts = [$label];
-                if ($description !== '') {
-                    $parts[] = $description;
-                }
-                if ($completed) {
-                    $parts[] = 'complete';
-                }
-                $taskLines[] = htmlspecialchars(implode('|', array_filter($parts, static function ($part) {
-                    return $part !== '';
-                })));
-            } else {
-                $line = trim((string) $task);
-                if ($line !== '') {
-                    $taskLines[] = htmlspecialchars($line);
-                }
+        $taskProgress = $normalizedModule['task_progress'] ?? fg_content_module_task_progress($normalizedTasks);
+        foreach ($normalizedTasks as $task) {
+            if (!is_array($task)) {
+                continue;
             }
+            $label = trim((string) ($task['label'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+            $description = trim((string) ($task['description'] ?? ''));
+            $completed = !empty($task['completed']);
+            $owner = trim((string) ($task['owner'] ?? ''));
+            $dueInput = trim((string) ($task['due_date'] ?? ($task['due_display'] ?? '')));
+            $priority = trim((string) ($task['priority'] ?? ''));
+            $notes = trim((string) ($task['notes'] ?? ''));
+
+            $parts = [
+                $label,
+                $description,
+                $completed ? 'complete' : '',
+                $owner,
+                $dueInput,
+                $priority,
+                $notes,
+            ];
+            while (!empty($parts) && end($parts) === '') {
+                array_pop($parts);
+            }
+            $taskLines[] = htmlspecialchars(implode('|', $parts));
         }
 
         if (!is_array($moduleGuides)) {
@@ -1375,7 +1472,7 @@ function fg_render_setup_page(array $data = []): void
         $body .= '<div class="field-grid content-module-grid">';
         $body .= '<label class="field"><span class="field-label">Categories</span><span class="field-control"><textarea name="categories" rows="4">' . $categoryText . '</textarea></span><span class="field-description">One category per line.</span></label>';
         $body .= '<label class="field"><span class="field-label">Fields</span><span class="field-control"><textarea name="fields" rows="6">' . implode("\n", $fieldLines) . '</textarea></span><span class="field-description">Use <code>Label|Description</code> per line to describe sub-prompts.</span></label>';
-        $body .= '<label class="field"><span class="field-label">Checklist</span><span class="field-control"><textarea name="tasks" rows="5">' . implode("\n", $taskLines) . '</textarea></span><span class="field-description">Capture repeatable steps (<code>Task|Optional description|complete</code> per line).</span></label>';
+        $body .= '<label class="field"><span class="field-label">Checklist</span><span class="field-control"><textarea name="tasks" rows="5">' . implode("\n", $taskLines) . '</textarea></span><span class="field-description">Capture repeatable steps (<code>Task|Description|complete|Owner|Due date|Priority|Notes</code> per line &mdash; leave trailing fields blank when not needed).</span></label>';
         $body .= '<label class="field"><span class="field-label">Profile prompts</span><span class="field-control"><textarea name="profile_prompts" rows="6">' . implode("\n", $profileLines) . '</textarea></span><span class="field-description">Help members extend their profiles when this module is used.</span></label>';
         $body .= '<label class="field"><span class="field-label">Wizard steps</span><span class="field-control"><textarea name="wizard_steps" rows="5">' . implode("\n", $wizardLines) . '</textarea></span><span class="field-description">Step-by-step guidance (<code>Title|Prompt</code> per line).</span></label>';
         $body .= '<label class="field"><span class="field-label">Micro guides</span><span class="field-control"><textarea name="micro_guides" rows="4">' . implode("\n", $moduleMicroGuides) . '</textarea></span><span class="field-description">Short prompts for individual publishing steps (<code>Title|Prompt</code> per line).</span></label>';

@@ -90,37 +90,73 @@ function fg_update_content_module(int $moduleId, array $attributes): ?array
                     return '';
                 }
                 $label = trim((string) ($task['label'] ?? ''));
+                if ($label === '') {
+                    return '';
+                }
                 $description = trim((string) ($task['description'] ?? ''));
                 $completed = !empty($task['completed']);
-                $parts = [$label];
-                if ($description !== '') {
-                    $parts[] = $description;
-                }
-                if ($completed) {
-                    $parts[] = 'complete';
+                $owner = trim((string) ($task['owner'] ?? ''));
+                $dueRaw = trim((string) ($task['due_date'] ?? $task['due'] ?? ($task['due_display'] ?? '')));
+                $priorityRaw = trim((string) ($task['priority'] ?? ''));
+                $notes = trim((string) ($task['notes'] ?? ''));
+
+                $parts = [
+                    $label,
+                    $description,
+                    $completed ? 'complete' : '',
+                    $owner,
+                    $dueRaw,
+                    $priorityRaw,
+                    $notes,
+                ];
+                while (!empty($parts) && end($parts) === '') {
+                    array_pop($parts);
                 }
 
-                return implode('|', array_filter($parts, static function ($part) {
-                    return $part !== '';
-                }));
+                return implode('|', $parts);
             }, $record['tasks']);
         }
 
         $tasks = [];
         foreach ($tasksInput as $taskLine) {
-            $parts = explode('|', $taskLine, 3);
-            $taskLabel = trim($parts[0] ?? '');
+            $parts = array_map(static function ($segment) {
+                return trim((string) $segment);
+            }, explode('|', (string) $taskLine));
+            $taskLabel = $parts[0] ?? '';
             if ($taskLabel === '') {
                 continue;
             }
-            $taskDescription = trim($parts[1] ?? '');
+            $taskDescription = $parts[1] ?? '';
             $statusHint = strtolower(trim((string) ($parts[2] ?? '')));
+            $owner = $parts[3] ?? '';
+            $dueRaw = $parts[4] ?? '';
+            $priorityRaw = $parts[5] ?? '';
+            $notes = '';
+            if (count($parts) > 6) {
+                $notes = trim(implode('|', array_slice($parts, 6)));
+            }
+
             $completed = in_array($statusHint, ['1', 'true', 'yes', 'y', 'on', 'complete', 'completed', 'done', 'finished', 'checked'], true);
-            $tasks[] = [
+
+            $taskEntry = [
                 'label' => $taskLabel,
                 'description' => $taskDescription,
                 'completed' => $completed,
             ];
+            if ($owner !== '') {
+                $taskEntry['owner'] = $owner;
+            }
+            if ($dueRaw !== '') {
+                $taskEntry['due_date'] = $dueRaw;
+            }
+            if ($priorityRaw !== '') {
+                $taskEntry['priority'] = $priorityRaw;
+            }
+            if ($notes !== '') {
+                $taskEntry['notes'] = $notes;
+            }
+
+            $tasks[] = $taskEntry;
         }
         if (empty($tasks) && isset($record['tasks']) && is_array($record['tasks'])) {
             $tasks = $record['tasks'];
