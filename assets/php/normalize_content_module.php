@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/normalize_content_module_key.php';
+require_once __DIR__ . '/content_module_task_progress.php';
 
 function fg_normalize_content_module_relationships($relationships): array
 {
@@ -341,6 +342,7 @@ function fg_normalize_content_module_definition(array $module): array
         ];
     }
     $normalized['tasks'] = $normalizedTasks;
+    $normalized['task_progress'] = fg_content_module_task_progress($normalizedTasks);
 
     $guideNormalizer = static function ($guides): array {
         if (is_array($guides)) {

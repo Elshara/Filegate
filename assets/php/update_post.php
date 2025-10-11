@@ -9,6 +9,7 @@ require_once __DIR__ . '/queue_notification.php';
 require_once __DIR__ . '/get_setting.php';
 require_once __DIR__ . '/find_user_by_id.php';
 require_once __DIR__ . '/normalize_content_module.php';
+require_once __DIR__ . '/content_module_task_progress.php';
 
 function fg_update_post(array $post): ?array
 {
@@ -62,6 +63,7 @@ function fg_update_post(array $post): ?array
                     }
                 }
                 $module_assignment['tasks'] = $normalized_tasks;
+                $module_assignment['task_progress'] = fg_content_module_task_progress($normalized_tasks);
                 $post['content_module'] = $module_assignment;
             } elseif (!empty($existing['content_module']) && is_array($existing['content_module'])) {
                 $post['content_module'] = fg_normalize_content_module_definition($existing['content_module']);

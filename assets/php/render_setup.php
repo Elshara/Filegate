@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/render_layout.php';
 require_once __DIR__ . '/default_translations_dataset.php';
+require_once __DIR__ . '/content_module_task_progress.php';
 
 function fg_render_setup_page(array $data = []): void
 {
@@ -1223,6 +1224,7 @@ function fg_render_setup_page(array $data = []): void
         if (!is_array($moduleTasks)) {
             $moduleTasks = [];
         }
+        $taskProgress = fg_content_module_task_progress($moduleTasks);
         foreach ($moduleTasks as $task) {
             if (is_array($task)) {
                 $label = trim((string) ($task['label'] ?? ($task['title'] ?? '')));
@@ -1320,6 +1322,12 @@ function fg_render_setup_page(array $data = []): void
         $visibilityLabel = $moduleVisibility === 'everyone' ? 'Everyone' : ucfirst($moduleVisibility);
         $body .= '<article class="content-module-card">';
         $body .= '<header><h3>' . htmlspecialchars($moduleLabel) . '</h3><p class="module-key"><code>' . htmlspecialchars($moduleKey) . '</code> · Status: <span class="module-status status-' . htmlspecialchars($moduleStatus) . '">' . htmlspecialchars($statusLabel) . '</span> · Visibility: ' . htmlspecialchars($visibilityLabel) . '</p></header>';
+        if (!empty($taskProgress['summary'])) {
+            $stateClass = $taskProgress['state'] ?? 'unknown';
+            $statusLabel = trim((string) ($taskProgress['status_label'] ?? ''));
+            $summaryText = $statusLabel !== '' ? $statusLabel . ' — ' . $taskProgress['summary'] : $taskProgress['summary'];
+            $body .= '<p class="module-task-summary task-state-' . htmlspecialchars($stateClass) . '">' . htmlspecialchars($summaryText) . '</p>';
+        }
         $body .= '<form method="post" action="/setup.php" class="content-module-form">';
         $body .= '<input type="hidden" name="action" value="update_content_module">';
         $body .= '<input type="hidden" name="module_id" value="' . htmlspecialchars((string) $moduleId) . '">';

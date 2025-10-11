@@ -16,6 +16,7 @@ require_once __DIR__ . '/update_upload_meta.php';
 require_once __DIR__ . '/guard_asset.php';
 require_once __DIR__ . '/find_content_module.php';
 require_once __DIR__ . '/normalize_content_module.php';
+require_once __DIR__ . '/content_module_task_progress.php';
 
 function fg_public_post_controller(): void
 {
@@ -168,6 +169,7 @@ function fg_public_post_controller(): void
             }
             unset($task_entry);
 
+            $module_definition['task_progress'] = fg_content_module_task_progress($module_definition['tasks']);
             $payload['content_module'] = $module_definition;
         }
 
@@ -416,7 +418,15 @@ function fg_public_post_controller(): void
                 $body .= '</ul></details>';
             }
             if (!empty($module_assignment['tasks'])) {
-                $body .= '<fieldset class="module-tasks"><legend>Module checklist</legend><ul>';
+                $body .= '<fieldset class="module-tasks"><legend>Module checklist</legend>';
+                $taskProgress = $module_assignment['task_progress'] ?? fg_content_module_task_progress($module_assignment['tasks']);
+                if (!empty($taskProgress['summary'])) {
+                    $stateClass = $taskProgress['state'] ?? 'unknown';
+                    $statusLabel = trim((string) ($taskProgress['status_label'] ?? ''));
+                    $summaryText = $statusLabel !== '' ? $statusLabel . ' — ' . $taskProgress['summary'] : $taskProgress['summary'];
+                    $body .= '<p class="module-task-summary task-state-' . htmlspecialchars($stateClass) . '">' . htmlspecialchars($summaryText) . '</p>';
+                }
+                $body .= '<ul>';
                 foreach ($module_assignment['tasks'] as $task) {
                     if (!is_array($task)) {
                         continue;
@@ -645,7 +655,15 @@ function fg_public_post_controller(): void
             $body .= '</select></label>';
         }
         if (!empty($normalized_module['tasks'])) {
-            $body .= '<fieldset class="module-tasks"><legend>Module checklist</legend><ul>';
+            $body .= '<fieldset class="module-tasks"><legend>Module checklist</legend>';
+            $taskProgress = $normalized_module['task_progress'] ?? fg_content_module_task_progress($normalized_module['tasks']);
+            if (!empty($taskProgress['summary'])) {
+                $stateClass = $taskProgress['state'] ?? 'unknown';
+                $statusLabel = trim((string) ($taskProgress['status_label'] ?? ''));
+                $summaryText = $statusLabel !== '' ? $statusLabel . ' — ' . $taskProgress['summary'] : $taskProgress['summary'];
+                $body .= '<p class="module-task-summary task-state-' . htmlspecialchars($stateClass) . '">' . htmlspecialchars($summaryText) . '</p>';
+            }
+            $body .= '<ul>';
             foreach ($normalized_module['tasks'] as $task) {
                 if (!is_array($task)) {
                     continue;

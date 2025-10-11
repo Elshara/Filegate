@@ -4,6 +4,7 @@ require_once __DIR__ . '/load_content_modules.php';
 require_once __DIR__ . '/save_content_modules.php';
 require_once __DIR__ . '/normalize_content_module_key.php';
 require_once __DIR__ . '/normalize_content_module.php';
+require_once __DIR__ . '/content_module_task_progress.php';
 
 function fg_add_content_module(array $attributes): array
 {
@@ -252,6 +253,7 @@ function fg_add_content_module(array $attributes): array
         'status' => $status,
         'visibility' => $visibility,
         'allowed_roles' => $allowedRoles,
+        'task_progress' => fg_content_module_task_progress($tasks),
     ];
 
     $records[] = $module;

@@ -6,6 +6,7 @@ require_once __DIR__ . '/get_setting.php';
 require_once __DIR__ . '/calculate_post_statistics.php';
 require_once __DIR__ . '/load_template_options.php';
 require_once __DIR__ . '/normalize_content_module.php';
+require_once __DIR__ . '/content_module_task_progress.php';
 
 function fg_render_post_body(array $post): string
 {
@@ -127,7 +128,15 @@ function fg_render_post_body(array $post): string
             $html .= '</ul></details>';
         }
         if (!empty($module_assignment['tasks'])) {
-            $html .= '<section class="post-module-tasks" aria-label="Module checklist"><h3>Checklist</h3><ul>';
+            $html .= '<section class="post-module-tasks" aria-label="Module checklist"><h3>Checklist</h3>';
+            $taskProgress = $module_assignment['task_progress'] ?? fg_content_module_task_progress($module_assignment['tasks']);
+            if (!empty($taskProgress['summary'])) {
+                $stateClass = $taskProgress['state'] ?? 'unknown';
+                $statusLabel = trim((string) ($taskProgress['status_label'] ?? ''));
+                $summaryText = $statusLabel !== '' ? $statusLabel . ' — ' . $taskProgress['summary'] : $taskProgress['summary'];
+                $html .= '<p class="post-module-task-summary task-state-' . htmlspecialchars($stateClass) . '">' . htmlspecialchars($summaryText) . '</p>';
+            }
+            $html .= '<ul>';
             foreach ($module_assignment['tasks'] as $task) {
                 if (!is_array($task)) {
                     continue;

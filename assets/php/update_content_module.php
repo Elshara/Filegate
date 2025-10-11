@@ -3,6 +3,7 @@
 require_once __DIR__ . '/load_content_modules.php';
 require_once __DIR__ . '/save_content_modules.php';
 require_once __DIR__ . '/normalize_content_module.php';
+require_once __DIR__ . '/content_module_task_progress.php';
 
 function fg_update_content_module(int $moduleId, array $attributes): ?array
 {
@@ -360,6 +361,7 @@ function fg_update_content_module(int $moduleId, array $attributes): ?array
             'status' => $status,
             'visibility' => $visibility,
             'allowed_roles' => $allowedRoles,
+            'task_progress' => fg_content_module_task_progress($tasks),
         ];
 
         fg_save_content_modules($modules);

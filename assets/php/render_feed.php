@@ -19,6 +19,7 @@ require_once __DIR__ . '/filter_knowledge_articles.php';
 require_once __DIR__ . '/list_knowledge_categories.php';
 require_once __DIR__ . '/get_asset_parameter_value.php';
 require_once __DIR__ . '/list_content_modules.php';
+require_once __DIR__ . '/content_module_task_progress.php';
 
 function fg_render_feed(array $viewer): string
 {
@@ -1357,6 +1358,7 @@ function fg_render_feed(array $viewer): string
                     return ucwords(str_replace('_', ' ', $role));
                 }, $allowedRoles));
             }
+            $taskProgress = $module['task_progress'] ?? fg_content_module_task_progress($module['tasks'] ?? []);
             $html .= '<li class="content-module-card">';
             $html .= '<header><h3>' . htmlspecialchars($label) . '</h3>';
             if ($format !== '') {
@@ -1368,6 +1370,12 @@ function fg_render_feed(array $viewer): string
             }
             if ($description !== '') {
                 $html .= '<p class="content-module-description">' . htmlspecialchars($description) . '</p>';
+            }
+            if (!empty($taskProgress['has_tasks']) && !empty($taskProgress['summary'])) {
+                $stateClass = $taskProgress['state'] ?? 'unknown';
+                $statusLabel = trim((string) ($taskProgress['status_label'] ?? ''));
+                $summaryText = $statusLabel !== '' ? $statusLabel . ' — ' . $taskProgress['summary'] : $taskProgress['summary'];
+                $html .= '<p class="content-module-task-summary task-state-' . htmlspecialchars($stateClass) . '">' . htmlspecialchars($summaryText) . '</p>';
             }
             if (!empty($categories)) {
                 $html .= '<ul class="content-module-categories">';

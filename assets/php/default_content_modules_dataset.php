@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/load_content_blueprints.php';
 require_once __DIR__ . '/normalize_content_module_key.php';
+require_once __DIR__ . '/content_module_task_progress.php';
 
 function fg_default_content_modules_dataset(): array
 {
@@ -58,6 +59,12 @@ function fg_default_content_modules_dataset(): array
             'Review|Confirm attachments, collaborators, and privacy rules prior to launch.',
         ];
 
+        $tasks = [
+            'Outline objective|Summarise what this entry should deliver before drafting.',
+            'Collect references|Link supporting modules, datasets, or assets contributors should review.',
+            'Assign follow-up|Note who reviews the entry next and when the team should revisit it.'
+        ];
+
         $moduleRecords[] = [
             'id' => $nextId,
             'key' => $key,
@@ -67,11 +74,8 @@ function fg_default_content_modules_dataset(): array
             'description' => trim((string) ($blueprint['description'] ?? '')),
             'categories' => array_slice($categories, 0, 6),
             'fields' => $fieldBlueprints,
-            'tasks' => [
-                'Outline objective|Summarise what this entry should deliver before drafting.',
-                'Collect references|Link supporting modules, datasets, or assets contributors should review.',
-                'Assign follow-up|Note who reviews the entry next and when the team should revisit it.'
-            ],
+            'tasks' => $tasks,
+            'task_progress' => fg_content_module_task_progress($tasks),
             'profile_prompts' => $profilePrompts,
             'wizard_steps' => $wizardSteps,
             'css_tokens' => $cssTokens,
