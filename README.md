@@ -143,6 +143,8 @@ Administrators manage module lifecycle directly from **Setup → Content Modules
 
 When administrators want to branch a template, the same dashboard offers a **Duplicate module** action beside each card. Filegate clones the source module, generates a unique key, resets checklist progress, and saves the copy as a draft so teams can experiment safely before publishing. There’s no need to touch `content_modules.json` by hand—the duplicate appears immediately after the source entry with all relationships, guides, and prompts intact.
 
+Need to reuse a template in another workspace? Select **Generate blueprint** to export the module as prettified JSON. The setup dashboard renders the blueprint in a copy-ready panel, making it simple to check the payload, archive it with the XML libraries, or import it into another Filegate install via the existing blueprint workflow.
+
 The creation and edit forms include a **Relationships** textarea that accepts `Type|Module key|Optional label|Optional description` entries—one per line. Filegate normalises each entry, ensuring module keys stay canonical while still preserving descriptive labels and notes. Leave the field empty to skip relationship mapping, or capture multiple lines to expose a full web of related templates in the UI.
 
 Setup also provides a real-time **Checklist coverage** overview that aggregates every post using a guided module. Administrators can review tracked module counts, average completion, overdue and due-soon posts, and recently updated templates without opening the datasets directly. Modules that need attention—because a post is overdue or approaching its due date—are summarised in a follow-up list so teams can jump straight to the right workflow.

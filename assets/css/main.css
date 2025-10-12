@@ -151,6 +151,30 @@ button.danger:hover,
   box-shadow: 0 12px 24px rgba(220, 38, 38, 0.25);
 }
 
+button.tertiary,
+.button.tertiary {
+  background: rgba(15, 23, 42, 0.05);
+  color: #0f172a;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: none;
+}
+
+button.tertiary:hover,
+.button.tertiary:hover {
+  background: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+}
+
+.copy-blueprint.copied {
+  background: linear-gradient(135deg, #34d399, #059669);
+  color: #fff;
+  border-color: rgba(5, 150, 105, 0.6);
+}
+
+.copy-blueprint.copied:hover {
+  box-shadow: 0 12px 24px rgba(5, 150, 105, 0.25);
+}
+
 .feed-post {
   display: grid;
   gap: 0.75rem;
@@ -3568,6 +3592,53 @@ button.danger:hover,
 .task-complete .task-state,
 .task-state-complete {
   color: #1d8a61;
+}
+
+.content-module-blueprint-preview {
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(248, 250, 252, 0.9);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.content-module-blueprint-preview header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.content-module-blueprint-preview .blueprint-source {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(30, 41, 59, 0.66);
+}
+
+.blueprint-preview-intro {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(30, 41, 59, 0.75);
+}
+
+.content-module-blueprint-preview textarea {
+  width: 100%;
+  min-height: 240px;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.04);
+  padding: 1rem;
+  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.blueprint-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .content-module-actions {

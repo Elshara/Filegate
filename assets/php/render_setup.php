@@ -150,6 +150,12 @@ function fg_render_setup_page(array $data = []): void
     if (!is_array($contentModuleAssignmentTotals)) {
         $contentModuleAssignmentTotals = [];
     }
+    $contentModuleBlueprintPreview = trim((string) ($data['content_module_blueprint_preview'] ?? ''));
+    $contentModuleBlueprintMeta = $data['content_module_blueprint_meta'] ?? [];
+    if (!is_array($contentModuleBlueprintMeta)) {
+        $contentModuleBlueprintMeta = [];
+    }
+    static $blueprintCopyScriptInjected = false;
 
     $automationTriggerOptions = $data['automation_triggers'] ?? ['user_registered', 'post_published', 'feature_request_submitted', 'bug_report_created'];
     if (!is_array($automationTriggerOptions) || empty($automationTriggerOptions)) {
@@ -1359,6 +1365,36 @@ function fg_render_setup_page(array $data = []): void
         $body .= '<p class="notice info">No content modules are active yet. Import a blueprint or create one from scratch below.</p>';
     }
 
+    if ($contentModuleBlueprintPreview !== '') {
+        $previewId = 'content-module-blueprint-' . substr(md5($contentModuleBlueprintPreview), 0, 12);
+        $sourceLabel = trim((string) ($contentModuleBlueprintMeta['label'] ?? ''));
+        $sourceKey = trim((string) ($contentModuleBlueprintMeta['key'] ?? ''));
+        $body .= '<section class="content-module-blueprint-preview">';
+        $body .= '<header><h3>Generated blueprint</h3>';
+        if ($sourceLabel !== '' || $sourceKey !== '') {
+            $captionParts = [];
+            if ($sourceLabel !== '') {
+                $captionParts[] = htmlspecialchars($sourceLabel);
+            }
+            if ($sourceKey !== '') {
+                $captionParts[] = '<code>' . htmlspecialchars($sourceKey) . '</code>';
+            }
+            $body .= '<p class="blueprint-source">Source: ' . implode(' · ', $captionParts) . '</p>';
+        }
+        $body .= '</header>';
+        $body .= '<p class="blueprint-preview-intro">Copy this JSON to reuse the module on another Filegate instance or keep it with your blueprint library.</p>';
+        $body .= '<textarea id="' . htmlspecialchars($previewId) . '" readonly rows="16">' . htmlspecialchars($contentModuleBlueprintPreview) . '</textarea>';
+        $body .= '<div class="blueprint-preview-actions">';
+        $body .= '<button type="button" class="button secondary copy-blueprint" data-target="' . htmlspecialchars($previewId) . '" data-label="Copy JSON" data-copied-label="Copied!">Copy JSON</button>';
+        $body .= '</div>';
+        $body .= '</section>';
+
+        if (!$blueprintCopyScriptInjected) {
+            $blueprintCopyScriptInjected = true;
+            $body .= '<script>(function(){document.addEventListener("click",function(event){var button=event.target.closest(".copy-blueprint");if(!button){return;}var targetId=button.getAttribute("data-target");if(!targetId){return;}var field=document.getElementById(targetId);if(!field){return;}var text=field.value;var defaultLabel=button.getAttribute("data-label")||button.textContent;var copiedLabel=button.getAttribute("data-copied-label")||"Copied!";var reset=function(){button.classList.remove("copied");button.textContent=defaultLabel;};var showCopied=function(){button.classList.add("copied");button.textContent=copiedLabel;setTimeout(reset,2000);};var fallback=function(){field.focus();field.select();try{if(document.execCommand("copy")){showCopied();}else{reset();}}catch(err){reset();}};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){showCopied();}).catch(function(){fallback();});}else{fallback();}event.preventDefault();});})();</script>';
+        }
+    }
+
     foreach ($contentModuleRecords as $module) {
         $moduleId = (int) ($module['id'] ?? 0);
         $normalizedModule = fg_normalize_content_module_definition($module);
@@ -1598,6 +1634,11 @@ function fg_render_setup_page(array $data = []): void
         $body .= '</div>';
         $body .= '</form>';
         $body .= '<div class="content-module-actions">';
+        $body .= '<form method="post" action="/setup.php" class="content-module-export">';
+        $body .= '<input type="hidden" name="action" value="export_content_module_blueprint">';
+        $body .= '<input type="hidden" name="module_id" value="' . htmlspecialchars((string) $moduleId) . '">';
+        $body .= '<button type="submit" class="button tertiary">Generate blueprint</button>';
+        $body .= '</form>';
         $body .= '<form method="post" action="/setup.php" class="content-module-duplicate">';
         $body .= '<input type="hidden" name="action" value="duplicate_content_module">';
         $body .= '<input type="hidden" name="module_id" value="' . htmlspecialchars((string) $moduleId) . '">';
@@ -1608,7 +1649,7 @@ function fg_render_setup_page(array $data = []): void
         $body .= '<input type="hidden" name="module_id" value="' . htmlspecialchars((string) $moduleId) . '">';
         $body .= '<button type="submit" class="button danger">Delete module</button>';
         $body .= '</form>';
-        $body .= '<p class="content-module-actions-note">Duplicate to branch a module without editing JSON files. New copies start as drafts with checklist progress reset.</p>';
+        $body .= '<p class="content-module-actions-note">Generate a blueprint to share the module elsewhere, or duplicate it locally to branch without editing JSON files. New copies start as drafts with checklist progress reset.</p>';
         $body .= '</div>';
         $body .= '</article>';
     }

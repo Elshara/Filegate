@@ -83,6 +83,7 @@ require_once __DIR__ . '/duplicate_content_module.php';
 require_once __DIR__ . '/load_content_blueprints.php';
 require_once __DIR__ . '/content_module_usage_summary.php';
 require_once __DIR__ . '/content_module_task_assignments.php';
+require_once __DIR__ . '/content_module_blueprint_from_module.php';
 require_once __DIR__ . '/load_automations.php';
 require_once __DIR__ . '/default_automations_dataset.php';
 require_once __DIR__ . '/add_automation.php';
@@ -228,6 +229,8 @@ function fg_public_setup_controller(): void
     $contentModuleAssignments = fg_content_module_task_assignments([
         'modules' => $contentModules['records'] ?? [],
     ]);
+    $contentModuleBlueprintPreview = '';
+    $contentModuleBlueprintMeta = [];
 
     try {
         $automations = fg_load_automations();
@@ -1018,7 +1021,7 @@ function fg_public_setup_controller(): void
                     }
                 }
             }
-        } elseif (in_array($action, ['create_content_module', 'update_content_module', 'delete_content_module', 'duplicate_content_module', 'adopt_content_blueprint'], true)) {
+        } elseif (in_array($action, ['create_content_module', 'update_content_module', 'delete_content_module', 'duplicate_content_module', 'export_content_module_blueprint', 'adopt_content_blueprint'], true)) {
             try {
                 $contentModules = fg_load_content_modules();
                 if (!isset($contentModules['records']) || !is_array($contentModules['records'])) {
@@ -1063,6 +1066,42 @@ function fg_public_setup_controller(): void
                         }
                     } catch (Throwable $exception) {
                         $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'export_content_module_blueprint') {
+                $moduleId = (int) ($_POST['module_id'] ?? 0);
+                if ($moduleId <= 0) {
+                    $errors[] = 'Unknown module selected for blueprint export.';
+                } else {
+                    $records = $contentModules['records'] ?? [];
+                    $module = null;
+                    foreach ($records as $record) {
+                        if ((int) ($record['id'] ?? 0) === $moduleId) {
+                            $module = $record;
+                            break;
+                        }
+                    }
+
+                    if ($module === null) {
+                        $errors[] = 'Content module could not be found for blueprint export.';
+                    } else {
+                        try {
+                            $blueprint = fg_content_module_blueprint_from_module($module);
+                            $encoded = json_encode($blueprint, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                            if ($encoded === false) {
+                                $errors[] = 'Unable to encode content module blueprint.';
+                            } else {
+                                $contentModuleBlueprintPreview = $encoded;
+                                $contentModuleBlueprintMeta = [
+                                    'label' => trim((string) ($blueprint['label'] ?? '')),
+                                    'key' => trim((string) ($blueprint['key'] ?? '')),
+                                ];
+                                $displayLabel = $contentModuleBlueprintMeta['label'] !== '' ? $contentModuleBlueprintMeta['label'] : 'Content module';
+                                $message = 'Blueprint generated for "' . $displayLabel . '".';
+                            }
+                        } catch (Throwable $exception) {
+                            $errors[] = 'Unable to generate content module blueprint: ' . $exception->getMessage();
+                        }
                     }
                 }
             } else {
@@ -2372,6 +2411,8 @@ function fg_public_setup_controller(): void
         'content_blueprints' => $contentBlueprints,
         'content_module_usage' => $contentModuleUsage,
         'content_module_assignments' => $contentModuleAssignments,
+        'content_module_blueprint_preview' => $contentModuleBlueprintPreview,
+        'content_module_blueprint_meta' => $contentModuleBlueprintMeta,
         'feature_request_statuses' => $featureRequestStatusOptions,
         'feature_request_priorities' => $featureRequestPriorityOptions,
         'feature_request_policy' => $featureRequestPolicy,
