@@ -1944,7 +1944,40 @@ function fg_render_setup_page(array $data = []): void
             $body .= '<form method="post" action="/setup.php" class="blueprint-import">';
             $body .= '<input type="hidden" name="action" value="adopt_content_blueprint">';
             $body .= '<input type="hidden" name="blueprint" value="' . htmlspecialchars($encodedPayload, ENT_QUOTES) . '">';
-            $body .= '<button type="submit" class="button">Import module</button>';
+            $body .= '<div class="blueprint-import-grid">';
+            $body .= '<label class="field"><span class="field-label">Dataset</span><span class="field-control"><select name="dataset">';
+            foreach ($datasetOptions as $datasetKey => $datasetLabel) {
+                $selected = ((string) $datasetKey === 'posts') ? ' selected' : '';
+                $body .= '<option value="' . htmlspecialchars((string) $datasetKey) . '"' . $selected . '>' . htmlspecialchars((string) $datasetLabel) . '</option>';
+            }
+            $body .= '</select></span></label>';
+            $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+            foreach (['draft' => 'Draft', 'active' => 'Active', 'archived' => 'Archived'] as $value => $labelOption) {
+                $selected = $value === 'draft' ? ' selected' : '';
+                $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($labelOption) . '</option>';
+            }
+            $body .= '</select></span></label>';
+            $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+            foreach (['members' => 'Members', 'everyone' => 'Everyone', 'admins' => 'Admins'] as $value => $labelOption) {
+                $selected = $value === 'members' ? ' selected' : '';
+                $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($labelOption) . '</option>';
+            }
+            $body .= '</select></span></label>';
+            if (!empty($roles)) {
+                $body .= '<label class="field"><span class="field-label">Allowed roles</span><span class="field-control"><select name="allowed_roles[]" multiple size="' . max(3, min(6, count($roles))) . '">';
+                foreach ($roles as $roleKey => $roleDescription) {
+                    $roleValue = strtolower((string) $roleKey);
+                    $body .= '<option value="' . htmlspecialchars($roleValue) . '">' . htmlspecialchars(ucfirst((string) $roleKey)) . '</option>';
+                }
+                $body .= '</select></span><span class="field-description">Optional role filter. Leave empty to inherit the visibility setting.</span></label>';
+            } else {
+                $body .= '<label class="field"><span class="field-label">Allowed roles</span><span class="field-control"><input type="text" name="allowed_roles" placeholder="admin, moderator"></span><span class="field-description">Optional comma-separated role slugs.</span></label>';
+            }
+            $body .= '</div>';
+            $body .= '<div class="action-row blueprint-import-actions">';
+            $body .= '<button type="submit" class="button primary">Import module</button>';
+            $body .= '<p class="blueprint-import-note">Customise dataset, status, and access controls before creating the module.</p>';
+            $body .= '</div>';
             $body .= '</form>';
             $body .= '</article>';
         }
