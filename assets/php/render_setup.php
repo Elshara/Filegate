@@ -138,6 +138,18 @@ function fg_render_setup_page(array $data = []): void
     if (!is_array($contentModuleUsageTotals)) {
         $contentModuleUsageTotals = [];
     }
+    $contentModuleAssignments = $data['content_module_assignments'] ?? ['owners' => [], 'totals' => []];
+    if (!is_array($contentModuleAssignments)) {
+        $contentModuleAssignments = ['owners' => [], 'totals' => []];
+    }
+    $contentModuleAssignmentOwners = $contentModuleAssignments['owners'] ?? [];
+    if (!is_array($contentModuleAssignmentOwners)) {
+        $contentModuleAssignmentOwners = [];
+    }
+    $contentModuleAssignmentTotals = $contentModuleAssignments['totals'] ?? [];
+    if (!is_array($contentModuleAssignmentTotals)) {
+        $contentModuleAssignmentTotals = [];
+    }
 
     $automationTriggerOptions = $data['automation_triggers'] ?? ['user_registered', 'post_published', 'feature_request_submitted', 'bug_report_created'];
     if (!is_array($automationTriggerOptions) || empty($automationTriggerOptions)) {
@@ -1240,6 +1252,107 @@ function fg_render_setup_page(array $data = []): void
             $body .= '</div>';
         }
         $body .= '</div>';
+        if (!empty($contentModuleAssignmentOwners)) {
+            $openTotal = (int) ($contentModuleAssignmentTotals['tasks_pending'] ?? 0);
+            $dueSoonTotal = (int) ($contentModuleAssignmentTotals['tasks_due_soon'] ?? 0);
+            $overdueTotal = (int) ($contentModuleAssignmentTotals['tasks_overdue'] ?? 0);
+            $completedTotal = (int) ($contentModuleAssignmentTotals['tasks_completed'] ?? 0);
+            $body .= '<div class="content-module-ownership">';
+            $body .= '<h4>Task ownership</h4>';
+            $summaryBits = [];
+            $summaryBits[] = htmlspecialchars(number_format($openTotal)) . ' open';
+            if ($overdueTotal > 0) {
+                $summaryBits[] = htmlspecialchars(number_format($overdueTotal)) . ' overdue';
+            }
+            if ($dueSoonTotal > 0) {
+                $summaryBits[] = htmlspecialchars(number_format($dueSoonTotal)) . ' due soon';
+            }
+            if ($completedTotal > 0) {
+                $summaryBits[] = htmlspecialchars(number_format($completedTotal)) . ' complete';
+            }
+            $body .= '<p class="ownership-summary">' . implode(' · ', $summaryBits) . '</p>';
+
+            $ownerPreview = array_slice($contentModuleAssignmentOwners, 0, 6);
+            $body .= '<ul class="content-module-ownership-list">';
+            foreach ($ownerPreview as $ownerEntry) {
+                if (!is_array($ownerEntry)) {
+                    continue;
+                }
+                $ownerLabel = trim((string) ($ownerEntry['label'] ?? $ownerEntry['key'] ?? 'Owner'));
+                $pendingCount = (int) ($ownerEntry['tasks_pending'] ?? 0);
+                $dueSoonCount = (int) ($ownerEntry['tasks_due_soon'] ?? 0);
+                $overdueCount = (int) ($ownerEntry['tasks_overdue'] ?? 0);
+                $completedCount = (int) ($ownerEntry['tasks_completed'] ?? 0);
+                $moduleCount = (int) ($ownerEntry['module_count'] ?? 0);
+                $postCount = (int) ($ownerEntry['post_count'] ?? 0);
+                $earliestDue = trim((string) ($ownerEntry['earliest_due_display'] ?? ''));
+                $stateClass = 'state-ok';
+                if ($overdueCount > 0) {
+                    $stateClass = 'state-overdue';
+                } elseif ($dueSoonCount > 0) {
+                    $stateClass = 'state-due-soon';
+                } elseif ($pendingCount > 0) {
+                    $stateClass = 'state-pending';
+                }
+                $body .= '<li class="ownership-item ' . $stateClass . '">';
+                $body .= '<header><strong>' . htmlspecialchars($ownerLabel) . '</strong>';
+                $body .= '<span class="ownership-count">' . htmlspecialchars(number_format($pendingCount)) . ' open</span>';
+                if ($completedCount > 0) {
+                    $body .= '<span class="ownership-count complete">' . htmlspecialchars(number_format($completedCount)) . ' complete</span>';
+                }
+                $body .= '</header>';
+                $metaBits = [];
+                if ($moduleCount > 0) {
+                    $metaBits[] = htmlspecialchars(number_format($moduleCount)) . ' module' . ($moduleCount === 1 ? '' : 's');
+                }
+                if ($postCount > 0) {
+                    $metaBits[] = htmlspecialchars(number_format($postCount)) . ' post' . ($postCount === 1 ? '' : 's');
+                }
+                if ($earliestDue !== '') {
+                    $metaBits[] = 'Next due ' . htmlspecialchars($earliestDue);
+                }
+                if (!empty($metaBits)) {
+                    $body .= '<p class="ownership-meta">' . implode(' · ', $metaBits) . '</p>';
+                }
+                $attentionTasks = $ownerEntry['attention_tasks'] ?? [];
+                if (!is_array($attentionTasks)) {
+                    $attentionTasks = [];
+                }
+                if (!empty($attentionTasks)) {
+                    $body .= '<ul class="ownership-task-list">';
+                    $attentionPreview = array_slice($attentionTasks, 0, 3);
+                    foreach ($attentionPreview as $task) {
+                        if (!is_array($task)) {
+                            continue;
+                        }
+                        $taskLabel = trim((string) ($task['label'] ?? 'Checklist task'));
+                        $taskState = 'state-' . htmlspecialchars($task['state'] ?? 'pending');
+                        $taskDue = trim((string) ($task['due_display'] ?? ''));
+                        $taskModule = trim((string) ($task['module_label'] ?? $task['module_key'] ?? 'Module'));
+                        $body .= '<li class="ownership-task ' . $taskState . '"><span class="ownership-task-label">' . htmlspecialchars($taskLabel) . '</span>';
+                        if ($taskModule !== '') {
+                            $body .= '<span class="ownership-task-module">' . htmlspecialchars($taskModule) . '</span>';
+                        }
+                        if ($taskDue !== '') {
+                            $body .= '<span class="ownership-task-due">Due ' . htmlspecialchars($taskDue) . '</span>';
+                        }
+                        $body .= '</li>';
+                    }
+                    if (count($attentionTasks) > count($attentionPreview)) {
+                        $remaining = count($attentionTasks) - count($attentionPreview);
+                        $body .= '<li class="ownership-task more">+' . htmlspecialchars(number_format($remaining)) . ' more task' . ($remaining === 1 ? '' : 's') . '</li>';
+                    }
+                    $body .= '</ul>';
+                }
+                $body .= '</li>';
+            }
+            if (count($contentModuleAssignmentOwners) > count($ownerPreview)) {
+                $remainingOwners = count($contentModuleAssignmentOwners) - count($ownerPreview);
+                $body .= '<li class="ownership-item more">+' . htmlspecialchars(number_format($remainingOwners)) . ' more owner' . ($remainingOwners === 1 ? '' : 's') . '</li>';
+            }
+            $body .= '</ul>';
+            $body .= '</div>';
+        }
     }
 
     if (empty($contentModuleRecords)) {

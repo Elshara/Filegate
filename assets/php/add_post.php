@@ -53,12 +53,59 @@ function fg_add_post(array $post): array
                 if ($taskKey === '') {
                     continue;
                 }
-                $normalized_tasks[] = [
+
+                $owner = trim((string) ($task['owner'] ?? ''));
+                $dueTimestamp = null;
+                if (isset($task['due_timestamp']) && is_numeric($task['due_timestamp'])) {
+                    $dueTimestamp = (int) $task['due_timestamp'];
+                }
+                $dueDate = trim((string) ($task['due_date'] ?? ''));
+                $dueDisplay = trim((string) ($task['due_display'] ?? ''));
+                if ($dueDisplay === '' && $dueDate !== '') {
+                    $dueDisplay = $dueDate;
+                }
+                if ($dueTimestamp === null) {
+                    $dueSource = $dueDate !== '' ? $dueDate : $dueDisplay;
+                    if ($dueSource !== '') {
+                        $parsed = strtotime($dueSource);
+                        if ($parsed !== false) {
+                            $dueTimestamp = $parsed;
+                        }
+                    }
+                }
+                if ($dueTimestamp !== null && $dueDate === '') {
+                    $dueDate = date('Y-m-d', $dueTimestamp);
+                    if ($dueDisplay === '') {
+                        $dueDisplay = date('M j, Y', $dueTimestamp);
+                    }
+                }
+
+                $priority = trim((string) ($task['priority'] ?? ''));
+                $priorityLabel = trim((string) ($task['priority_label'] ?? ''));
+                if ($priorityLabel === '' && $priority !== '') {
+                    $priorityLabel = ucfirst($priority);
+                }
+                $notes = trim((string) ($task['notes'] ?? ''));
+                $weight = isset($task['weight']) && is_numeric($task['weight']) ? (float) $task['weight'] : 1.0;
+
+                $normalizedTask = [
                     'key' => $taskKey,
                     'label' => $taskLabel,
                     'description' => trim((string) ($task['description'] ?? '')),
                     'completed' => !empty($task['completed']),
+                    'owner' => $owner,
+                    'due_date' => $dueDate,
+                    'due_display' => $dueDisplay,
+                    'priority' => $priority,
+                    'priority_label' => $priorityLabel,
+                    'notes' => $notes,
+                    'weight' => $weight,
                 ];
+                if ($dueTimestamp !== null) {
+                    $normalizedTask['due_timestamp'] = $dueTimestamp;
+                }
+
+                $normalized_tasks[] = $normalizedTask;
             }
         }
         $module_assignment['tasks'] = $normalized_tasks;

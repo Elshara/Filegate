@@ -21,6 +21,8 @@ require_once __DIR__ . '/get_asset_parameter_value.php';
 require_once __DIR__ . '/list_content_modules.php';
 require_once __DIR__ . '/content_module_task_progress.php';
 require_once __DIR__ . '/content_module_usage_summary.php';
+require_once __DIR__ . '/content_module_task_assignments.php';
+require_once __DIR__ . '/normalize_content_module_key.php';
 
 function fg_render_feed(array $viewer): string
 {
@@ -1291,6 +1293,60 @@ function fg_render_feed(array $viewer): string
         $overduePosts = (int) ($moduleUsageTotals['posts_overdue'] ?? 0);
         $dueSoonPosts = (int) ($moduleUsageTotals['posts_due_soon'] ?? 0);
 
+        $moduleAssignments = fg_content_module_task_assignments([
+            'modules' => $post_modules,
+            'posts' => ['records' => $records],
+        ]);
+        if (!is_array($moduleAssignments)) {
+            $moduleAssignments = ['owners' => [], 'totals' => []];
+        }
+        $viewerAssignmentEntries = [];
+        $viewerTokens = [];
+        foreach (['display_name', 'full_name', 'username', 'email'] as $tokenField) {
+            if (empty($viewer[$tokenField])) {
+                continue;
+            }
+            $value = trim((string) $viewer[$tokenField]);
+            if ($value === '') {
+                continue;
+            }
+            $viewerTokens[] = strtolower($value);
+            $viewerTokens[] = fg_normalize_content_module_key($value);
+        }
+        $viewerTokens = array_values(array_unique(array_filter($viewerTokens, static function ($token) {
+            return is_string($token) && $token !== '';
+        })));
+        if (!empty($viewerTokens)) {
+            $assignmentOwners = $moduleAssignments['owners'] ?? [];
+            if (!is_array($assignmentOwners)) {
+                $assignmentOwners = [];
+            }
+            foreach ($assignmentOwners as $ownerEntry) {
+                if (!is_array($ownerEntry)) {
+                    continue;
+                }
+                $ownerTokens = $ownerEntry['match_tokens'] ?? [];
+                if (!is_array($ownerTokens)) {
+                    $ownerTokens = [];
+                }
+                $ownerTokens = array_values(array_unique(array_filter(array_map(static function ($token) {
+                    return strtolower((string) $token);
+                }, $ownerTokens), static function ($token) {
+                    return $token !== '';
+                })));
+                $matched = false;
+                foreach ($ownerTokens as $ownerToken) {
+                    if (in_array($ownerToken, $viewerTokens, true)) {
+                        $matched = true;
+                        break;
+                    }
+                }
+                if ($matched) {
+                    $viewerAssignmentEntries[] = $ownerEntry;
+                }
+            }
+        }
+
         $averageCompletionAccumulator = 0.0;
         $averageCompletionModules = 0;
         foreach ($moduleUsageEntries as $entry) {
@@ -1349,6 +1405,105 @@ function fg_render_feed(array $viewer): string
             $html .= '</ul>';
         }
         $html .= '</div>';
+        if (!empty($viewerAssignmentEntries)) {
+            $viewerAssignmentTotals = [
+                'tasks' => 0,
+                'completed' => 0,
+                'pending' => 0,
+                'due_soon' => 0,
+                'overdue' => 0,
+            ];
+            $viewerAttention = [];
+            foreach ($viewerAssignmentEntries as $assignmentEntry) {
+                $viewerAssignmentTotals['tasks'] += (int) ($assignmentEntry['tasks_total'] ?? 0);
+                $viewerAssignmentTotals['completed'] += (int) ($assignmentEntry['tasks_completed'] ?? 0);
+                $viewerAssignmentTotals['pending'] += (int) ($assignmentEntry['tasks_pending'] ?? 0);
+                $viewerAssignmentTotals['due_soon'] += (int) ($assignmentEntry['tasks_due_soon'] ?? 0);
+                $viewerAssignmentTotals['overdue'] += (int) ($assignmentEntry['tasks_overdue'] ?? 0);
+                $attentionTasks = $assignmentEntry['attention_tasks'] ?? [];
+                if (!is_array($attentionTasks)) {
+                    $attentionTasks = [];
+                }
+                foreach ($attentionTasks as $task) {
+                    if (!is_array($task)) {
+                        continue;
+                    }
+                    $task['owner_label'] = $assignmentEntry['label'] ?? $assignmentEntry['key'] ?? 'Owner';
+                    $viewerAttention[] = $task;
+                }
+            }
+            usort($viewerAttention, static function ($a, $b) {
+                $stateOrder = ['overdue' => 0, 'due-soon' => 1, 'pending' => 2, 'complete' => 3];
+                $stateA = $stateOrder[$a['state'] ?? 'pending'] ?? 4;
+                $stateB = $stateOrder[$b['state'] ?? 'pending'] ?? 4;
+                if ($stateA !== $stateB) {
+                    return $stateA <=> $stateB;
+                }
+                $dueA = $a['due_timestamp'] ?? PHP_INT_MAX;
+                $dueB = $b['due_timestamp'] ?? PHP_INT_MAX;
+                if ($dueA !== $dueB) {
+                    return $dueA <=> $dueB;
+                }
+                return strcmp(strtolower((string) ($a['label'] ?? '')), strtolower((string) ($b['label'] ?? '')));
+            });
+            $attentionPreview = array_slice($viewerAttention, 0, 5);
+
+            $html .= '<div class="content-module-assignments">';
+            $html .= '<h3>Assigned module tasks</h3>';
+            $summaryBits = [];
+            $summaryBits[] = htmlspecialchars(number_format($viewerAssignmentTotals['tasks_pending'])) . ' open';
+            if ($viewerAssignmentTotals['overdue'] > 0) {
+                $summaryBits[] = htmlspecialchars(number_format($viewerAssignmentTotals['overdue'])) . ' overdue';
+            }
+            if ($viewerAssignmentTotals['due_soon'] > 0) {
+                $summaryBits[] = htmlspecialchars(number_format($viewerAssignmentTotals['due_soon'])) . ' due soon';
+            }
+            if ($viewerAssignmentTotals['completed'] > 0) {
+                $summaryBits[] = htmlspecialchars(number_format($viewerAssignmentTotals['completed'])) . ' complete';
+            }
+            $html .= '<p class="assignment-summary">' . implode(' · ', $summaryBits) . '</p>';
+
+            if (!empty($attentionPreview)) {
+                $html .= '<ul class="assignment-list">';
+                foreach ($attentionPreview as $task) {
+                    if (!is_array($task)) {
+                        continue;
+                    }
+                    $stateClass = 'state-' . htmlspecialchars($task['state'] ?? 'pending');
+                    $taskLabel = trim((string) ($task['label'] ?? 'Checklist task'));
+                    $dueDisplay = trim((string) ($task['due_display'] ?? ''));
+                    $moduleLabel = trim((string) ($task['module_label'] ?? $task['module_key'] ?? 'Module'));
+                    $postUrl = trim((string) ($task['post_url'] ?? ''));
+                    $ownerLabel = trim((string) ($task['owner_label'] ?? ''));
+                    $html .= '<li class="assignment-item ' . $stateClass . '">';
+                    $html .= '<strong>' . htmlspecialchars($taskLabel) . '</strong>';
+                    if ($ownerLabel !== '') {
+                        $html .= '<span class="assignment-owner">' . htmlspecialchars($ownerLabel) . '</span>';
+                    }
+                    if ($moduleLabel !== '') {
+                        $html .= '<span class="assignment-module">' . htmlspecialchars($moduleLabel) . '</span>';
+                    }
+                    if ($dueDisplay !== '') {
+                        $html .= '<span class="assignment-due">Due ' . htmlspecialchars($dueDisplay) . '</span>';
+                    }
+                    if (!empty($task['priority_label'])) {
+                        $html .= '<span class="assignment-priority">' . htmlspecialchars($task['priority_label']) . '</span>';
+                    }
+                    if ($postUrl !== '') {
+                        $html .= '<a class="assignment-link" href="' . htmlspecialchars($postUrl) . '">Open post</a>';
+                    }
+                    $html .= '</li>';
+                }
+                if (count($viewerAttention) > count($attentionPreview)) {
+                    $remaining = count($viewerAttention) - count($attentionPreview);
+                    $html .= '<li class="assignment-item more">+' . htmlspecialchars(number_format($remaining)) . ' more task' . ($remaining === 1 ? '' : 's') . '</li>';
+                }
+                $html .= '</ul>';
+            } else {
+                $html .= '<p class="assignment-empty">All assigned tasks are complete.</p>';
+            }
+            $html .= '</div>';
+        }
         $html .= '<ul class="content-module-list">';
         foreach ($post_modules as $module) {
             if (!is_array($module)) {
