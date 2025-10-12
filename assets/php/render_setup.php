@@ -152,6 +152,7 @@ function fg_render_setup_page(array $data = []): void
     }
     $contentModuleBlueprintPreview = trim((string) ($data['content_module_blueprint_preview'] ?? ''));
     $contentModuleBlueprintMeta = $data['content_module_blueprint_meta'] ?? [];
+    $contentModuleBlueprintRequest = (string) ($data['content_module_blueprint_request'] ?? '');
     if (!is_array($contentModuleBlueprintMeta)) {
         $contentModuleBlueprintMeta = [];
     }
@@ -1394,6 +1395,49 @@ function fg_render_setup_page(array $data = []): void
             $body .= '<script>(function(){document.addEventListener("click",function(event){var button=event.target.closest(".copy-blueprint");if(!button){return;}var targetId=button.getAttribute("data-target");if(!targetId){return;}var field=document.getElementById(targetId);if(!field){return;}var text=field.value;var defaultLabel=button.getAttribute("data-label")||button.textContent;var copiedLabel=button.getAttribute("data-copied-label")||"Copied!";var reset=function(){button.classList.remove("copied");button.textContent=defaultLabel;};var showCopied=function(){button.classList.add("copied");button.textContent=copiedLabel;setTimeout(reset,2000);};var fallback=function(){field.focus();field.select();try{if(document.execCommand("copy")){showCopied();}else{reset();}}catch(err){reset();}};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){showCopied();}).catch(function(){fallback();});}else{fallback();}event.preventDefault();});})();</script>';
         }
     }
+
+    $body .= '<article class="content-module-card import-blueprint">';
+    $body .= '<header><h3>Import blueprint JSON</h3><p>Paste a blueprint exported from Filegate or another compatible library to recreate the module here. We will map categories, guidance, checklists, and relationships automatically.</p></header>';
+    $body .= '<form method="post" action="/setup.php" class="content-module-import">';
+    $body .= '<input type="hidden" name="action" value="adopt_content_blueprint">';
+    $body .= '<label class="field"><span class="field-label">Blueprint JSON</span><span class="field-control"><textarea name="blueprint" rows="10" placeholder="{\n  &quot;label&quot;: &quot;Module&quot;\n}" required>' . htmlspecialchars($contentModuleBlueprintRequest) . '</textarea></span><span class="field-description">Include the JSON payload generated from the module dashboard or stored alongside the XML blueprint libraries.</span></label>';
+    $body .= '<div class="field-grid content-module-import-grid">';
+    $body .= '<label class="field"><span class="field-label">Dataset</span><span class="field-control"><select name="dataset">';
+    $defaultDatasetKey = 'posts';
+    foreach ($datasetOptions as $datasetKey => $datasetLabel) {
+        $selected = ((string) $datasetKey === $defaultDatasetKey) ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($datasetKey) . '"' . $selected . '>' . htmlspecialchars((string) $datasetLabel) . '</option>';
+    }
+    $body .= '</select></span><span class="field-description">Choose where imported entries will be stored.</span></label>';
+    $body .= '<label class="field"><span class="field-label">Status</span><span class="field-control"><select name="status">';
+    foreach (['draft' => 'Draft', 'active' => 'Active', 'archived' => 'Archived'] as $value => $labelOption) {
+        $selected = $value === 'draft' ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($labelOption) . '</option>';
+    }
+    $body .= '</select></span><span class="field-description">Imports default to drafts so you can review them before launch.</span></label>';
+    $body .= '<label class="field"><span class="field-label">Visibility</span><span class="field-control"><select name="visibility">';
+    foreach (['members' => 'Members', 'everyone' => 'Everyone', 'admins' => 'Admins'] as $value => $labelOption) {
+        $selected = $value === 'members' ? ' selected' : '';
+        $body .= '<option value="' . htmlspecialchars($value) . '"' . $selected . '>' . htmlspecialchars($labelOption) . '</option>';
+    }
+    $body .= '</select></span><span class="field-description">Control who can launch the imported module from the feed.</span></label>';
+    if (!empty($roles)) {
+        $body .= '<label class="field"><span class="field-label">Allowed roles</span><span class="field-control"><select name="allowed_roles[]" multiple size="' . max(3, min(6, count($roles))) . '">';
+        foreach ($roles as $roleKey => $roleDescription) {
+            $roleValue = strtolower((string) $roleKey);
+            $body .= '<option value="' . htmlspecialchars($roleValue) . '">' . htmlspecialchars(ucfirst((string) $roleKey)) . '</option>';
+        }
+        $body .= '</select></span><span class="field-description">Leave empty to allow all roles permitted by the visibility setting.</span></label>';
+    } else {
+        $body .= '<label class="field"><span class="field-label">Allowed roles</span><span class="field-control"><input type="text" name="allowed_roles" placeholder="admin, moderator"></span><span class="field-description">Optional comma-separated role slugs.</span></label>';
+    }
+    $body .= '</div>';
+    $body .= '<div class="action-row">';
+    $body .= '<button type="submit" class="button primary">Import blueprint</button>';
+    $body .= '<p class="content-module-import-note">We will create a new module copy with checklist progress reset and relationships intact.</p>';
+    $body .= '</div>';
+    $body .= '</form>';
+    $body .= '</article>';
 
     foreach ($contentModuleRecords as $module) {
         $moduleId = (int) ($module['id'] ?? 0);

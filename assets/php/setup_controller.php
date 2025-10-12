@@ -231,6 +231,7 @@ function fg_public_setup_controller(): void
     ]);
     $contentModuleBlueprintPreview = '';
     $contentModuleBlueprintMeta = [];
+    $contentModuleBlueprintRequest = '';
 
     try {
         $automations = fg_load_automations();
@@ -1105,6 +1106,8 @@ function fg_public_setup_controller(): void
                     }
                 }
             } else {
+                $shouldCreateModule = true;
+                $blueprintRaw = '';
                 $payload = [
                     'label' => $_POST['label'] ?? '',
                     'dataset' => $_POST['dataset'] ?? 'posts',
@@ -1125,164 +1128,188 @@ function fg_public_setup_controller(): void
                 ];
 
                 if ($action === 'adopt_content_blueprint') {
-                    $blueprintRaw = $_POST['blueprint'] ?? '';
-                    $decoded = json_decode((string) $blueprintRaw, true);
-                    if (is_array($decoded)) {
-                        $payload['label'] = $decoded['label'] ?? ($decoded['title'] ?? 'Content module');
-                        $payload['description'] = $decoded['description'] ?? ($decoded['summary'] ?? '');
-                        $payload['format'] = $decoded['format'] ?? '';
-                        if (!empty($decoded['categories']) && is_array($decoded['categories'])) {
-                            $payload['categories'] = $decoded['categories'];
-                        }
-                        if (!empty($decoded['fields']) && is_array($decoded['fields'])) {
-                            $payload['fields'] = array_map(static function (array $field): string {
-                                $label = trim((string) ($field['label'] ?? ($field['title'] ?? '')));
-                                $description = trim((string) ($field['description'] ?? ''));
-                                if ($description === '') {
-                                    return $label;
-                                }
-                                return $label . '|' . $description;
-                            }, $decoded['fields']);
-                        }
-                        $blueprintTasks = [];
-                        if (!empty($decoded['tasks']) && is_array($decoded['tasks'])) {
-                            $blueprintTasks = $decoded['tasks'];
-                        } elseif (!empty($decoded['checklists']) && is_array($decoded['checklists'])) {
-                            $blueprintTasks = $decoded['checklists'];
-                        } elseif (!empty($decoded['checklist']) && is_array($decoded['checklist'])) {
-                            $blueprintTasks = $decoded['checklist'];
-                        }
+                    $blueprintRaw = (string) ($_POST['blueprint'] ?? '');
+                    $contentModuleBlueprintRequest = $blueprintRaw;
+                    $trimmedBlueprint = trim($blueprintRaw);
 
-                        if (!empty($blueprintTasks)) {
-                            $payload['tasks'] = array_map(static function ($task): string {
-                                if (is_array($task)) {
-                                    $label = trim((string) ($task['label'] ?? ($task['title'] ?? '')));
-                                    $description = trim((string) ($task['description'] ?? ($task['prompt'] ?? '')));
-                                    $completed = !empty($task['completed']) || in_array(strtolower(trim((string) ($task['status'] ?? $task['state'] ?? ''))), ['complete', 'completed', 'done', 'finished'], true);
-                                    $parts = [$label];
-                                    if ($description !== '') {
-                                        $parts[] = $description;
-                                    }
-                                    if ($completed) {
-                                        $parts[] = 'complete';
-                                    }
+                    if ($trimmedBlueprint === '') {
+                        $errors[] = 'Blueprint JSON is required to import a content module.';
+                        $shouldCreateModule = false;
+                    } else {
+                        $decoded = json_decode($trimmedBlueprint, true);
+                        if (!is_array($decoded)) {
+                            $errors[] = 'Blueprint JSON could not be decoded. Confirm the payload is valid JSON before importing it.';
+                            $shouldCreateModule = false;
+                        } else {
+                            $contentModuleBlueprintRequest = '';
 
-                                    return implode('|', array_filter($parts, static function ($part) {
-                                        return $part !== '';
-                                    }));
-                                }
-
-                                return (string) $task;
-                            }, $decoded['tasks']);
-                        }
-                        if (!empty($decoded['profile_prompts']) && is_array($decoded['profile_prompts'])) {
-                            $payload['profile_prompts'] = array_map(static function (array $prompt): string {
-                                $label = trim((string) ($prompt['label'] ?? ($prompt['name'] ?? '')));
-                                $description = trim((string) ($prompt['description'] ?? ''));
-                                if ($description === '') {
-                                    return $label;
-                                }
-                                return $label . '|' . $description;
-                            }, $decoded['profile_prompts']);
-                        }
-                        if (!empty($decoded['wizard_steps']) && is_array($decoded['wizard_steps'])) {
-                            $payload['wizard_steps'] = array_map(static function (array $step): string {
-                                $title = trim((string) ($step['title'] ?? ''));
-                                $prompt = trim((string) ($step['prompt'] ?? ''));
-                                if ($prompt === '') {
-                                    return $title;
-                                }
-                                return $title . '|' . $prompt;
-                            }, $decoded['wizard_steps']);
-                        }
-                        if (!empty($decoded['guides']) && is_array($decoded['guides'])) {
-                            if (!empty($decoded['guides']['micro']) && is_array($decoded['guides']['micro'])) {
-                                $payload['micro_guides'] = array_map(static function ($guide): string {
-                                    if (is_array($guide)) {
-                                        $title = trim((string) ($guide['title'] ?? $guide['label'] ?? ''));
-                                        $prompt = trim((string) ($guide['prompt'] ?? $guide['description'] ?? ''));
-                                    } else {
-                                        $title = trim((string) $guide);
-                                        $prompt = '';
-                                    }
-                                    if ($title === '') {
-                                        return '';
-                                    }
-                                    if ($prompt === '') {
-                                        return $title;
-                                    }
-
-                                    return $title . '|' . $prompt;
-                                }, array_filter($decoded['guides']['micro'], static function ($guide) {
-                                    return $guide !== null && $guide !== '';
-                                }));
+                            $payload['label'] = $decoded['label'] ?? ($decoded['title'] ?? 'Content module');
+                            $payload['description'] = $decoded['description'] ?? ($decoded['summary'] ?? '');
+                            $payload['format'] = $decoded['format'] ?? '';
+                            if (!empty($decoded['categories']) && is_array($decoded['categories'])) {
+                                $payload['categories'] = $decoded['categories'];
                             }
-                            if (!empty($decoded['guides']['macro']) && is_array($decoded['guides']['macro'])) {
-                                $payload['macro_guides'] = array_map(static function ($guide): string {
-                                    if (is_array($guide)) {
-                                        $title = trim((string) ($guide['title'] ?? $guide['label'] ?? ''));
-                                        $prompt = trim((string) ($guide['prompt'] ?? $guide['description'] ?? ''));
-                                    } else {
-                                        $title = trim((string) $guide);
-                                        $prompt = '';
-                                    }
-                                    if ($title === '') {
-                                        return '';
-                                    }
-                                    if ($prompt === '') {
-                                        return $title;
+                            if (!empty($decoded['fields']) && is_array($decoded['fields'])) {
+                                $payload['fields'] = array_map(static function (array $field): string {
+                                    $label = trim((string) ($field['label'] ?? ($field['title'] ?? '')));
+                                    $description = trim((string) ($field['description'] ?? ''));
+                                    if ($description === '') {
+                                        return $label;
                                     }
 
-                                    return $title . '|' . $prompt;
-                                }, array_filter($decoded['guides']['macro'], static function ($guide) {
-                                    return $guide !== null && $guide !== '';
-                                }));
+                                    return $label . '|' . $description;
+                                }, $decoded['fields']);
                             }
-                        }
-                        if (!empty($decoded['css_tokens']) && is_array($decoded['css_tokens'])) {
-                            $payload['css_tokens'] = $decoded['css_tokens'];
-                        }
-                        if (!empty($decoded['relationships'])) {
-                            $relationships = $decoded['relationships'];
-                            if (is_array($relationships)) {
-                                $payload['relationships'] = array_map(static function ($relationship): string {
-                                    if (is_array($relationship)) {
-                                        $type = trim((string) ($relationship['type'] ?? 'related'));
-                                        if ($type === '') {
-                                            $type = 'related';
-                                        }
-                                        $target = trim((string) ($relationship['module_key'] ?? $relationship['module_reference'] ?? ''));
-                                        if ($target === '') {
-                                            return '';
-                                        }
-                                        $label = trim((string) ($relationship['module_label'] ?? ''));
-                                        $description = trim((string) ($relationship['description'] ?? ''));
-                                        $parts = [$type, $target];
-                                        if ($label !== '' && strcasecmp($label, $target) !== 0) {
-                                            $parts[] = $label;
-                                            if ($description !== '') {
-                                                $parts[] = $description;
-                                            }
-                                        } elseif ($description !== '') {
+
+                            $blueprintTasks = [];
+                            if (!empty($decoded['tasks']) && is_array($decoded['tasks'])) {
+                                $blueprintTasks = $decoded['tasks'];
+                            } elseif (!empty($decoded['checklists']) && is_array($decoded['checklists'])) {
+                                $blueprintTasks = $decoded['checklists'];
+                            } elseif (!empty($decoded['checklist']) && is_array($decoded['checklist'])) {
+                                $blueprintTasks = $decoded['checklist'];
+                            }
+
+                            if (!empty($blueprintTasks)) {
+                                $payload['tasks'] = array_map(static function ($task): string {
+                                    if (is_array($task)) {
+                                        $label = trim((string) ($task['label'] ?? ($task['title'] ?? '')));
+                                        $description = trim((string) ($task['description'] ?? ($task['prompt'] ?? '')));
+                                        $completed = !empty($task['completed']) || in_array(strtolower(trim((string) ($task['status'] ?? $task['state'] ?? ''))), ['complete', 'completed', 'done', 'finished'], true);
+                                        $parts = [$label];
+                                        if ($description !== '') {
                                             $parts[] = $description;
                                         }
+                                        if ($completed) {
+                                            $parts[] = 'complete';
+                                        }
 
-                                        return implode('|', $parts);
+                                        return implode('|', array_filter($parts, static function ($part) {
+                                            return $part !== '';
+                                        }));
                                     }
 
-                                    return (string) $relationship;
-                                }, $relationships);
+                                    return (string) $task;
+                                }, $blueprintTasks);
+                            }
+
+                            if (!empty($decoded['profile_prompts']) && is_array($decoded['profile_prompts'])) {
+                                $payload['profile_prompts'] = array_map(static function (array $prompt): string {
+                                    $label = trim((string) ($prompt['label'] ?? ($prompt['name'] ?? '')));
+                                    $description = trim((string) ($prompt['description'] ?? ''));
+                                    if ($description === '') {
+                                        return $label;
+                                    }
+
+                                    return $label . '|' . $description;
+                                }, $decoded['profile_prompts']);
+                            }
+                            if (!empty($decoded['wizard_steps']) && is_array($decoded['wizard_steps'])) {
+                                $payload['wizard_steps'] = array_map(static function (array $step): string {
+                                    $title = trim((string) ($step['title'] ?? ''));
+                                    $prompt = trim((string) ($step['prompt'] ?? ''));
+                                    if ($prompt === '') {
+                                        return $title;
+                                    }
+
+                                    return $title . '|' . $prompt;
+                                }, $decoded['wizard_steps']);
+                            }
+                            if (!empty($decoded['guides']) && is_array($decoded['guides'])) {
+                                if (!empty($decoded['guides']['micro']) && is_array($decoded['guides']['micro'])) {
+                                    $payload['micro_guides'] = array_map(static function ($guide): string {
+                                        if (is_array($guide)) {
+                                            $title = trim((string) ($guide['title'] ?? $guide['label'] ?? ''));
+                                            $prompt = trim((string) ($guide['prompt'] ?? $guide['description'] ?? ''));
+                                        } else {
+                                            $title = trim((string) $guide);
+                                            $prompt = '';
+                                        }
+                                        if ($title === '') {
+                                            return '';
+                                        }
+                                        if ($prompt === '') {
+                                            return $title;
+                                        }
+
+                                        return $title . '|' . $prompt;
+                                    }, array_filter($decoded['guides']['micro'], static function ($guide) {
+                                        return $guide !== null && $guide !== '';
+                                    }));
+                                }
+                                if (!empty($decoded['guides']['macro']) && is_array($decoded['guides']['macro'])) {
+                                    $payload['macro_guides'] = array_map(static function ($guide): string {
+                                        if (is_array($guide)) {
+                                            $title = trim((string) ($guide['title'] ?? $guide['label'] ?? ''));
+                                            $prompt = trim((string) ($guide['prompt'] ?? $guide['description'] ?? ''));
+                                        } else {
+                                            $title = trim((string) $guide);
+                                            $prompt = '';
+                                        }
+                                        if ($title === '') {
+                                            return '';
+                                        }
+                                        if ($prompt === '') {
+                                            return $title;
+                                        }
+
+                                        return $title . '|' . $prompt;
+                                    }, array_filter($decoded['guides']['macro'], static function ($guide) {
+                                        return $guide !== null && $guide !== '';
+                                    }));
+                                }
+                            }
+                            if (!empty($decoded['css_tokens']) && is_array($decoded['css_tokens'])) {
+                                $payload['css_tokens'] = $decoded['css_tokens'];
+                            }
+                            if (!empty($decoded['relationships'])) {
+                                $relationships = $decoded['relationships'];
+                                if (is_array($relationships)) {
+                                    $payload['relationships'] = array_map(static function ($relationship): string {
+                                        if (is_array($relationship)) {
+                                            $type = trim((string) ($relationship['type'] ?? 'related'));
+                                            if ($type === '') {
+                                                $type = 'related';
+                                            }
+                                            $target = trim((string) ($relationship['module_key'] ?? $relationship['module_reference'] ?? ''));
+                                            if ($target === '') {
+                                                return '';
+                                            }
+                                            $label = trim((string) ($relationship['module_label'] ?? ''));
+                                            $description = trim((string) ($relationship['description'] ?? ''));
+                                            $parts = [$type, $target];
+                                            if ($label !== '' && strcasecmp($label, $target) !== 0) {
+                                                $parts[] = $label;
+                                                if ($description !== '') {
+                                                    $parts[] = $description;
+                                                }
+                                            } elseif ($description !== '') {
+                                                $parts[] = $description;
+                                            }
+
+                                            return implode('|', $parts);
+                                        }
+
+                                        return (string) $relationship;
+                                    }, $relationships);
+                                }
                             }
                         }
                     }
                 }
 
-                if ($action === 'create_content_module' || $action === 'adopt_content_blueprint') {
+                if ($action === 'create_content_module' || ($action === 'adopt_content_blueprint' && $shouldCreateModule)) {
                     try {
                         $created = fg_add_content_module($payload);
                         $message = 'Content module "' . ($created['label'] ?? 'Module') . '" created.';
+                        if ($action === 'adopt_content_blueprint') {
+                            $contentModuleBlueprintRequest = '';
+                        }
                     } catch (Throwable $exception) {
                         $errors[] = $exception->getMessage();
+                        if ($action === 'adopt_content_blueprint' && $contentModuleBlueprintRequest === '') {
+                            $contentModuleBlueprintRequest = $blueprintRaw;
+                        }
                     }
                 } elseif ($action === 'update_content_module') {
                     $moduleId = (int) ($_POST['module_id'] ?? 0);
@@ -2413,6 +2440,7 @@ function fg_public_setup_controller(): void
         'content_module_assignments' => $contentModuleAssignments,
         'content_module_blueprint_preview' => $contentModuleBlueprintPreview,
         'content_module_blueprint_meta' => $contentModuleBlueprintMeta,
+        'content_module_blueprint_request' => $contentModuleBlueprintRequest,
         'feature_request_statuses' => $featureRequestStatusOptions,
         'feature_request_priorities' => $featureRequestPriorityOptions,
         'feature_request_policy' => $featureRequestPolicy,
