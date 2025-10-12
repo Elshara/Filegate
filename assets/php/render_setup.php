@@ -1597,11 +1597,19 @@ function fg_render_setup_page(array $data = []): void
         $body .= '<button type="submit" class="button primary">Save module</button>';
         $body .= '</div>';
         $body .= '</form>';
+        $body .= '<div class="content-module-actions">';
+        $body .= '<form method="post" action="/setup.php" class="content-module-duplicate">';
+        $body .= '<input type="hidden" name="action" value="duplicate_content_module">';
+        $body .= '<input type="hidden" name="module_id" value="' . htmlspecialchars((string) $moduleId) . '">';
+        $body .= '<button type="submit" class="button secondary">Duplicate module</button>';
+        $body .= '</form>';
         $body .= '<form method="post" action="/setup.php" class="content-module-delete" onsubmit="return confirm(\'Delete this content module?\');">';
         $body .= '<input type="hidden" name="action" value="delete_content_module">';
         $body .= '<input type="hidden" name="module_id" value="' . htmlspecialchars((string) $moduleId) . '">';
         $body .= '<button type="submit" class="button danger">Delete module</button>';
         $body .= '</form>';
+        $body .= '<p class="content-module-actions-note">Duplicate to branch a module without editing JSON files. New copies start as drafts with checklist progress reset.</p>';
+        $body .= '</div>';
         $body .= '</article>';
     }
 

@@ -79,6 +79,7 @@ require_once __DIR__ . '/default_content_modules_dataset.php';
 require_once __DIR__ . '/add_content_module.php';
 require_once __DIR__ . '/update_content_module.php';
 require_once __DIR__ . '/delete_content_module.php';
+require_once __DIR__ . '/duplicate_content_module.php';
 require_once __DIR__ . '/load_content_blueprints.php';
 require_once __DIR__ . '/content_module_usage_summary.php';
 require_once __DIR__ . '/content_module_task_assignments.php';
@@ -1017,7 +1018,7 @@ function fg_public_setup_controller(): void
                     }
                 }
             }
-        } elseif (in_array($action, ['create_content_module', 'update_content_module', 'delete_content_module', 'adopt_content_blueprint'], true)) {
+        } elseif (in_array($action, ['create_content_module', 'update_content_module', 'delete_content_module', 'duplicate_content_module', 'adopt_content_blueprint'], true)) {
             try {
                 $contentModules = fg_load_content_modules();
                 if (!isset($contentModules['records']) || !is_array($contentModules['records'])) {
@@ -1039,6 +1040,26 @@ function fg_public_setup_controller(): void
                             $message = 'Content module deleted successfully.';
                         } else {
                             $errors[] = 'Content module could not be deleted or no longer exists.';
+                        }
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'duplicate_content_module') {
+                $moduleId = (int) ($_POST['module_id'] ?? 0);
+                if ($moduleId <= 0) {
+                    $errors[] = 'Unknown module selected for duplication.';
+                } else {
+                    try {
+                        $duplicate = fg_duplicate_content_module($moduleId);
+                        if ($duplicate !== null) {
+                            $duplicateLabel = trim((string) ($duplicate['label'] ?? 'Content module copy'));
+                            if ($duplicateLabel === '') {
+                                $duplicateLabel = 'Content module copy';
+                            }
+                            $message = 'Content module duplicated as "' . $duplicateLabel . '".';
+                        } else {
+                            $errors[] = 'Content module could not be duplicated or no longer exists.';
                         }
                     } catch (Throwable $exception) {
                         $errors[] = $exception->getMessage();

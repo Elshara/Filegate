@@ -127,6 +127,30 @@ input[type="submit"]:hover {
   box-shadow: 0 12px 24px rgba(54, 87, 255, 0.2);
 }
 
+button.secondary,
+.button.secondary {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  box-shadow: none;
+}
+
+button.secondary:hover,
+.button.secondary:hover {
+  background: rgba(37, 99, 235, 0.18);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+}
+
+button.danger,
+.button.danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+button.danger:hover,
+.button.danger:hover {
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.25);
+}
+
 .feed-post {
   display: grid;
   gap: 0.75rem;
@@ -3544,6 +3568,25 @@ input[type="submit"]:hover {
 .task-complete .task-state,
 .task-state-complete {
   color: #1d8a61;
+}
+
+.content-module-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.content-module-actions form {
+  margin: 0;
+}
+
+.content-module-actions-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(30, 41, 59, 0.72);
+  flex: 1 1 220px;
 }
 
 .content-module-assignments {
