@@ -1,24 +1,24 @@
 <?php
 
-require_once __DIR__ . '/../global/load_settings.php';
-require_once __DIR__ . '/../global/get_setting.php';
-require_once __DIR__ . '/../global/can_manage_setting.php';
-require_once __DIR__ . '/../global/list_datasets.php';
-require_once __DIR__ . '/../global/is_admin.php';
-require_once __DIR__ . '/../global/render_layout.php';
-require_once __DIR__ . '/../global/load_json.php';
-require_once __DIR__ . '/../global/seed_defaults.php';
-require_once __DIR__ . '/../global/dataset_is_exposable.php';
-require_once __DIR__ . '/../global/dataset_format.php';
-require_once __DIR__ . '/../global/dataset_path.php';
-require_once __DIR__ . '/../global/load_asset_configurations.php';
-require_once __DIR__ . '/../global/load_asset_overrides.php';
-require_once __DIR__ . '/../global/get_asset_parameter_value.php';
-require_once __DIR__ . '/../global/asset_label.php';
-require_once __DIR__ . '/../global/resolve_theme_tokens.php';
-require_once __DIR__ . '/../global/resolve_locale.php';
-require_once __DIR__ . '/../global/load_translations.php';
-require_once __DIR__ . '/../global/translate.php';
+require_once __DIR__ . '/load_settings.php';
+require_once __DIR__ . '/get_setting.php';
+require_once __DIR__ . '/can_manage_setting.php';
+require_once __DIR__ . '/list_datasets.php';
+require_once __DIR__ . '/is_admin.php';
+require_once __DIR__ . '/render_layout.php';
+require_once __DIR__ . '/load_json.php';
+require_once __DIR__ . '/seed_defaults.php';
+require_once __DIR__ . '/dataset_is_exposable.php';
+require_once __DIR__ . '/dataset_format.php';
+require_once __DIR__ . '/dataset_path.php';
+require_once __DIR__ . '/load_asset_configurations.php';
+require_once __DIR__ . '/load_asset_overrides.php';
+require_once __DIR__ . '/get_asset_parameter_value.php';
+require_once __DIR__ . '/asset_label.php';
+require_once __DIR__ . '/resolve_theme_tokens.php';
+require_once __DIR__ . '/resolve_locale.php';
+require_once __DIR__ . '/load_translations.php';
+require_once __DIR__ . '/translate.php';
 
 function fg_render_settings_page(array $user, array $context = []): void
 {

@@ -127,6 +127,54 @@ input[type="submit"]:hover {
   box-shadow: 0 12px 24px rgba(54, 87, 255, 0.2);
 }
 
+button.secondary,
+.button.secondary {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  box-shadow: none;
+}
+
+button.secondary:hover,
+.button.secondary:hover {
+  background: rgba(37, 99, 235, 0.18);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+}
+
+button.danger,
+.button.danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+button.danger:hover,
+.button.danger:hover {
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.25);
+}
+
+button.tertiary,
+.button.tertiary {
+  background: rgba(15, 23, 42, 0.05);
+  color: #0f172a;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: none;
+}
+
+button.tertiary:hover,
+.button.tertiary:hover {
+  background: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+}
+
+.copy-blueprint.copied {
+  background: linear-gradient(135deg, #34d399, #059669);
+  color: #fff;
+  border-color: rgba(5, 150, 105, 0.6);
+}
+
+.copy-blueprint.copied:hover {
+  box-shadow: 0 12px 24px rgba(5, 150, 105, 0.25);
+}
+
 .feed-post {
   display: grid;
   gap: 0.75rem;
@@ -3454,4 +3502,600 @@ input[type="submit"]:hover {
     border-style: dashed;
     border-color: rgba(59, 130, 246, 0.35);
     background: rgba(59, 130, 246, 0.08);
+}
+
+.module-tasks ul,
+.post-module-tasks ul,
+.content-module-tasks ul {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.module-tasks li,
+.post-module-tasks li,
+.content-module-tasks li {
+  background: rgba(32, 44, 62, 0.05);
+  border: 1px solid rgba(32, 44, 62, 0.08);
+  border-radius: 0.85rem;
+  padding: 0.75rem 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.module-tasks li label {
+  display: grid;
+  gap: 0.35rem;
+  align-items: flex-start;
+}
+
+.module-tasks .task-label,
+.post-module-tasks .task-label,
+.content-module-tasks .task-label {
+  font-weight: 600;
+}
+
+.module-tasks .task-description,
+.post-module-tasks .task-description,
+.content-module-tasks .task-description {
+  display: block;
+  color: #4a5973;
+}
+
+.module-tasks .task-state,
+.post-module-tasks .task-state,
+.content-module-tasks .task-state {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1d8a61;
+}
+
+.module-tasks .task-meta,
+.post-module-tasks .task-meta,
+.content-module-tasks .task-meta,
+.module-tasks .task-notes,
+.post-module-tasks .task-notes,
+.content-module-tasks .task-notes {
+  display: block;
+  font-size: 0.85rem;
+  color: #52617a;
+}
+
+.task-complete {
+  border-color: rgba(33, 118, 88, 0.35);
+  background: rgba(33, 118, 88, 0.08);
+}
+
+.task-overdue {
+  border-color: rgba(179, 38, 30, 0.4);
+  background: rgba(179, 38, 30, 0.08);
+}
+
+.task-due-soon {
+  border-color: rgba(179, 107, 0, 0.4);
+  background: rgba(179, 107, 0, 0.08);
+}
+
+.task-state-overdue,
+.task-overdue .task-state {
+  color: #b3261e;
+}
+
+.task-state-due_soon,
+.task-state-due-soon,
+.task-due-soon .task-state {
+  color: #c97a15;
+}
+
+.task-complete .task-state,
+.task-state-complete {
+  color: #1d8a61;
+}
+
+.content-module-blueprint-preview {
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(248, 250, 252, 0.9);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.content-module-blueprint-preview header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.content-module-blueprint-preview .blueprint-source {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(30, 41, 59, 0.66);
+}
+
+.blueprint-preview-intro {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(30, 41, 59, 0.75);
+}
+
+.content-module-blueprint-preview textarea {
+  width: 100%;
+  min-height: 240px;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.04);
+  padding: 1rem;
+  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.blueprint-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.content-module-card.import-blueprint {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 1rem;
+}
+
+.content-module-card.import-blueprint header h3 {
+  margin: 0;
+}
+
+.content-module-card.import-blueprint header p {
+  margin: 0.25rem 0 0;
+  color: rgba(30, 41, 59, 0.72);
+}
+
+.content-module-import textarea {
+  width: 100%;
+  min-height: 220px;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.04);
+  padding: 1rem;
+  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.content-module-import-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.content-module-import select[multiple] {
+  min-height: 140px;
+}
+
+.content-module-import .action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.content-module-import .action-row .button {
+  flex: 0 0 auto;
+}
+
+.content-module-import-note {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(30, 41, 59, 0.68);
+  flex: 1 1 220px;
+}
+
+.content-blueprint-library {
+  margin-top: 2rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.blueprint-library-filters {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  padding: 1rem 1.25rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.blueprint-library-filters .field {
+  margin: 0;
+}
+
+.blueprint-filter-fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.blueprint-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.blueprint-filter-actions .button {
+  flex: 0 0 auto;
+}
+
+.blueprint-filter-summary {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(30, 41, 59, 0.68);
+  flex: 1 1 220px;
+}
+
+.blueprint-empty {
+  margin: 0;
+}
+
+.blueprint-card {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 0.85rem;
+}
+
+.blueprint-card header h4 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.blueprint-card .blueprint-format {
+  margin: 0.25rem 0 0;
+  color: rgba(30, 41, 59, 0.68);
+  font-size: 0.9rem;
+}
+
+.blueprint-card .blueprint-description {
+  margin: 0;
+  color: rgba(30, 41, 59, 0.78);
+}
+
+.blueprint-card .blueprint-fields {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.blueprint-card .blueprint-guides {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(248, 250, 252, 0.8);
+  padding: 0.75rem 1rem;
+}
+
+.blueprint-card .blueprint-guides summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.blueprint-card .blueprint-guides ul {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.blueprint-card .blueprint-guides h5 {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.95rem;
+  color: rgba(30, 41, 59, 0.75);
+}
+
+.blueprint-import {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.blueprint-import-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.blueprint-import select[multiple] {
+  min-height: 120px;
+}
+
+.blueprint-import-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.blueprint-import-actions .button {
+  flex: 0 0 auto;
+}
+
+.blueprint-import-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(30, 41, 59, 0.7);
+  flex: 1 1 220px;
+}
+
+.content-module-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.content-module-actions form {
+  margin: 0;
+}
+
+.content-module-actions-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(30, 41, 59, 0.72);
+  flex: 1 1 220px;
+}
+
+.content-module-assignments {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.content-module-assignments h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.assignment-summary {
+  margin: 0;
+  color: rgba(30, 41, 59, 0.75);
+  font-weight: 600;
+}
+
+.assignment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.assignment-item {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-left: 4px solid rgba(59, 130, 246, 0.6);
+  border-radius: 0.85rem;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.assignment-item strong {
+  font-size: 1rem;
+  color: rgba(15, 23, 42, 0.92);
+}
+
+.assignment-owner,
+.assignment-module,
+.assignment-due,
+.assignment-priority {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(30, 41, 59, 0.7);
+  background: rgba(30, 64, 175, 0.08);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+
+.assignment-due {
+  background: rgba(217, 119, 6, 0.12);
+  color: #b45309;
+}
+
+.assignment-priority {
+  background: rgba(190, 24, 93, 0.12);
+  color: #9d174d;
+}
+
+.assignment-item.state-overdue {
+  border-left-color: #b3261e;
+}
+
+.assignment-item.state-due-soon {
+  border-left-color: #c97a15;
+}
+
+.assignment-item.state-complete {
+  border-left-color: #1d8a61;
+  opacity: 0.85;
+}
+
+.assignment-link {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  text-decoration: none;
+}
+
+.assignment-link:hover,
+.assignment-link:focus {
+  text-decoration: underline;
+}
+
+.assignment-item.more {
+  border-style: dashed;
+  border-color: rgba(59, 130, 246, 0.35);
+  background: rgba(59, 130, 246, 0.08);
+  justify-content: center;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.assignment-empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(30, 41, 59, 0.65);
+}
+
+.content-module-ownership {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  display: grid;
+  gap: 1rem;
+}
+
+.content-module-ownership h4 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.ownership-summary {
+  margin: 0;
+  font-weight: 600;
+  color: rgba(30, 41, 59, 0.7);
+}
+
+.content-module-ownership-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.ownership-item {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-left: 4px solid rgba(59, 130, 246, 0.45);
+  border-radius: 0.85rem;
+  padding: 1rem 1.25rem;
+  background: rgba(248, 250, 252, 0.95);
+  display: grid;
+  gap: 0.6rem;
+}
+
+.ownership-item header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+}
+
+.ownership-item header strong {
+  font-size: 1rem;
+  color: rgba(15, 23, 42, 0.9);
+}
+
+.ownership-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(30, 41, 59, 0.7);
+  background: rgba(30, 64, 175, 0.08);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+
+.ownership-count.complete {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+}
+
+.ownership-item.state-overdue {
+  border-left-color: #b3261e;
+}
+
+.ownership-item.state-due-soon {
+  border-left-color: #c97a15;
+}
+
+.ownership-item.state-pending {
+  border-left-color: rgba(59, 130, 246, 0.65);
+}
+
+.ownership-meta {
+  margin: 0;
+  color: rgba(30, 41, 59, 0.65);
+  font-size: 0.9rem;
+}
+
+.ownership-task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ownership-task {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  align-items: center;
+  font-size: 0.85rem;
+  color: rgba(30, 41, 59, 0.75);
+}
+
+.ownership-task-label {
+  font-weight: 600;
+  color: rgba(15, 23, 42, 0.85);
+}
+
+.ownership-task-module,
+.ownership-task-due {
+  font-weight: 600;
+  color: rgba(30, 41, 59, 0.7);
+}
+
+.ownership-task.state-overdue .ownership-task-label,
+.assignment-item.state-overdue strong {
+  color: #b3261e;
+}
+
+.ownership-task.state-due-soon .ownership-task-label,
+.assignment-item.state-due-soon strong {
+  color: #c97a15;
+}
+
+.ownership-item.more,
+.ownership-task.more {
+  border: none;
+  padding: 0;
+  font-weight: 600;
+  color: #1e3a8a;
 }

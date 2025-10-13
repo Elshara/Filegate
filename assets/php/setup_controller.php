@@ -1,101 +1,112 @@
 <?php
 
-require_once __DIR__ . '/../global/bootstrap.php';
-require_once __DIR__ . '/../global/require_login.php';
-require_once __DIR__ . '/../global/is_admin.php';
-require_once __DIR__ . '/../global/load_asset_configurations.php';
-require_once __DIR__ . '/../global/load_asset_overrides.php';
-require_once __DIR__ . '/../global/update_asset_configuration.php';
-require_once __DIR__ . '/../global/update_asset_permissions.php';
-require_once __DIR__ . '/../global/update_asset_override.php';
-require_once __DIR__ . '/../global/clear_asset_override.php';
-require_once __DIR__ . '/../global/load_settings.php';
-require_once __DIR__ . '/../global/get_setting.php';
-require_once __DIR__ . '/../global/load_users.php';
-require_once __DIR__ . '/../global/load_dataset_manifest.php';
-require_once __DIR__ . '/../global/dataset_format.php';
-require_once __DIR__ . '/../global/dataset_nature.php';
-require_once __DIR__ . '/../global/dataset_path.php';
-require_once __DIR__ . '/../global/ensure_data_directory.php';
-require_once __DIR__ . '/../global/load_dataset_contents.php';
-require_once __DIR__ . '/../global/save_dataset_contents.php';
-require_once __DIR__ . '/../global/dataset_default_payload.php';
-require_once __DIR__ . '/../global/format_file_size.php';
-require_once __DIR__ . '/../global/load_theme_tokens.php';
-require_once __DIR__ . '/../global/load_themes.php';
-require_once __DIR__ . '/../global/save_themes.php';
-require_once __DIR__ . '/../global/default_themes_dataset.php';
-require_once __DIR__ . '/../global/save_settings.php';
-require_once __DIR__ . '/../global/load_pages.php';
-require_once __DIR__ . '/../global/add_page.php';
-require_once __DIR__ . '/../global/update_page.php';
-require_once __DIR__ . '/../global/delete_page.php';
-require_once __DIR__ . '/../global/default_pages_dataset.php';
-require_once __DIR__ . '/../global/save_pages.php';
-require_once __DIR__ . '/../global/load_project_status.php';
-require_once __DIR__ . '/../global/default_project_status_dataset.php';
-require_once __DIR__ . '/../global/add_project_status.php';
-require_once __DIR__ . '/../global/update_project_status.php';
-require_once __DIR__ . '/../global/delete_project_status.php';
-require_once __DIR__ . '/../global/load_changelog.php';
-require_once __DIR__ . '/../global/default_changelog_dataset.php';
-require_once __DIR__ . '/../global/add_changelog_entry.php';
-require_once __DIR__ . '/../global/update_changelog_entry.php';
-require_once __DIR__ . '/../global/delete_changelog_entry.php';
-require_once __DIR__ . '/../global/load_feature_requests.php';
-require_once __DIR__ . '/../global/default_feature_requests_dataset.php';
-require_once __DIR__ . '/../global/add_feature_request.php';
-require_once __DIR__ . '/../global/update_feature_request.php';
-require_once __DIR__ . '/../global/delete_feature_request.php';
-require_once __DIR__ . '/../global/load_bug_reports.php';
-require_once __DIR__ . '/../global/default_bug_reports_dataset.php';
-require_once __DIR__ . '/../global/add_bug_report.php';
-require_once __DIR__ . '/../global/update_bug_report.php';
-require_once __DIR__ . '/../global/delete_bug_report.php';
-require_once __DIR__ . '/../global/load_polls.php';
-require_once __DIR__ . '/../global/default_polls_dataset.php';
-require_once __DIR__ . '/../global/add_poll.php';
-require_once __DIR__ . '/../global/update_poll.php';
-require_once __DIR__ . '/../global/delete_poll.php';
-require_once __DIR__ . '/../global/load_events.php';
-require_once __DIR__ . '/../global/default_events_dataset.php';
-require_once __DIR__ . '/../global/add_event.php';
-require_once __DIR__ . '/../global/update_event.php';
-require_once __DIR__ . '/../global/delete_event.php';
-require_once __DIR__ . '/../global/load_knowledge_base.php';
-require_once __DIR__ . '/../global/default_knowledge_base_dataset.php';
-require_once __DIR__ . '/../global/add_knowledge_article.php';
-require_once __DIR__ . '/../global/update_knowledge_article.php';
-require_once __DIR__ . '/../global/delete_knowledge_article.php';
-require_once __DIR__ . '/../global/load_knowledge_categories.php';
-require_once __DIR__ . '/../global/default_knowledge_categories_dataset.php';
-require_once __DIR__ . '/../global/add_knowledge_category.php';
-require_once __DIR__ . '/../global/update_knowledge_category.php';
-require_once __DIR__ . '/../global/delete_knowledge_category.php';
-require_once __DIR__ . '/../global/list_knowledge_categories.php';
-require_once __DIR__ . '/../global/load_automations.php';
-require_once __DIR__ . '/../global/default_automations_dataset.php';
-require_once __DIR__ . '/../global/add_automation.php';
-require_once __DIR__ . '/../global/update_automation.php';
-require_once __DIR__ . '/../global/delete_automation.php';
-require_once __DIR__ . '/../pages/render_setup.php';
-require_once __DIR__ . '/../global/guard_asset.php';
-require_once __DIR__ . '/../global/load_asset_snapshots.php';
-require_once __DIR__ . '/../global/record_dataset_snapshot.php';
-require_once __DIR__ . '/../global/list_dataset_snapshots.php';
-require_once __DIR__ . '/../global/restore_dataset_snapshot.php';
-require_once __DIR__ . '/../global/delete_dataset_snapshot.php';
-require_once __DIR__ . '/../global/load_activity_log.php';
-require_once __DIR__ . '/../global/load_translations.php';
-require_once __DIR__ . '/../global/save_translations.php';
-require_once __DIR__ . '/../global/normalize_translation_token_key.php';
-require_once __DIR__ . '/../global/default_translations_dataset.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/require_login.php';
+require_once __DIR__ . '/is_admin.php';
+require_once __DIR__ . '/load_asset_configurations.php';
+require_once __DIR__ . '/load_asset_overrides.php';
+require_once __DIR__ . '/update_asset_configuration.php';
+require_once __DIR__ . '/update_asset_permissions.php';
+require_once __DIR__ . '/update_asset_override.php';
+require_once __DIR__ . '/clear_asset_override.php';
+require_once __DIR__ . '/load_settings.php';
+require_once __DIR__ . '/get_setting.php';
+require_once __DIR__ . '/load_users.php';
+require_once __DIR__ . '/load_dataset_manifest.php';
+require_once __DIR__ . '/dataset_format.php';
+require_once __DIR__ . '/dataset_nature.php';
+require_once __DIR__ . '/dataset_path.php';
+require_once __DIR__ . '/ensure_data_directory.php';
+require_once __DIR__ . '/load_dataset_contents.php';
+require_once __DIR__ . '/save_dataset_contents.php';
+require_once __DIR__ . '/dataset_default_payload.php';
+require_once __DIR__ . '/format_file_size.php';
+require_once __DIR__ . '/load_theme_tokens.php';
+require_once __DIR__ . '/load_themes.php';
+require_once __DIR__ . '/save_themes.php';
+require_once __DIR__ . '/default_themes_dataset.php';
+require_once __DIR__ . '/save_settings.php';
+require_once __DIR__ . '/load_pages.php';
+require_once __DIR__ . '/add_page.php';
+require_once __DIR__ . '/update_page.php';
+require_once __DIR__ . '/delete_page.php';
+require_once __DIR__ . '/default_pages_dataset.php';
+require_once __DIR__ . '/save_pages.php';
+require_once __DIR__ . '/load_project_status.php';
+require_once __DIR__ . '/default_project_status_dataset.php';
+require_once __DIR__ . '/add_project_status.php';
+require_once __DIR__ . '/update_project_status.php';
+require_once __DIR__ . '/delete_project_status.php';
+require_once __DIR__ . '/load_changelog.php';
+require_once __DIR__ . '/default_changelog_dataset.php';
+require_once __DIR__ . '/add_changelog_entry.php';
+require_once __DIR__ . '/update_changelog_entry.php';
+require_once __DIR__ . '/delete_changelog_entry.php';
+require_once __DIR__ . '/load_feature_requests.php';
+require_once __DIR__ . '/default_feature_requests_dataset.php';
+require_once __DIR__ . '/add_feature_request.php';
+require_once __DIR__ . '/update_feature_request.php';
+require_once __DIR__ . '/delete_feature_request.php';
+require_once __DIR__ . '/load_bug_reports.php';
+require_once __DIR__ . '/default_bug_reports_dataset.php';
+require_once __DIR__ . '/add_bug_report.php';
+require_once __DIR__ . '/update_bug_report.php';
+require_once __DIR__ . '/delete_bug_report.php';
+require_once __DIR__ . '/load_polls.php';
+require_once __DIR__ . '/default_polls_dataset.php';
+require_once __DIR__ . '/add_poll.php';
+require_once __DIR__ . '/update_poll.php';
+require_once __DIR__ . '/delete_poll.php';
+require_once __DIR__ . '/load_events.php';
+require_once __DIR__ . '/default_events_dataset.php';
+require_once __DIR__ . '/add_event.php';
+require_once __DIR__ . '/update_event.php';
+require_once __DIR__ . '/delete_event.php';
+require_once __DIR__ . '/load_knowledge_base.php';
+require_once __DIR__ . '/default_knowledge_base_dataset.php';
+require_once __DIR__ . '/add_knowledge_article.php';
+require_once __DIR__ . '/update_knowledge_article.php';
+require_once __DIR__ . '/delete_knowledge_article.php';
+require_once __DIR__ . '/load_knowledge_categories.php';
+require_once __DIR__ . '/default_knowledge_categories_dataset.php';
+require_once __DIR__ . '/add_knowledge_category.php';
+require_once __DIR__ . '/update_knowledge_category.php';
+require_once __DIR__ . '/delete_knowledge_category.php';
+require_once __DIR__ . '/list_knowledge_categories.php';
+require_once __DIR__ . '/load_content_modules.php';
+require_once __DIR__ . '/save_content_modules.php';
+require_once __DIR__ . '/default_content_modules_dataset.php';
+require_once __DIR__ . '/add_content_module.php';
+require_once __DIR__ . '/update_content_module.php';
+require_once __DIR__ . '/delete_content_module.php';
+require_once __DIR__ . '/duplicate_content_module.php';
+require_once __DIR__ . '/load_content_blueprints.php';
+require_once __DIR__ . '/content_module_usage_summary.php';
+require_once __DIR__ . '/content_module_task_assignments.php';
+require_once __DIR__ . '/content_module_blueprint_from_module.php';
+require_once __DIR__ . '/load_automations.php';
+require_once __DIR__ . '/default_automations_dataset.php';
+require_once __DIR__ . '/add_automation.php';
+require_once __DIR__ . '/update_automation.php';
+require_once __DIR__ . '/delete_automation.php';
+require_once __DIR__ . '/render_setup.php';
+require_once __DIR__ . '/guard_asset.php';
+require_once __DIR__ . '/load_asset_snapshots.php';
+require_once __DIR__ . '/record_dataset_snapshot.php';
+require_once __DIR__ . '/list_dataset_snapshots.php';
+require_once __DIR__ . '/restore_dataset_snapshot.php';
+require_once __DIR__ . '/delete_dataset_snapshot.php';
+require_once __DIR__ . '/load_activity_log.php';
+require_once __DIR__ . '/load_translations.php';
+require_once __DIR__ . '/save_translations.php';
+require_once __DIR__ . '/normalize_translation_token_key.php';
+require_once __DIR__ . '/default_translations_dataset.php';
 
 function fg_public_setup_controller(): void
 {
     fg_bootstrap();
     $current = fg_require_login();
-    fg_guard_asset('assets/php/public/setup_controller.php', [
+    fg_guard_asset('assets/php/setup_controller.php', [
         'role' => $current['role'] ?? null,
         'user_id' => $current['id'] ?? null,
     ]);
@@ -119,6 +130,7 @@ function fg_public_setup_controller(): void
     $errors = [];
     fg_ensure_data_directory();
     $manifest = fg_load_dataset_manifest();
+    $datasets = $manifest;
     $translations = fg_load_translations();
     try {
         $projectStatus = fg_load_project_status();
@@ -199,6 +211,139 @@ function fg_public_setup_controller(): void
         $errors[] = 'Unable to load knowledge category dataset: ' . $exception->getMessage();
         $knowledgeCategories = fg_default_knowledge_categories_dataset();
     }
+
+    try {
+        $contentModules = fg_load_content_modules();
+        if (!isset($contentModules['records']) || !is_array($contentModules['records'])) {
+            $contentModules = fg_default_content_modules_dataset();
+        }
+    } catch (Throwable $exception) {
+        $errors[] = 'Unable to load content module dataset: ' . $exception->getMessage();
+        $contentModules = fg_default_content_modules_dataset();
+    }
+
+    $contentBlueprints = fg_load_content_blueprints();
+    $contentBlueprintFilters = [
+        'query' => '',
+        'format' => '',
+        'formats' => [],
+        'total' => 0,
+        'matches' => 0,
+        'has_filters' => false,
+        'preserved' => [],
+    ];
+    if (isset($contentBlueprints['module_blueprints']) && is_array($contentBlueprints['module_blueprints'])) {
+        $moduleBlueprints = $contentBlueprints['module_blueprints'];
+        $contentBlueprintFilters['total'] = count($moduleBlueprints);
+
+        $formatOptions = [];
+        foreach ($moduleBlueprints as $moduleBlueprint) {
+            if (!is_array($moduleBlueprint)) {
+                continue;
+            }
+            $format = trim((string) ($moduleBlueprint['format'] ?? ''));
+            if ($format === '') {
+                continue;
+            }
+            $formatKey = strtolower($format);
+            if (!isset($formatOptions[$formatKey])) {
+                $formatOptions[$formatKey] = $format;
+            }
+        }
+        if (!empty($formatOptions)) {
+            natcasesort($formatOptions);
+            $contentBlueprintFilters['formats'] = array_values($formatOptions);
+        }
+
+        $queryRaw = $_GET['blueprint_query'] ?? '';
+        if (is_array($queryRaw)) {
+            $queryRaw = reset($queryRaw);
+        }
+        $query = trim((string) $queryRaw);
+
+        $formatFilterRaw = $_GET['blueprint_format'] ?? '';
+        if (is_array($formatFilterRaw)) {
+            $formatFilterRaw = reset($formatFilterRaw);
+        }
+        $formatFilter = trim((string) $formatFilterRaw);
+        if ($formatFilter !== '') {
+            $formatFilterKey = strtolower($formatFilter);
+            if (!isset($formatOptions[$formatFilterKey])) {
+                $formatFilter = '';
+            } else {
+                $formatFilter = $formatOptions[$formatFilterKey];
+            }
+        }
+        $contentBlueprintFilters['query'] = $query;
+        $contentBlueprintFilters['format'] = $formatFilter;
+        $contentBlueprintFilters['has_filters'] = ($query !== '') || ($formatFilter !== '');
+
+        $filteredBlueprints = [];
+        foreach ($moduleBlueprints as $moduleBlueprint) {
+            if (!is_array($moduleBlueprint)) {
+                continue;
+            }
+
+            $blueprintFormat = trim((string) ($moduleBlueprint['format'] ?? ''));
+            if ($formatFilter !== '' && strcasecmp($blueprintFormat, $formatFilter) !== 0) {
+                continue;
+            }
+
+            if ($query !== '') {
+                $haystackParts = [
+                    (string) ($moduleBlueprint['title'] ?? ''),
+                    $blueprintFormat,
+                    (string) ($moduleBlueprint['description'] ?? ''),
+                ];
+                foreach ($moduleBlueprint['fields'] ?? [] as $field) {
+                    if (!is_array($field)) {
+                        $haystackParts[] = (string) $field;
+                        continue;
+                    }
+                    $haystackParts[] = (string) ($field['title'] ?? '');
+                    $haystackParts[] = (string) ($field['description'] ?? '');
+                }
+                $haystack = implode(' ', array_filter(array_map(static function ($value) {
+                    return trim((string) $value);
+                }, $haystackParts), static function ($value) {
+                    return $value !== '';
+                }));
+
+                if ($haystack === '' || stripos($haystack, $query) === false) {
+                    continue;
+                }
+            }
+
+            $filteredBlueprints[] = $moduleBlueprint;
+        }
+
+        $contentBlueprintFilters['matches'] = count($filteredBlueprints);
+        $contentBlueprints['module_blueprints_filtered'] = $filteredBlueprints;
+
+        $preservedQuery = [];
+        foreach ($_GET as $key => $value) {
+            if (in_array($key, ['blueprint_query', 'blueprint_format'], true)) {
+                continue;
+            }
+            if (is_scalar($value)) {
+                $preservedQuery[$key] = (string) $value;
+            }
+        }
+        $contentBlueprintFilters['preserved'] = $preservedQuery;
+    } else {
+        $contentBlueprints['module_blueprints'] = [];
+        $contentBlueprints['module_blueprints_filtered'] = [];
+    }
+    $contentBlueprints['filters'] = $contentBlueprintFilters;
+    $contentModuleUsage = fg_content_module_usage_summary([
+        'statuses' => ['active', 'draft', 'archived'],
+    ]);
+    $contentModuleAssignments = fg_content_module_task_assignments([
+        'modules' => $contentModules['records'] ?? [],
+    ]);
+    $contentModuleBlueprintPreview = '';
+    $contentModuleBlueprintMeta = [];
+    $contentModuleBlueprintRequest = '';
 
     try {
         $automations = fg_load_automations();
@@ -988,6 +1133,318 @@ function fg_public_setup_controller(): void
                         $errors[] = $exception->getMessage();
                     }
                 }
+            }
+        } elseif (in_array($action, ['create_content_module', 'update_content_module', 'delete_content_module', 'duplicate_content_module', 'export_content_module_blueprint', 'adopt_content_blueprint'], true)) {
+            try {
+                $contentModules = fg_load_content_modules();
+                if (!isset($contentModules['records']) || !is_array($contentModules['records'])) {
+                    $contentModules = fg_default_content_modules_dataset();
+                    fg_save_content_modules($contentModules);
+                }
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to load content module dataset: ' . $exception->getMessage();
+                $contentModules = fg_default_content_modules_dataset();
+            }
+
+            if ($action === 'delete_content_module') {
+                $moduleId = (int) ($_POST['module_id'] ?? 0);
+                if ($moduleId <= 0) {
+                    $errors[] = 'Unknown module selected for deletion.';
+                } else {
+                    try {
+                        if (fg_delete_content_module($moduleId)) {
+                            $message = 'Content module deleted successfully.';
+                        } else {
+                            $errors[] = 'Content module could not be deleted or no longer exists.';
+                        }
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'duplicate_content_module') {
+                $moduleId = (int) ($_POST['module_id'] ?? 0);
+                if ($moduleId <= 0) {
+                    $errors[] = 'Unknown module selected for duplication.';
+                } else {
+                    try {
+                        $duplicate = fg_duplicate_content_module($moduleId);
+                        if ($duplicate !== null) {
+                            $duplicateLabel = trim((string) ($duplicate['label'] ?? 'Content module copy'));
+                            if ($duplicateLabel === '') {
+                                $duplicateLabel = 'Content module copy';
+                            }
+                            $message = 'Content module duplicated as "' . $duplicateLabel . '".';
+                        } else {
+                            $errors[] = 'Content module could not be duplicated or no longer exists.';
+                        }
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                    }
+                }
+            } elseif ($action === 'export_content_module_blueprint') {
+                $moduleId = (int) ($_POST['module_id'] ?? 0);
+                if ($moduleId <= 0) {
+                    $errors[] = 'Unknown module selected for blueprint export.';
+                } else {
+                    $records = $contentModules['records'] ?? [];
+                    $module = null;
+                    foreach ($records as $record) {
+                        if ((int) ($record['id'] ?? 0) === $moduleId) {
+                            $module = $record;
+                            break;
+                        }
+                    }
+
+                    if ($module === null) {
+                        $errors[] = 'Content module could not be found for blueprint export.';
+                    } else {
+                        try {
+                            $blueprint = fg_content_module_blueprint_from_module($module);
+                            $encoded = json_encode($blueprint, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                            if ($encoded === false) {
+                                $errors[] = 'Unable to encode content module blueprint.';
+                            } else {
+                                $contentModuleBlueprintPreview = $encoded;
+                                $contentModuleBlueprintMeta = [
+                                    'label' => trim((string) ($blueprint['label'] ?? '')),
+                                    'key' => trim((string) ($blueprint['key'] ?? '')),
+                                ];
+                                $displayLabel = $contentModuleBlueprintMeta['label'] !== '' ? $contentModuleBlueprintMeta['label'] : 'Content module';
+                                $message = 'Blueprint generated for "' . $displayLabel . '".';
+                            }
+                        } catch (Throwable $exception) {
+                            $errors[] = 'Unable to generate content module blueprint: ' . $exception->getMessage();
+                        }
+                    }
+                }
+            } else {
+                $shouldCreateModule = true;
+                $blueprintRaw = '';
+                $payload = [
+                    'label' => $_POST['label'] ?? '',
+                    'dataset' => $_POST['dataset'] ?? 'posts',
+                    'format' => $_POST['format'] ?? '',
+                    'description' => $_POST['description'] ?? '',
+                    'categories' => $_POST['categories'] ?? [],
+                    'fields' => $_POST['fields'] ?? [],
+                    'tasks' => $_POST['tasks'] ?? [],
+                    'profile_prompts' => $_POST['profile_prompts'] ?? [],
+                    'wizard_steps' => $_POST['wizard_steps'] ?? [],
+                    'micro_guides' => $_POST['micro_guides'] ?? [],
+                    'macro_guides' => $_POST['macro_guides'] ?? [],
+                    'css_tokens' => $_POST['css_tokens'] ?? [],
+                    'relationships' => $_POST['relationships'] ?? [],
+                    'status' => $_POST['status'] ?? 'active',
+                    'visibility' => $_POST['visibility'] ?? 'members',
+                    'allowed_roles' => $_POST['allowed_roles'] ?? [],
+                ];
+
+                if ($action === 'adopt_content_blueprint') {
+                    $blueprintRaw = (string) ($_POST['blueprint'] ?? '');
+                    $contentModuleBlueprintRequest = $blueprintRaw;
+                    $trimmedBlueprint = trim($blueprintRaw);
+
+                    if ($trimmedBlueprint === '') {
+                        $errors[] = 'Blueprint JSON is required to import a content module.';
+                        $shouldCreateModule = false;
+                    } else {
+                        $decoded = json_decode($trimmedBlueprint, true);
+                        if (!is_array($decoded)) {
+                            $errors[] = 'Blueprint JSON could not be decoded. Confirm the payload is valid JSON before importing it.';
+                            $shouldCreateModule = false;
+                        } else {
+                            $contentModuleBlueprintRequest = '';
+
+                            $payload['label'] = $decoded['label'] ?? ($decoded['title'] ?? 'Content module');
+                            $payload['description'] = $decoded['description'] ?? ($decoded['summary'] ?? '');
+                            $payload['format'] = $decoded['format'] ?? '';
+                            if (!empty($decoded['categories']) && is_array($decoded['categories'])) {
+                                $payload['categories'] = $decoded['categories'];
+                            }
+                            if (!empty($decoded['fields']) && is_array($decoded['fields'])) {
+                                $payload['fields'] = array_map(static function (array $field): string {
+                                    $label = trim((string) ($field['label'] ?? ($field['title'] ?? '')));
+                                    $description = trim((string) ($field['description'] ?? ''));
+                                    if ($description === '') {
+                                        return $label;
+                                    }
+
+                                    return $label . '|' . $description;
+                                }, $decoded['fields']);
+                            }
+
+                            $blueprintTasks = [];
+                            if (!empty($decoded['tasks']) && is_array($decoded['tasks'])) {
+                                $blueprintTasks = $decoded['tasks'];
+                            } elseif (!empty($decoded['checklists']) && is_array($decoded['checklists'])) {
+                                $blueprintTasks = $decoded['checklists'];
+                            } elseif (!empty($decoded['checklist']) && is_array($decoded['checklist'])) {
+                                $blueprintTasks = $decoded['checklist'];
+                            }
+
+                            if (!empty($blueprintTasks)) {
+                                $payload['tasks'] = array_map(static function ($task): string {
+                                    if (is_array($task)) {
+                                        $label = trim((string) ($task['label'] ?? ($task['title'] ?? '')));
+                                        $description = trim((string) ($task['description'] ?? ($task['prompt'] ?? '')));
+                                        $completed = !empty($task['completed']) || in_array(strtolower(trim((string) ($task['status'] ?? $task['state'] ?? ''))), ['complete', 'completed', 'done', 'finished'], true);
+                                        $parts = [$label];
+                                        if ($description !== '') {
+                                            $parts[] = $description;
+                                        }
+                                        if ($completed) {
+                                            $parts[] = 'complete';
+                                        }
+
+                                        return implode('|', array_filter($parts, static function ($part) {
+                                            return $part !== '';
+                                        }));
+                                    }
+
+                                    return (string) $task;
+                                }, $blueprintTasks);
+                            }
+
+                            if (!empty($decoded['profile_prompts']) && is_array($decoded['profile_prompts'])) {
+                                $payload['profile_prompts'] = array_map(static function (array $prompt): string {
+                                    $label = trim((string) ($prompt['label'] ?? ($prompt['name'] ?? '')));
+                                    $description = trim((string) ($prompt['description'] ?? ''));
+                                    if ($description === '') {
+                                        return $label;
+                                    }
+
+                                    return $label . '|' . $description;
+                                }, $decoded['profile_prompts']);
+                            }
+                            if (!empty($decoded['wizard_steps']) && is_array($decoded['wizard_steps'])) {
+                                $payload['wizard_steps'] = array_map(static function (array $step): string {
+                                    $title = trim((string) ($step['title'] ?? ''));
+                                    $prompt = trim((string) ($step['prompt'] ?? ''));
+                                    if ($prompt === '') {
+                                        return $title;
+                                    }
+
+                                    return $title . '|' . $prompt;
+                                }, $decoded['wizard_steps']);
+                            }
+                            if (!empty($decoded['guides']) && is_array($decoded['guides'])) {
+                                if (!empty($decoded['guides']['micro']) && is_array($decoded['guides']['micro'])) {
+                                    $payload['micro_guides'] = array_map(static function ($guide): string {
+                                        if (is_array($guide)) {
+                                            $title = trim((string) ($guide['title'] ?? $guide['label'] ?? ''));
+                                            $prompt = trim((string) ($guide['prompt'] ?? $guide['description'] ?? ''));
+                                        } else {
+                                            $title = trim((string) $guide);
+                                            $prompt = '';
+                                        }
+                                        if ($title === '') {
+                                            return '';
+                                        }
+                                        if ($prompt === '') {
+                                            return $title;
+                                        }
+
+                                        return $title . '|' . $prompt;
+                                    }, array_filter($decoded['guides']['micro'], static function ($guide) {
+                                        return $guide !== null && $guide !== '';
+                                    }));
+                                }
+                                if (!empty($decoded['guides']['macro']) && is_array($decoded['guides']['macro'])) {
+                                    $payload['macro_guides'] = array_map(static function ($guide): string {
+                                        if (is_array($guide)) {
+                                            $title = trim((string) ($guide['title'] ?? $guide['label'] ?? ''));
+                                            $prompt = trim((string) ($guide['prompt'] ?? $guide['description'] ?? ''));
+                                        } else {
+                                            $title = trim((string) $guide);
+                                            $prompt = '';
+                                        }
+                                        if ($title === '') {
+                                            return '';
+                                        }
+                                        if ($prompt === '') {
+                                            return $title;
+                                        }
+
+                                        return $title . '|' . $prompt;
+                                    }, array_filter($decoded['guides']['macro'], static function ($guide) {
+                                        return $guide !== null && $guide !== '';
+                                    }));
+                                }
+                            }
+                            if (!empty($decoded['css_tokens']) && is_array($decoded['css_tokens'])) {
+                                $payload['css_tokens'] = $decoded['css_tokens'];
+                            }
+                            if (!empty($decoded['relationships'])) {
+                                $relationships = $decoded['relationships'];
+                                if (is_array($relationships)) {
+                                    $payload['relationships'] = array_map(static function ($relationship): string {
+                                        if (is_array($relationship)) {
+                                            $type = trim((string) ($relationship['type'] ?? 'related'));
+                                            if ($type === '') {
+                                                $type = 'related';
+                                            }
+                                            $target = trim((string) ($relationship['module_key'] ?? $relationship['module_reference'] ?? ''));
+                                            if ($target === '') {
+                                                return '';
+                                            }
+                                            $label = trim((string) ($relationship['module_label'] ?? ''));
+                                            $description = trim((string) ($relationship['description'] ?? ''));
+                                            $parts = [$type, $target];
+                                            if ($label !== '' && strcasecmp($label, $target) !== 0) {
+                                                $parts[] = $label;
+                                                if ($description !== '') {
+                                                    $parts[] = $description;
+                                                }
+                                            } elseif ($description !== '') {
+                                                $parts[] = $description;
+                                            }
+
+                                            return implode('|', $parts);
+                                        }
+
+                                        return (string) $relationship;
+                                    }, $relationships);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ($action === 'create_content_module' || ($action === 'adopt_content_blueprint' && $shouldCreateModule)) {
+                    try {
+                        $created = fg_add_content_module($payload);
+                        $message = 'Content module "' . ($created['label'] ?? 'Module') . '" created.';
+                        if ($action === 'adopt_content_blueprint') {
+                            $contentModuleBlueprintRequest = '';
+                        }
+                    } catch (Throwable $exception) {
+                        $errors[] = $exception->getMessage();
+                        if ($action === 'adopt_content_blueprint' && $contentModuleBlueprintRequest === '') {
+                            $contentModuleBlueprintRequest = $blueprintRaw;
+                        }
+                    }
+                } elseif ($action === 'update_content_module') {
+                    $moduleId = (int) ($_POST['module_id'] ?? 0);
+                    if ($moduleId <= 0) {
+                        $errors[] = 'Invalid module identifier supplied.';
+                    } else {
+                        try {
+                            $updated = fg_update_content_module($moduleId, $payload);
+                            if ($updated !== null) {
+                                $message = 'Content module updated successfully.';
+                            } else {
+                                $errors[] = 'Content module not found.';
+                            }
+                        } catch (Throwable $exception) {
+                            $errors[] = $exception->getMessage();
+                        }
+                    }
+                }
+            }
+            try {
+                $contentModules = fg_load_content_modules();
+            } catch (Throwable $exception) {
+                $errors[] = 'Unable to refresh content module dataset: ' . $exception->getMessage();
             }
         } elseif (in_array($action, ['create_project_status', 'update_project_status', 'delete_project_status'], true)) {
             try {
@@ -2089,6 +2546,13 @@ function fg_public_setup_controller(): void
         'knowledge_default_status' => $knowledgeDefaultStatus,
         'knowledge_default_visibility' => $knowledgeDefaultVisibility,
         'knowledge_default_category' => $knowledgeDefaultCategoryId,
+        'content_modules' => $contentModules,
+        'content_blueprints' => $contentBlueprints,
+        'content_module_usage' => $contentModuleUsage,
+        'content_module_assignments' => $contentModuleAssignments,
+        'content_module_blueprint_preview' => $contentModuleBlueprintPreview,
+        'content_module_blueprint_meta' => $contentModuleBlueprintMeta,
+        'content_module_blueprint_request' => $contentModuleBlueprintRequest,
         'feature_request_statuses' => $featureRequestStatusOptions,
         'feature_request_priorities' => $featureRequestPriorityOptions,
         'feature_request_policy' => $featureRequestPolicy,

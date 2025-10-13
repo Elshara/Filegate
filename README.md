@@ -4,9 +4,9 @@ Filegate is a profile-centred social application designed for shared hosting. Ev
 
 ## Key principles
 
-- **Flat-file persistence** – Users, posts, and settings are stored as JSON documents under `assets/json/dynamic`, keeping deployment portable and backup-friendly.
-- **Asset classification** – A manifest in `assets/json/static/datasets.json` labels each dataset as `static` or `dynamic` so the platform can route reads and writes to the correct store automatically.
-- **Function-per-file PHP** – Each reusable routine lives in its own PHP file under `assets/php/{global|pages|public}` so entrypoints load only the logic they need.
+- **Flat-file persistence** – Users, posts, and settings are stored as JSON documents under `assets/json`, keeping deployment portable and backup-friendly.
+- **Asset classification** – A manifest in `assets/json/datasets.json` labels each dataset as `static` or `dynamic` so the platform can route reads and writes to the correct store automatically.
+- **Function-per-file PHP** – Each reusable routine lives in its own PHP file under `assets/php`, keeping entrypoints focused on only the logic they need.
 - **Localized presentation** – Shared styles live in `assets/css`, while each page controller builds its markup on demand to keep the runtime light.
 - **Delegated configuration** – Administrators can rename the network, expose or lock individual settings, and even swap out entire datasets without touching the filesystem.
 - **HTML5-native content** – Profiles and posts accept a wide range of HTML5 elements, allowing creators to publish rich articles, galleries, conversations, or custom post types.
@@ -23,17 +23,13 @@ Filegate is a profile-centred social application designed for shared hosting. Ev
 
 ```
 assets/
-  css/global/          Shared styles served directly from /assets
-  js/global/           Client runtime helpers (AJAX, previews, dataset viewers)
-  json/static/         Manifested metadata (dataset registry, other static assets)
-  json/dynamic/        Flat-file datasets (users, posts, settings)
-  xml/static/          XML descriptors (notification templates, XHTML prototypes)
-  xml/dynamic/         Reserved for future XML datasets
-  php/global/          Global helper functions (one function per file)
-  php/pages/           Localised renderers for feed, settings, and profile views
-  php/public/          HTTP controllers that back the public entrypoints
-  uploads/             Extension-based storage for user attachments
-index.php              Authenticated feed controller (thin wrapper around assets/php/public)
+  css/                Shared styles served directly from /assets
+  js/                 Client runtime helpers (AJAX, previews, dataset viewers)
+  json/               Flat-file datasets (users, posts, settings, manifests)
+  php/                PHP entrypoints, controllers, and helpers (one function per file)
+  xml/                XML descriptors (notification templates, XHTML prototypes)
+  uploads/            Extension-based storage for user attachments
+index.php              Authenticated feed controller (thin wrapper around assets/php)
 login.php              Sign-in form bootstrapper
 logout.php             Session terminator bootstrapper
 media.php              Authenticated attachment streamer bootstrapper
@@ -44,11 +40,15 @@ settings.php           Delegated settings workspace wrapper
 setup.php              Administrative asset setup wrapper
 toggle-like.php        AJAX like/unlike endpoint wrapper
 dataset.php            Authenticated dataset viewer wrapper
+feature-request.php    Feature request workspace wrapper
+bug-report.php         Bug submission wrapper
+knowledge.php          Knowledge base wrapper
+page.php               Static page viewer wrapper
 ```
 
-> **Note:** Each PHP wrapper at the project root simply loads its dedicated controller from `assets/php/public`. The controllers encapsulate the real logic so administrators can configure and override behaviour without duplicating code across multiple directories.
+> **Note:** Each PHP wrapper at the project root simply loads its dedicated script from `assets/php`. The controllers encapsulate the real logic so administrators can configure and override behaviour without duplicating code across multiple directories.
 
-The JavaScript helpers under `assets/js/global` expose a single function each (for example `fg_registerPostPreview`) so that pages can load only the behaviours they need. The client runtime is self-contained—no remote CDNs or APIs are required.
+The JavaScript helpers under `assets/js` expose a single function each (for example `fg_registerPostPreview`) so that pages can load only the behaviours they need. The client runtime is self-contained—no remote CDNs or APIs are required.
 
 ## First run
 
@@ -59,7 +59,7 @@ The JavaScript helpers under `assets/js/global` expose a single function each (f
 
 ## Settings model
 
-Settings are described in `assets/json/dynamic/settings.json` with the following structure:
+Settings are described in `assets/json/settings.json` with the following structure:
 
 - `value` – Current value (string or JSON serialised string via the UI).
 - `managed_by` – `admins`, `everyone`, `custom`, or `none`.
@@ -79,8 +79,9 @@ Every PHP, CSS, JSON, JS, XML, and HTTP controller is catalogued automatically t
 - capture global or role-level overrides that cascade to every user; and
 - create or clear user-specific values without editing flat files; and
 - open the dataset manager to upload replacements, edit payloads, or regenerate seeded defaults for JSON and XML stores.
+- curate **Content modules** built from the XML blueprints so teams can import reusable post types, customise field prompts, and guide publishers with step-by-step wizards.
 
-The setup dashboard mirrors the `assets/php/global` convention by saving each change straight into the flat-file datasets (`asset_configurations.json` and `asset_overrides.json`). As new files are introduced, the manifest is refreshed automatically during bootstrap so the dashboard always reflects the real filesystem.
+The setup dashboard mirrors the `assets/php` convention by saving each change straight into the flat-file datasets (`asset_configurations.json` and `asset_overrides.json`). As new files are introduced, the manifest is refreshed automatically during bootstrap so the dashboard always reflects the real filesystem.
 
 Members with permission to personalise assets will see an **Asset personalisation** section inside `/settings.php`. The UI surfaces the default, global, and role-derived values alongside the active value for each parameter so users can confidently tune their experience without breaking dependent assets.
 
@@ -93,7 +94,7 @@ The setup dashboard now ships with a **Page Management** section dedicated to th
 - delete obsolete pages safely with confirmation prompts; and
 - draft brand-new pages from the browser, seeding content, template, and visibility defaults in one action.
 
-Pages live in `assets/json/dynamic/pages.json` and are seeded with a welcome page by default. The dataset is configurable like any other store—use the dataset manager to inspect the payload or reset to defaults. Each page honours the visibility model (`public`, `members`, or selected roles), and the global navigation automatically surfaces entries marked **Show in navigation** for both authenticated and guest visitors. Members still benefit from per-asset overrides because the renderer participates in the configuration manifest like every other asset.
+Pages live in `assets/json/pages.json` and are seeded with a welcome page by default. The dataset is configurable like any other store—use the dataset manager to inspect the payload or reset to defaults. Each page honours the visibility model (`public`, `members`, or selected roles), and the global navigation automatically surfaces entries marked **Show in navigation** for both authenticated and guest visitors. Members still benefit from per-asset overrides because the renderer participates in the configuration manifest like every other asset.
 
 Visit `/page.php` to see the published list. Linking directly to `/page.php?slug=welcome` (or any custom slug) renders the page using the stored template keyword, and administrators can create additional templates via existing asset tooling to extend the layout catalogue.
 
@@ -120,9 +121,37 @@ Posts are stored with HTML5-friendly bodies plus additional metadata:
 
 The home feed honours privacy and collaborator rules, and collaborators can open posts in edit mode via `/post.php?post=<id>`.
 
-Rich embeds are generated entirely locally using the templates in `assets/json/static/embed_providers.json`. Administrators can disable inline rendering globally through the **Rich Embed Policy** setting; the metadata is still stored with each post so embeds can reappear instantly when the policy is re-enabled.
+Rich embeds are generated entirely locally using the templates in `assets/json/embed_providers.json`. Administrators can disable inline rendering globally through the **Rich Embed Policy** setting; the metadata is still stored with each post so embeds can reappear instantly when the policy is re-enabled.
 
 Statistics follow the **Post Statistics Visibility** setting. When hidden, the values remain in the dataset for analysis without surfacing in the UI.
+
+### Guided content modules
+
+Teams that rely on structured templates can open the **Guided content modules** panel on the home feed to browse curated blueprints sourced from `assets/json/content_modules.json`. Each entry exposes its categories, wizard steps, profile prompts, CSS token references, optional micro/macro guidance, and a shortcut to `/post.php?module=<key>` where members can launch a guided composer.
+
+The module composer preloads the module description, category tags, and type label, then renders every blueprint field as a labelled textarea alongside optional wizard-stage selectors. Micro guides spotlight individual publishing steps while macro guides outline team-level rollouts, so authors understand both immediate tasks and the broader workflow before publishing. Responses are stored directly with the post so the feed renders a dedicated module section—complete with field summaries, stage indicators, guidance summaries, and reference prompts—without touching external APIs.
+
+Modules can also reference one another through relationship mappings. Each relationship records the connection type (`related`, `supports`, `records`, and so on), a target module key, an optional human-friendly label, and guidance about how the two entries collaborate. The feed, module composer, and published posts surface these connections so teams can hop between prerequisite templates, follow-up workflows, and companion formats without leaving Filegate.
+
+Administrators may capture reusable checklists for each module so authors can mark important steps as they publish. Checklist items appear as inline tasks in the guided composer, persist on the post for later editing, and surface on the feed with completion states. Each surface now summarises progress with contextual badges (for example, *Not started*, *In progress*, or *Checklist complete*) plus completion counts so teams can scan status at a glance. Members can store their progress without editing flat files while administrators update task defaults directly from the setup dashboard, which shows the same summaries for every module card.
+
+Checklist tasks now accept optional ownership, due dates, priorities, and notes so administrators can coordinate responsibilities alongside guidance. The setup dashboard and blueprint importer accept the extended `Task|Description|complete|Owner|Due date|Priority|Notes` syntax, and every surface—from the composer to the feed and published posts—highlights due-soon or overdue items with colour-coded badges and metadata.
+
+Members see a dedicated **Assigned module tasks** panel on the feed that aggregates checklists delegated to their profile, highlights overdue or due-soon follow-ups, and links directly to the originating posts. The setup dashboard mirrors the same metrics with a **Task ownership** summary that ranks owners, showcases open workload by module, and bubbles up follow-up tasks so administrators can rebalance responsibilities without combing through individual posts.
+
+Administrators manage module lifecycle directly from **Setup → Content Modules**. Status flags (`active`, `draft`, `archived`) control whether a module appears on the feed, while visibility scopes (`everyone`, `members`, `admins`) and optional role filters keep specialist composers limited to the right teams. The setup dashboard now accepts granular micro and macro guide copy—either handwritten or imported from the XML blueprint library—so operators can codify both immediate prompts and long-form rollout checklists alongside module metadata. Draft and archived modules stay available to editors through their saved snapshots, so in-progress work is never lost while configuration evolves.
+
+When administrators want to branch a template, the same dashboard offers a **Duplicate module** action beside each card. Filegate clones the source module, generates a unique key, resets checklist progress, and saves the copy as a draft so teams can experiment safely before publishing. There’s no need to touch `content_modules.json` by hand—the duplicate appears immediately after the source entry with all relationships, guides, and prompts intact.
+
+Need to reuse a template in another workspace? Select **Generate blueprint** to export the module as prettified JSON. The setup dashboard renders the blueprint in a copy-ready panel, making it simple to check the payload, archive it with the XML libraries, or import it into another Filegate install via the existing blueprint workflow. Administrators can also paste a blueprint payload directly into the **Import blueprint JSON** card—Filegate now validates the JSON before creating a draft module, maps guidance, tasks, relationships, and field prompts automatically, and lets you pick the dataset, visibility, and allowed roles without touching the JSON by hand. The curated blueprint library includes the same controls, so every "Import module" action can target the right dataset, status, and role scope without editing the generated payload first.
+
+Blueprint catalogs can grow quickly, so the setup dashboard now offers library filters that search by title, field prompt, description, or format. Combine the search box with the format selector to jump straight to compatible templates, or reset the filters to browse the entire XML-provided library again.
+
+The creation and edit forms include a **Relationships** textarea that accepts `Type|Module key|Optional label|Optional description` entries—one per line. Filegate normalises each entry, ensuring module keys stay canonical while still preserving descriptive labels and notes. Leave the field empty to skip relationship mapping, or capture multiple lines to expose a full web of related templates in the UI.
+
+Setup also provides a real-time **Checklist coverage** overview that aggregates every post using a guided module. Administrators can review tracked module counts, average completion, overdue and due-soon posts, and recently updated templates without opening the datasets directly. Modules that need attention—because a post is overdue or approaching its due date—are summarised in a follow-up list so teams can jump straight to the right workflow.
+
+Members see the same analytics on the home feed. The guided modules panel now highlights the total number of active checklists, average completion across all guided posts, and a short list of modules that are overdue or due soon. These summaries update automatically as posts are saved, keeping everyone aligned on publishing progress without leaving Filegate.
 
 ## Managing datasets
 
@@ -130,7 +159,7 @@ Administrators can expand the **Dataset Management** section on `/setup.php` to 
 
 The latest release also introduces an `automations` dataset that stores trigger/condition/action metadata for Filegate's local workflow engine. Setup exposes dedicated cards for creating, editing, and deleting automations, while the member feed summarises status counts, priorities, and recent activity so everyone can see which routines are active. The automation dashboard now bundles an inline reference guide, advanced controls that stay tucked behind expandable panels, and stricter validation so malformed conditions or actions are caught before writes land. On the feed, automation summaries use sanitised status badges and call out when additional rules exist beyond the configured display limit.
 
-Before any dataset write lands, Filegate now records the previous payload into the `asset_snapshots` store (`assets/json/dynamic/asset_snapshots.json`). The setup dashboard surfaces the most recent captures for each dataset—complete with timestamps, the member who triggered the change, the original reason, and a trimmed preview. Administrators can create named snapshots on demand, restore an older payload in a single click, or prune redundant snapshots without leaving the browser.
+Before any dataset write lands, Filegate now records the previous payload into the `asset_snapshots` store (`assets/json/asset_snapshots.json`). The setup dashboard surfaces the most recent captures for each dataset—complete with timestamps, the member who triggered the change, the original reason, and a trimmed preview. Administrators can create named snapshots on demand, restore an older payload in a single click, or prune redundant snapshots without leaving the browser.
 
 Snapshot storage honours the dataset manifest’s static/dynamic split and enforces per-dataset limits so shared hosts stay tidy. Restoring a snapshot automatically records the current payload first, making every change reversible from the UI.
 
@@ -140,7 +169,7 @@ The feed and composer use the same client runtime to fetch the HTML5 element ref
 
 ## Events
 
-Events are stored in `assets/json/dynamic/events.json`. Each record captures the title, summary, long-form description, visibility, status (`draft`, `scheduled`, `completed`, `cancelled` by default), scheduled start/end timestamps, timezone hints, location details (with optional URL), host IDs, collaborator IDs, tags, attachment references, and RSVP metadata (policy, limit, supporter IDs). Helper functions under `assets/php/global` handle creation, updates, and deletions while enforcing validation so the dataset stays well-formed.
+Events are stored in `assets/json/events.json`. Each record captures the title, summary, long-form description, visibility, status (`draft`, `scheduled`, `completed`, `cancelled` by default), scheduled start/end timestamps, timezone hints, location details (with optional URL), host IDs, collaborator IDs, tags, attachment references, and RSVP metadata (policy, limit, supporter IDs). Helper functions under `assets/php` handle creation, updates, and deletions while enforcing validation so the dataset stays well-formed.
 
 Administrators manage scheduling from **Setup → Event planning**. The dashboard surfaces:
 
@@ -201,7 +230,7 @@ The generated screenshots (`artifacts/setup-event-manager.png` and `artifacts/fe
 
 ## Polls
 
-Poll data lives in `assets/json/dynamic/polls.json`. Each record stores the question, description, status, visibility, whether multiple selections are allowed, a `max_selections` cap (with `0` representing unlimited picks for multi-select polls), option metadata (including supporter IDs and vote counts), owner role/user hints, timestamps, and optional expiry dates.
+Poll data lives in `assets/json/polls.json`. Each record stores the question, description, status, visibility, whether multiple selections are allowed, a `max_selections` cap (with `0` representing unlimited picks for multi-select polls), option metadata (including supporter IDs and vote counts), owner role/user hints, timestamps, and optional expiry dates.
 
 Administrators manage polls from **Setup → Poll catalogue**, where they can:
 
@@ -210,11 +239,11 @@ Administrators manage polls from **Setup → Poll catalogue**, where they can:
 - toggle multi-select mode, enforce a maximum selection count, or close polls from the same form; and
 - delete or create polls through dedicated forms that automatically normalise option lists and seed IDs.
 
-Creation policies are delegated through the **Poll policy** setting (disabled, members, moderators, admins) alongside defaults for visibility and multi-select behaviour. Non-admins are blocked from accessing the setup dashboard, but the same flat-file dataset backs any future member-facing poll widgets. All saves are written via the poll helper functions in `assets/php/global`, so audit logging and dataset snapshots continue to track every change.
+Creation policies are delegated through the **Poll policy** setting (disabled, members, moderators, admins) alongside defaults for visibility and multi-select behaviour. Non-admins are blocked from accessing the setup dashboard, but the same flat-file dataset backs any future member-facing poll widgets. All saves are written via the poll helper functions in `assets/php`, so audit logging and dataset snapshots continue to track every change.
 
 ## Bug reports
 
-Bug submissions live in `assets/json/dynamic/bug_reports.json`. Each entry tracks the title, summary, rich details, status, severity, visibility, reporter, optional owner, tags, reproduction steps, affected versions, reference links, attachments, watcher IDs, and timestamps for creation, updates, and activity.
+Bug submissions live in `assets/json/bug_reports.json`. Each entry tracks the title, summary, rich details, status, severity, visibility, reporter, optional owner, tags, reproduction steps, affected versions, reference links, attachments, watcher IDs, and timestamps for creation, updates, and activity.
 
 Administrators moderate issues from **Setup → Bug report manager**, which surfaces:
 
@@ -227,7 +256,7 @@ Members see a condensed bug tracker on the feed that honours the submission poli
 
 ## Roadmap tracking
 
-Filegate seeds `assets/json/dynamic/project_status.json` with representative milestones so operators can document what is built, in progress, or still planned without touching the filesystem. Administrators curate the roadmap from **Setup → Roadmap tracker**, where they can:
+Filegate seeds `assets/json/project_status.json` with representative milestones so operators can document what is built, in progress, or still planned without touching the filesystem. Administrators curate the roadmap from **Setup → Roadmap tracker**, where they can:
 
 - capture entries with titles, categories, milestones, and summaries that explain the initiative;
 - assign ownership to specific roles or profiles and define the desired status (`Built`, `In progress`, `Planned`, or `On hold`);
@@ -238,22 +267,22 @@ Every save updates the flat-file dataset, records an activity event, and keeps t
 
 ## Knowledge base
 
-Knowledge articles live in `assets/json/dynamic/knowledge_base.json`. Each record stores a slug, title, summary, HTML/XHTML body, visibility, status, template keyword, optional attachments, and an optional `category_id`. Categories are managed separately in `assets/json/dynamic/knowledge_categories.json`, allowing you to organise guides into browsable collections without editing PHP.
+Knowledge articles live in `assets/json/knowledge_base.json`. Each record stores a slug, title, summary, HTML/XHTML body, visibility, status, template keyword, optional attachments, and an optional `category_id`. Categories are managed separately in `assets/json/knowledge_categories.json`, allowing you to organise guides into browsable collections without editing PHP.
 
 Administrators curate entries from **Setup → Knowledge base**, where they can:
 
 - review status totals, top tags, category usage, and article metadata from a single dashboard;
 - edit titles, content, visibility, templates, categories, and attachments through browser forms;
 - assign authors, adjust tags, archive articles, or move them between categories without touching JSON; and
-- create new guides with sensible defaults seeded from `assets/php/global/default_knowledge_base_dataset.php` and `assets/php/global/default_knowledge_categories_dataset.php`.
+- create new guides with sensible defaults seeded from `assets/php/default_knowledge_base_dataset.php` and `assets/php/default_knowledge_categories_dataset.php`.
 
 The same setup screen also exposes category management cards so admins can add, reorder, hide, or delete categories—complete with audit logging and automatic detachment from affected articles.
 
-Members and guests can browse `/knowledge.php`, filter by tag or category, run keyword searches, and open individual articles rendered by `assets/php/pages/render_knowledge_base.php`. The feed surfaces a summary panel that honours visibility rules, while admins can tune behaviour (default tag, default category, tag cloud visibility, category filter availability, listing limits) via asset configuration overrides.
+Members and guests can browse `/knowledge.php`, filter by tag or category, run keyword searches, and open individual articles rendered by `assets/php/render_knowledge_base.php`. The feed surfaces a summary panel that honours visibility rules, while admins can tune behaviour (default tag, default category, tag cloud visibility, category filter availability, listing limits) via asset configuration overrides.
 
 ## Feature request board
 
-Ideas, enhancements, and operational chores sit alongside roadmap items in `assets/json/dynamic/feature_requests.json`. Administrators open **Setup → Feature request catalogue** to:
+Ideas, enhancements, and operational chores sit alongside roadmap items in `assets/json/feature_requests.json`. Administrators open **Setup → Feature request catalogue** to:
 
 - review status and priority chips that summarise how many ideas are open, researching, planned, in progress, completed, or declined;
 - edit individual requests with forms for titles, summaries, detailed briefs, visibility, impact, effort, tags, requestor/owner assignments, and supporter lists without touching the file system;
@@ -264,7 +293,7 @@ Statuses, priorities, the submission policy, and default visibility are all conf
 
 ## Changelog management
 
-Releases, fixes, and operational changes live in `assets/json/dynamic/changelog.json`. Administrators can open **Setup → Changelog** to:
+Releases, fixes, and operational changes live in `assets/json/changelog.json`. Administrators can open **Setup → Changelog** to:
 
 - publish entries with titles, summaries, long-form bodies, and highlight toggles so important updates stand out on the feed,
 - categorise each change as a release, improvement, fix, announcement, or breaking change, and control whether it is visible to everyone, signed-in members, or administrators,
@@ -287,8 +316,8 @@ The activity history is captured before and after snapshot restores, dataset res
 
 Colour palettes live entirely in flat files so hosts without shell access can still rebrand Filegate.
 
-- `assets/json/dynamic/themes.json` stores named presets, each of which defines values for the published theme tokens.
-- `assets/json/static/theme_tokens.json` documents every token, its description, default colour, and the CSS variable the runtime will update.
+- `assets/json/themes.json` stores named presets, each of which defines values for the published theme tokens.
+- `assets/json/theme_tokens.json` documents every token, its description, default colour, and the CSS variable the runtime will update.
 - Administrators manage presets from `/setup.php`. Each theme card includes live previews, reset helpers, and buttons for setting or removing the default palette.
 - Creating a new theme happens directly in the browser—enter a key, adjust the token colours, and Filegate writes the dataset for you.
 - Members can opt into personal palettes from `/settings.php` when the **Theme Personalisation Policy** setting is enabled. Changes apply instantly thanks to the `fg_registerThemePreview` helper.
@@ -298,9 +327,9 @@ Colour palettes live entirely in flat files so hosts without shell access can st
 
 Filegate keeps notification metadata in flat files so delivery agents can operate without remote APIs.
 
-- `assets/json/static/notification_channels.json` defines the available transports (email, browser push, cookie banner, file-cache) and their capabilities.
-- `assets/xml/static/notification_templates.xml` stores channel-specific subjects and bodies; admins may extend it with additional `<template>` nodes.
-- `assets/json/dynamic/notifications.json` is the delivery queue written by post creation and updates.
+- `assets/json/notification_channels.json` defines the available transports (email, browser push, cookie banner, file-cache) and their capabilities.
+- `assets/xml/notification_templates.xml` stores channel-specific subjects and bodies; admins may extend it with additional `<template>` nodes.
+- `assets/json/notifications.json` is the delivery queue written by post creation and updates.
 - `assets/uploads/<extension>` holds binary attachments that can be referenced inside notification payloads.
 
 The **Default Notification Channels** and **Notification Cache Driver** settings in `/settings.php` decide which transports are queued automatically and whether file-based caching is active. For Apache hosts you can add caching or cookie headers via `.htaccess`; for Nginx, mirror those directives inside your server block (e.g. caching `/assets/uploads/` and exposing the `media.php` download endpoint).

@@ -6,13 +6,18 @@ function fg_ensure_data_directory(): void
 {
     $paths = [];
     foreach (['json', 'xml'] as $format) {
+        $base = fg_data_directory('dynamic', $format);
+        $paths[] = $base;
+
         foreach (['static', 'dynamic'] as $nature) {
-            $paths[] = fg_data_directory($nature, $format);
+            $legacy = __DIR__ . '/../' . $format . '/' . $nature;
+            if (is_dir($legacy)) {
+                $paths[] = $legacy;
+            }
         }
     }
 
-    $paths[] = dirname(fg_data_directory('dynamic', 'json'));
-    $paths[] = __DIR__ . '/../../uploads';
+    $paths[] = __DIR__ . '/../uploads';
 
     foreach ($paths as $directory) {
         if (!is_dir($directory)) {

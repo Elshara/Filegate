@@ -1,23 +1,28 @@
 <?php
 
-require_once __DIR__ . '/../global/load_posts.php';
-require_once __DIR__ . '/../global/find_user_by_id.php';
-require_once __DIR__ . '/../global/get_setting.php';
-require_once __DIR__ . '/../global/render_post_body.php';
-require_once __DIR__ . '/../global/load_template_options.php';
-require_once __DIR__ . '/../global/load_editor_options.php';
-require_once __DIR__ . '/../global/load_notification_channels.php';
-require_once __DIR__ . '/../global/translate.php';
-require_once __DIR__ . '/../global/load_project_status.php';
-require_once __DIR__ . '/../global/load_changelog.php';
-require_once __DIR__ . '/../global/load_feature_requests.php';
-require_once __DIR__ . '/../global/load_bug_reports.php';
-require_once __DIR__ . '/../global/load_events.php';
-require_once __DIR__ . '/../global/load_automations.php';
-require_once __DIR__ . '/../global/default_automations_dataset.php';
-require_once __DIR__ . '/../global/filter_knowledge_articles.php';
-require_once __DIR__ . '/../global/list_knowledge_categories.php';
-require_once __DIR__ . '/../global/get_asset_parameter_value.php';
+require_once __DIR__ . '/load_posts.php';
+require_once __DIR__ . '/find_user_by_id.php';
+require_once __DIR__ . '/get_setting.php';
+require_once __DIR__ . '/render_post_body.php';
+require_once __DIR__ . '/load_template_options.php';
+require_once __DIR__ . '/load_editor_options.php';
+require_once __DIR__ . '/load_notification_channels.php';
+require_once __DIR__ . '/translate.php';
+require_once __DIR__ . '/load_project_status.php';
+require_once __DIR__ . '/load_changelog.php';
+require_once __DIR__ . '/load_feature_requests.php';
+require_once __DIR__ . '/load_bug_reports.php';
+require_once __DIR__ . '/load_events.php';
+require_once __DIR__ . '/load_automations.php';
+require_once __DIR__ . '/default_automations_dataset.php';
+require_once __DIR__ . '/filter_knowledge_articles.php';
+require_once __DIR__ . '/list_knowledge_categories.php';
+require_once __DIR__ . '/get_asset_parameter_value.php';
+require_once __DIR__ . '/list_content_modules.php';
+require_once __DIR__ . '/content_module_task_progress.php';
+require_once __DIR__ . '/content_module_usage_summary.php';
+require_once __DIR__ . '/content_module_task_assignments.php';
+require_once __DIR__ . '/normalize_content_module_key.php';
 
 function fg_render_feed(array $viewer): string
 {
@@ -1257,6 +1262,512 @@ function fg_render_feed(array $viewer): string
     $html .= '</form></section>';
     $html .= '<section class="panel preview-panel" id="composer-preview" data-preview-output hidden><h2>Live preview</h2><div class="preview-body" data-preview-body><div class="preview-placeholder">Start writing to see your live preview, embeds, and statistics.</div></div><div class="preview-embeds" data-preview-embeds hidden></div><dl class="preview-statistics" data-preview-stats hidden></dl><ul class="preview-attachments" data-upload-list hidden></ul></section>';
 
+    $post_modules = fg_list_content_modules('posts', [
+        'viewer' => $viewer,
+        'enforce_visibility' => true,
+        'statuses' => ['active'],
+    ]);
+    if (!empty($post_modules)) {
+        $taskToday = strtotime('today');
+        if ($taskToday === false) {
+            $taskToday = strtotime(date('Y-m-d'));
+        }
+        if ($taskToday === false) {
+            $taskToday = time();
+        }
+        $taskSoonThreshold = $taskToday + (3 * 86400);
+        $html .= '<section class="panel content-modules-panel">';
+        $html .= '<h2>Guided content modules</h2>';
+        $html .= '<p class="content-modules-intro">Launch guided composers for curated post types, complete with categories, field prompts, and wizard stages.</p>';
+        $moduleUsage = fg_content_module_usage_summary([
+            'modules' => $post_modules,
+            'posts' => ['records' => $records],
+        ]);
+        $moduleUsageTotals = $moduleUsage['totals'] ?? [];
+        $moduleUsageEntries = $moduleUsage['modules'] ?? [];
+        if (!is_array($moduleUsageEntries)) {
+            $moduleUsageEntries = [];
+        }
+        $trackedPosts = (int) ($moduleUsageTotals['posts'] ?? 0);
+        $completedPosts = (int) ($moduleUsageTotals['posts_completed'] ?? 0);
+        $overduePosts = (int) ($moduleUsageTotals['posts_overdue'] ?? 0);
+        $dueSoonPosts = (int) ($moduleUsageTotals['posts_due_soon'] ?? 0);
+
+        $moduleAssignments = fg_content_module_task_assignments([
+            'modules' => $post_modules,
+            'posts' => ['records' => $records],
+        ]);
+        if (!is_array($moduleAssignments)) {
+            $moduleAssignments = ['owners' => [], 'totals' => []];
+        }
+        $viewerAssignmentEntries = [];
+        $viewerTokens = [];
+        foreach (['display_name', 'full_name', 'username', 'email'] as $tokenField) {
+            if (empty($viewer[$tokenField])) {
+                continue;
+            }
+            $value = trim((string) $viewer[$tokenField]);
+            if ($value === '') {
+                continue;
+            }
+            $viewerTokens[] = strtolower($value);
+            $viewerTokens[] = fg_normalize_content_module_key($value);
+        }
+        $viewerTokens = array_values(array_unique(array_filter($viewerTokens, static function ($token) {
+            return is_string($token) && $token !== '';
+        })));
+        if (!empty($viewerTokens)) {
+            $assignmentOwners = $moduleAssignments['owners'] ?? [];
+            if (!is_array($assignmentOwners)) {
+                $assignmentOwners = [];
+            }
+            foreach ($assignmentOwners as $ownerEntry) {
+                if (!is_array($ownerEntry)) {
+                    continue;
+                }
+                $ownerTokens = $ownerEntry['match_tokens'] ?? [];
+                if (!is_array($ownerTokens)) {
+                    $ownerTokens = [];
+                }
+                $ownerTokens = array_values(array_unique(array_filter(array_map(static function ($token) {
+                    return strtolower((string) $token);
+                }, $ownerTokens), static function ($token) {
+                    return $token !== '';
+                })));
+                $matched = false;
+                foreach ($ownerTokens as $ownerToken) {
+                    if (in_array($ownerToken, $viewerTokens, true)) {
+                        $matched = true;
+                        break;
+                    }
+                }
+                if ($matched) {
+                    $viewerAssignmentEntries[] = $ownerEntry;
+                }
+            }
+        }
+
+        $averageCompletionAccumulator = 0.0;
+        $averageCompletionModules = 0;
+        foreach ($moduleUsageEntries as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+            $averageCompletionAccumulator += (float) ($entry['percent_average'] ?? 0.0);
+            $averageCompletionModules++;
+        }
+        $averageCompletion = $averageCompletionModules > 0 ? $averageCompletionAccumulator / $averageCompletionModules : 0.0;
+        $averageCompletion = max(0.0, min(100.0, $averageCompletion));
+        $averageCompletionLabel = rtrim(rtrim(sprintf('%.1f', $averageCompletion), '0'), '.');
+        if ($averageCompletionLabel === '') {
+            $averageCompletionLabel = '0';
+        }
+        $averageCompletionLabel .= '%';
+
+        $attentionModules = array_values(array_filter($moduleUsageEntries, static function ($entry) {
+            return is_array($entry) && in_array($entry['attention_state'] ?? '', ['overdue', 'due_soon'], true);
+        }));
+
+        $html .= '<div class="content-module-summary">';
+        $html .= '<p class="content-module-overview">' . htmlspecialchars(number_format($trackedPosts)) . ' guided ' . ($trackedPosts === 1 ? 'post' : 'posts') . ' · ' . htmlspecialchars(number_format($completedPosts)) . ' complete · Average completion ' . htmlspecialchars($averageCompletionLabel) . '</p>';
+        if ($overduePosts > 0 || $dueSoonPosts > 0) {
+            $attentionBits = [];
+            if ($overduePosts > 0) {
+                $attentionBits[] = htmlspecialchars(number_format($overduePosts)) . ' overdue';
+            }
+            if ($dueSoonPosts > 0) {
+                $attentionBits[] = htmlspecialchars(number_format($dueSoonPosts)) . ' due soon';
+            }
+            $html .= '<p class="content-module-alert-summary">' . implode(' · ', $attentionBits) . '</p>';
+        } elseif ($trackedPosts > 0) {
+            $html .= '<p class="content-module-alert-summary ok">All tracked checklists are on schedule.</p>';
+        }
+        if (!empty($attentionModules)) {
+            $html .= '<ul class="content-module-alert-list">';
+            $attentionPreview = array_slice($attentionModules, 0, 3);
+            foreach ($attentionPreview as $entry) {
+                if (!is_array($entry)) {
+                    continue;
+                }
+                $stateClass = 'state-' . htmlspecialchars($entry['attention_state'] ?? 'idle');
+                $html .= '<li class="content-module-alert-item ' . $stateClass . '">';
+                $html .= '<strong>' . htmlspecialchars($entry['label'] ?? $entry['key'] ?? 'Module') . '</strong>';
+                $html .= '<span class="content-module-alert-status">' . htmlspecialchars($entry['attention_label'] ?? '') . '</span>';
+                if (!empty($entry['last_activity_display'])) {
+                    $html .= '<span class="content-module-alert-meta">Updated ' . htmlspecialchars($entry['last_activity_display']) . '</span>';
+                }
+                $html .= '</li>';
+            }
+            if (count($attentionModules) > count($attentionPreview)) {
+                $remaining = count($attentionModules) - count($attentionPreview);
+                $html .= '<li class="content-module-alert-item more">+' . htmlspecialchars(number_format($remaining)) . ' more module' . ($remaining === 1 ? '' : 's') . ' need attention</li>';
+            }
+            $html .= '</ul>';
+        }
+        $html .= '</div>';
+        if (!empty($viewerAssignmentEntries)) {
+            $viewerAssignmentTotals = [
+                'tasks' => 0,
+                'completed' => 0,
+                'pending' => 0,
+                'due_soon' => 0,
+                'overdue' => 0,
+            ];
+            $viewerAttention = [];
+            foreach ($viewerAssignmentEntries as $assignmentEntry) {
+                $viewerAssignmentTotals['tasks'] += (int) ($assignmentEntry['tasks_total'] ?? 0);
+                $viewerAssignmentTotals['completed'] += (int) ($assignmentEntry['tasks_completed'] ?? 0);
+                $viewerAssignmentTotals['pending'] += (int) ($assignmentEntry['tasks_pending'] ?? 0);
+                $viewerAssignmentTotals['due_soon'] += (int) ($assignmentEntry['tasks_due_soon'] ?? 0);
+                $viewerAssignmentTotals['overdue'] += (int) ($assignmentEntry['tasks_overdue'] ?? 0);
+                $attentionTasks = $assignmentEntry['attention_tasks'] ?? [];
+                if (!is_array($attentionTasks)) {
+                    $attentionTasks = [];
+                }
+                foreach ($attentionTasks as $task) {
+                    if (!is_array($task)) {
+                        continue;
+                    }
+                    $task['owner_label'] = $assignmentEntry['label'] ?? $assignmentEntry['key'] ?? 'Owner';
+                    $viewerAttention[] = $task;
+                }
+            }
+            usort($viewerAttention, static function ($a, $b) {
+                $stateOrder = ['overdue' => 0, 'due-soon' => 1, 'pending' => 2, 'complete' => 3];
+                $stateA = $stateOrder[$a['state'] ?? 'pending'] ?? 4;
+                $stateB = $stateOrder[$b['state'] ?? 'pending'] ?? 4;
+                if ($stateA !== $stateB) {
+                    return $stateA <=> $stateB;
+                }
+                $dueA = $a['due_timestamp'] ?? PHP_INT_MAX;
+                $dueB = $b['due_timestamp'] ?? PHP_INT_MAX;
+                if ($dueA !== $dueB) {
+                    return $dueA <=> $dueB;
+                }
+                return strcmp(strtolower((string) ($a['label'] ?? '')), strtolower((string) ($b['label'] ?? '')));
+            });
+            $attentionPreview = array_slice($viewerAttention, 0, 5);
+
+            $html .= '<div class="content-module-assignments">';
+            $html .= '<h3>Assigned module tasks</h3>';
+            $summaryBits = [];
+            $summaryBits[] = htmlspecialchars(number_format($viewerAssignmentTotals['tasks_pending'])) . ' open';
+            if ($viewerAssignmentTotals['overdue'] > 0) {
+                $summaryBits[] = htmlspecialchars(number_format($viewerAssignmentTotals['overdue'])) . ' overdue';
+            }
+            if ($viewerAssignmentTotals['due_soon'] > 0) {
+                $summaryBits[] = htmlspecialchars(number_format($viewerAssignmentTotals['due_soon'])) . ' due soon';
+            }
+            if ($viewerAssignmentTotals['completed'] > 0) {
+                $summaryBits[] = htmlspecialchars(number_format($viewerAssignmentTotals['completed'])) . ' complete';
+            }
+            $html .= '<p class="assignment-summary">' . implode(' · ', $summaryBits) . '</p>';
+
+            if (!empty($attentionPreview)) {
+                $html .= '<ul class="assignment-list">';
+                foreach ($attentionPreview as $task) {
+                    if (!is_array($task)) {
+                        continue;
+                    }
+                    $stateClass = 'state-' . htmlspecialchars($task['state'] ?? 'pending');
+                    $taskLabel = trim((string) ($task['label'] ?? 'Checklist task'));
+                    $dueDisplay = trim((string) ($task['due_display'] ?? ''));
+                    $moduleLabel = trim((string) ($task['module_label'] ?? $task['module_key'] ?? 'Module'));
+                    $postUrl = trim((string) ($task['post_url'] ?? ''));
+                    $ownerLabel = trim((string) ($task['owner_label'] ?? ''));
+                    $html .= '<li class="assignment-item ' . $stateClass . '">';
+                    $html .= '<strong>' . htmlspecialchars($taskLabel) . '</strong>';
+                    if ($ownerLabel !== '') {
+                        $html .= '<span class="assignment-owner">' . htmlspecialchars($ownerLabel) . '</span>';
+                    }
+                    if ($moduleLabel !== '') {
+                        $html .= '<span class="assignment-module">' . htmlspecialchars($moduleLabel) . '</span>';
+                    }
+                    if ($dueDisplay !== '') {
+                        $html .= '<span class="assignment-due">Due ' . htmlspecialchars($dueDisplay) . '</span>';
+                    }
+                    if (!empty($task['priority_label'])) {
+                        $html .= '<span class="assignment-priority">' . htmlspecialchars($task['priority_label']) . '</span>';
+                    }
+                    if ($postUrl !== '') {
+                        $html .= '<a class="assignment-link" href="' . htmlspecialchars($postUrl) . '">Open post</a>';
+                    }
+                    $html .= '</li>';
+                }
+                if (count($viewerAttention) > count($attentionPreview)) {
+                    $remaining = count($viewerAttention) - count($attentionPreview);
+                    $html .= '<li class="assignment-item more">+' . htmlspecialchars(number_format($remaining)) . ' more task' . ($remaining === 1 ? '' : 's') . '</li>';
+                }
+                $html .= '</ul>';
+            } else {
+                $html .= '<p class="assignment-empty">All assigned tasks are complete.</p>';
+            }
+            $html .= '</div>';
+        }
+        $html .= '<ul class="content-module-list">';
+        foreach ($post_modules as $module) {
+            if (!is_array($module)) {
+                continue;
+            }
+            $label = $module['label'] ?? ($module['key'] ?? 'Module');
+            $description = trim((string) ($module['description'] ?? ''));
+            $format = trim((string) ($module['format'] ?? ''));
+            $categories = $module['categories'] ?? [];
+            if (!is_array($categories)) {
+                $categories = [];
+            }
+            $wizard_steps = $module['wizard_steps'] ?? [];
+            if (!is_array($wizard_steps)) {
+                $wizard_steps = [];
+            }
+            $moduleTasksRaw = $module['tasks'] ?? [];
+            if (!is_array($moduleTasksRaw)) {
+                $moduleTasksRaw = [];
+            }
+            $moduleTasks = [];
+            foreach ($moduleTasksRaw as $task) {
+                if (!is_array($task)) {
+                    continue;
+                }
+                $taskLabel = trim((string) ($task['label'] ?? ''));
+                if ($taskLabel === '') {
+                    continue;
+                }
+                $taskDescription = trim((string) ($task['description'] ?? ''));
+                $owner = trim((string) ($task['owner'] ?? ''));
+                $dueDisplay = trim((string) ($task['due_display'] ?? ($task['due_date'] ?? '')));
+                $priorityLabel = trim((string) ($task['priority_label'] ?? ($task['priority'] ?? '')));
+                $notes = trim((string) ($task['notes'] ?? ''));
+                $completed = !empty($task['completed']);
+                $dueTimestamp = isset($task['due_timestamp']) && is_numeric($task['due_timestamp']) ? (int) $task['due_timestamp'] : null;
+
+                $state = 'pending';
+                $stateLabel = 'Pending';
+                if ($completed) {
+                    $state = 'complete';
+                    $stateLabel = 'Completed';
+                } elseif ($dueTimestamp !== null) {
+                    if ($dueTimestamp < $taskToday) {
+                        $state = 'overdue';
+                        $stateLabel = 'Overdue';
+                    } elseif ($dueTimestamp <= $taskSoonThreshold) {
+                        $state = 'due-soon';
+                        $stateLabel = 'Due soon';
+                    }
+                }
+
+                $metaBits = [];
+                if ($owner !== '') {
+                    $metaBits[] = 'Owner: ' . $owner;
+                }
+                if ($dueDisplay !== '') {
+                    $metaBits[] = 'Due: ' . $dueDisplay;
+                }
+                if ($priorityLabel !== '') {
+                    $metaBits[] = $priorityLabel;
+                }
+
+                $moduleTasks[] = [
+                    'label' => $taskLabel,
+                    'description' => $taskDescription,
+                    'state' => $state,
+                    'state_label' => $stateLabel,
+                    'meta' => $metaBits,
+                    'notes' => $notes,
+                ];
+            }
+            $moduleGuides = $module['guides'] ?? [];
+            if (!is_array($moduleGuides)) {
+                $moduleGuides = [];
+            }
+            $microGuides = [];
+            foreach (($moduleGuides['micro'] ?? []) as $guide) {
+                if (is_array($guide)) {
+                    $title = trim((string) ($guide['title'] ?? ''));
+                    $prompt = trim((string) ($guide['prompt'] ?? ''));
+                    $microGuides[] = [$title, $prompt];
+                } elseif (is_string($guide) && trim($guide) !== '') {
+                    $microGuides[] = [trim($guide), ''];
+                }
+            }
+            $macroGuides = [];
+            foreach (($moduleGuides['macro'] ?? []) as $guide) {
+                if (is_array($guide)) {
+                    $title = trim((string) ($guide['title'] ?? ''));
+                    $prompt = trim((string) ($guide['prompt'] ?? ''));
+                    $macroGuides[] = [$title, $prompt];
+                } elseif (is_string($guide) && trim($guide) !== '') {
+                    $macroGuides[] = [trim($guide), ''];
+                }
+            }
+            $moduleRelationships = $module['relationships'] ?? [];
+            if (!is_array($moduleRelationships)) {
+                $moduleRelationships = [];
+            }
+            $visibility = strtolower((string) ($module['visibility'] ?? 'members'));
+            $allowedRoles = $module['allowed_roles'] ?? [];
+            if (!is_array($allowedRoles)) {
+                $allowedRoles = [];
+            }
+            $allowedRoles = array_values(array_filter(array_map(static function ($role) {
+                return strtolower(trim((string) $role));
+            }, $allowedRoles), static function ($role) {
+                return $role !== '';
+            }));
+            $audienceBits = [];
+            if ($visibility === 'admins') {
+                $audienceBits[] = 'Admins only';
+            } elseif ($visibility === 'everyone') {
+                $audienceBits[] = 'Everyone';
+            } else {
+                $audienceBits[] = 'Members';
+            }
+            if (!empty($allowedRoles)) {
+                $audienceBits[] = 'Roles: ' . implode(', ', array_map(static function ($role) {
+                    return ucwords(str_replace('_', ' ', $role));
+                }, $allowedRoles));
+            }
+            $taskProgress = $module['task_progress'] ?? fg_content_module_task_progress($module['tasks'] ?? []);
+            $html .= '<li class="content-module-card">';
+            $html .= '<header><h3>' . htmlspecialchars($label) . '</h3>';
+            if ($format !== '') {
+                $html .= '<p class="content-module-format">Format: ' . htmlspecialchars($format) . '</p>';
+            }
+            $html .= '</header>';
+            if (!empty($audienceBits)) {
+                $html .= '<p class="content-module-audience">' . htmlspecialchars(implode(' · ', $audienceBits)) . '</p>';
+            }
+            if ($description !== '') {
+                $html .= '<p class="content-module-description">' . htmlspecialchars($description) . '</p>';
+            }
+            if (!empty($taskProgress['has_tasks']) && !empty($taskProgress['summary'])) {
+                $stateClass = $taskProgress['state'] ?? 'unknown';
+                $statusLabel = trim((string) ($taskProgress['status_label'] ?? ''));
+                $summaryText = $statusLabel !== '' ? $statusLabel . ' — ' . $taskProgress['summary'] : $taskProgress['summary'];
+                $html .= '<p class="content-module-task-summary task-state-' . htmlspecialchars($stateClass) . '">' . htmlspecialchars($summaryText) . '</p>';
+            }
+            if (!empty($categories)) {
+                $html .= '<ul class="content-module-categories">';
+                foreach ($categories as $category) {
+                    $html .= '<li>' . htmlspecialchars((string) $category) . '</li>';
+                }
+                $html .= '</ul>';
+            }
+            if (!empty($wizard_steps)) {
+                $html .= '<ol class="content-module-steps">';
+                foreach ($wizard_steps as $step) {
+                    $html .= '<li>' . htmlspecialchars((string) $step) . '</li>';
+                }
+                $html .= '</ol>';
+            }
+            if (!empty($moduleTasks)) {
+                $html .= '<details class="content-module-tasks"><summary>Checklist</summary><ul>';
+                foreach ($moduleTasks as $task) {
+                    if (!is_array($task)) {
+                        continue;
+                    }
+                    $taskLabel = trim((string) ($task['label'] ?? ''));
+                    $taskDescription = trim((string) ($task['description'] ?? ''));
+                    if ($taskLabel === '' && $taskDescription === '') {
+                        continue;
+                    }
+                    $stateClass = trim((string) ($task['state'] ?? 'pending'));
+                    $stateLabel = trim((string) ($task['state_label'] ?? ucfirst($stateClass)));
+                    $html .= '<li class="task-' . htmlspecialchars($stateClass) . '"><span class="task-label">' . htmlspecialchars($taskLabel !== '' ? $taskLabel : $taskDescription) . '</span>';
+                    if ($taskDescription !== '' && strcasecmp($taskDescription, $taskLabel) !== 0) {
+                        $html .= '<span class="task-description">' . htmlspecialchars($taskDescription) . '</span>';
+                    }
+                    $html .= '<span class="task-state">' . htmlspecialchars($stateLabel) . '</span>';
+                    $metaBits = $task['meta'] ?? [];
+                    if (is_array($metaBits)) {
+                        $metaBits = array_values(array_filter(array_map(static function ($bit) {
+                            return trim((string) $bit);
+                        }, $metaBits), static function ($bit) {
+                            return $bit !== '';
+                        }));
+                        if (!empty($metaBits)) {
+                            $html .= '<small class="task-meta">' . htmlspecialchars(implode(' · ', $metaBits)) . '</small>';
+                        }
+                    }
+                    $notes = trim((string) ($task['notes'] ?? ''));
+                    if ($notes !== '') {
+                        $html .= '<small class="task-notes">' . htmlspecialchars($notes) . '</small>';
+                    }
+                    $html .= '</li>';
+                }
+                $html .= '</ul></details>';
+            }
+            if (!empty($microGuides) || !empty($macroGuides)) {
+                $html .= '<details class="content-module-guides"><summary>Guidance</summary>';
+                if (!empty($microGuides)) {
+                    $html .= '<h4>Micro</h4><ul>';
+                    foreach ($microGuides as $guide) {
+                        [$title, $prompt] = $guide;
+                        if ($title === '' && $prompt === '') {
+                            continue;
+                        }
+                        $html .= '<li>' . htmlspecialchars($title === '' ? $prompt : $title);
+                        if ($title !== '' && $prompt !== '') {
+                            $html .= '<span> — ' . htmlspecialchars($prompt) . '</span>';
+                        }
+                        $html .= '</li>';
+                    }
+                    $html .= '</ul>';
+                }
+                if (!empty($macroGuides)) {
+                    $html .= '<h4>Macro</h4><ul>';
+                    foreach ($macroGuides as $guide) {
+                        [$title, $prompt] = $guide;
+                        if ($title === '' && $prompt === '') {
+                            continue;
+                        }
+                        $html .= '<li>' . htmlspecialchars($title === '' ? $prompt : $title);
+                        if ($title !== '' && $prompt !== '') {
+                            $html .= '<span> — ' . htmlspecialchars($prompt) . '</span>';
+                        }
+                        $html .= '</li>';
+                    }
+                    $html .= '</ul>';
+                }
+                $html .= '</details>';
+            }
+            if (!empty($moduleRelationships)) {
+                $html .= '<details class="content-module-relationships"><summary>Connected modules</summary><ul>';
+                foreach ($moduleRelationships as $relationship) {
+                    if (!is_array($relationship)) {
+                        continue;
+                    }
+                    $type = trim((string) ($relationship['type'] ?? 'related'));
+                    if ($type === '') {
+                        $type = 'related';
+                    }
+                    $targetKey = trim((string) ($relationship['module_key'] ?? $relationship['module_reference'] ?? ''));
+                    if ($targetKey === '') {
+                        continue;
+                    }
+                    $targetLabel = trim((string) ($relationship['module_label'] ?? ''));
+                    if ($targetLabel === '' && isset($post_modules[$targetKey]) && is_array($post_modules[$targetKey])) {
+                        $targetLabel = trim((string) ($post_modules[$targetKey]['label'] ?? ''));
+                    }
+                    $description = trim((string) ($relationship['description'] ?? ''));
+                    $html .= '<li><strong>' . htmlspecialchars(ucfirst($type)) . '</strong>: ' . htmlspecialchars($targetLabel !== '' ? $targetLabel : $targetKey);
+                    if ($targetLabel !== '' && strcasecmp($targetLabel, $targetKey) !== 0) {
+                        $html .= ' <code>' . htmlspecialchars($targetKey) . '</code>';
+                    }
+                    if ($description !== '') {
+                        $html .= '<span> — ' . htmlspecialchars($description) . '</span>';
+                    }
+                    $html .= '</li>';
+                }
+                $html .= '</ul></details>';
+            }
+            $html .= '<p class="content-module-actions"><a class="button" href="/post.php?module=' . htmlspecialchars($module['key']) . '">Launch guided composer</a></p>';
+            $html .= '</li>';
+        }
+        $html .= '</ul>';
+        $html .= '</section>';
+    }
+
     if (!empty($alerts)) {
         $html .= '<section class="panel feed-alerts">';
         foreach ($alerts as $alert) {
@@ -1698,7 +2209,7 @@ function fg_render_feed(array $viewer): string
         'role' => $viewer['role'] ?? null,
         'user_id' => $viewer['id'] ?? null,
     ];
-    $knowledgeEnabled = fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'enabled', $knowledgeContext);
+    $knowledgeEnabled = fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'enabled', $knowledgeContext);
     $knowledgeArticles = [];
     $knowledgeCategories = [];
     if ($knowledgeEnabled) {
@@ -1709,7 +2220,7 @@ function fg_render_feed(array $viewer): string
         }
 
         $knowledgeArticles = fg_filter_knowledge_articles($viewer);
-        $defaultKnowledgeTag = trim((string) fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'default_tag', $knowledgeContext));
+        $defaultKnowledgeTag = trim((string) fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'default_tag', $knowledgeContext));
         if ($defaultKnowledgeTag !== '') {
             $filterTag = strtolower($defaultKnowledgeTag);
             $knowledgeArticles = array_values(array_filter($knowledgeArticles, static function (array $article) use ($filterTag) {
@@ -1722,7 +2233,7 @@ function fg_render_feed(array $viewer): string
         }
 
         $knowledgeLimitSetting = (int) fg_get_setting('knowledge_base_listing_limit', 5);
-        $knowledgeOverrideLimit = (int) fg_get_asset_parameter_value('assets/php/pages/render_knowledge_base.php', 'listing_limit', $knowledgeContext);
+        $knowledgeOverrideLimit = (int) fg_get_asset_parameter_value('assets/php/render_knowledge_base.php', 'listing_limit', $knowledgeContext);
         $appliedLimit = $knowledgeOverrideLimit > 0 ? $knowledgeOverrideLimit : $knowledgeLimitSetting;
         if ($appliedLimit > 0) {
             $knowledgeArticles = array_slice($knowledgeArticles, 0, $appliedLimit);
