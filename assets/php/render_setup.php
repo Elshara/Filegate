@@ -1174,7 +1174,7 @@ function fg_render_setup_page(array $data = []): void
         $datasetOptions[$datasetKey] = $definition['label'] ?? $datasetKey;
     }
 
-    $body .= '<section class="content-module-manager">';
+    $body .= '<section class="content-module-manager" id="content-modules">';
     $body .= '<h2>Content Modules</h2>';
     $body .= '<p>Design interdependent content types that reuse shared categories, field prompts, and styling tokens pulled from the XML blueprints.</p>';
 
@@ -1796,13 +1796,71 @@ function fg_render_setup_page(array $data = []): void
     $body .= '</form>';
     $body .= '</article>';
 
-    $moduleBlueprints = $contentBlueprints['module_blueprints'] ?? [];
-    if (!empty($moduleBlueprints)) {
+    $moduleBlueprintsAll = $contentBlueprints['module_blueprints'] ?? [];
+    $moduleBlueprints = $contentBlueprints['module_blueprints_filtered'] ?? $moduleBlueprintsAll;
+    $blueprintFilters = $contentBlueprints['filters'] ?? [];
+    $blueprintQuery = (string) ($blueprintFilters['query'] ?? '');
+    $blueprintFormatFilter = (string) ($blueprintFilters['format'] ?? '');
+    $blueprintFormatOptions = [];
+    if (isset($blueprintFilters['formats']) && is_array($blueprintFilters['formats'])) {
+        $blueprintFormatOptions = $blueprintFilters['formats'];
+    }
+    $blueprintMatchCount = (int) ($blueprintFilters['matches'] ?? count($moduleBlueprints));
+    $blueprintTotalCount = (int) ($blueprintFilters['total'] ?? count($moduleBlueprintsAll));
+    $blueprintHasFilters = !empty($blueprintFilters['has_filters']);
+    $blueprintPreserved = [];
+    if (isset($blueprintFilters['preserved']) && is_array($blueprintFilters['preserved'])) {
+        $blueprintPreserved = $blueprintFilters['preserved'];
+    }
+
+    if (!empty($moduleBlueprintsAll)) {
         $body .= '<aside class="content-blueprint-library">';
         $body .= '<h3>Blueprint library</h3>';
         $body .= '<p>Select a ready-made blueprint to seed a new module. Each blueprint bundles field prompts, suggested categories, and wizard copy.</p>';
+
+        $body .= '<form method="get" action="/setup.php#content-modules" class="blueprint-library-filters">';
+        foreach ($blueprintPreserved as $preservedKey => $preservedValue) {
+            $body .= '<input type="hidden" name="' . htmlspecialchars((string) $preservedKey) . '" value="' . htmlspecialchars((string) $preservedValue) . '">';
+        }
+        $body .= '<div class="blueprint-filter-fields">';
+        $body .= '<label class="field"><span class="field-label">Search</span><span class="field-control"><input type="search" name="blueprint_query" value="' . htmlspecialchars($blueprintQuery) . '" placeholder="Find by title, format, or field"></span></label>';
+        if (!empty($blueprintFormatOptions)) {
+            $body .= '<label class="field"><span class="field-label">Format</span><span class="field-control"><select name="blueprint_format">';
+            $body .= '<option value="">All formats</option>';
+            foreach ($blueprintFormatOptions as $formatOption) {
+                $selected = (strcasecmp((string) $formatOption, $blueprintFormatFilter) === 0) ? ' selected' : '';
+                $body .= '<option value="' . htmlspecialchars((string) $formatOption) . '"' . $selected . '>' . htmlspecialchars((string) $formatOption) . '</option>';
+            }
+            $body .= '</select></span></label>';
+        }
+        $body .= '</div>';
+
+        if ($blueprintTotalCount > 0) {
+            $summary = 'Showing ' . number_format($blueprintMatchCount) . ' of ' . number_format($blueprintTotalCount) . ' blueprints';
+            if ($blueprintHasFilters) {
+                $summary .= ' matching the current filters.';
+            } else {
+                $summary .= '.';
+            }
+        } else {
+            $summary = 'No blueprints available in the library yet.';
+        }
+
+        $body .= '<div class="blueprint-filter-actions">';
+        $body .= '<button type="submit" class="button secondary">Apply filters</button>';
+        if ($blueprintHasFilters) {
+            $body .= '<a class="button tertiary" href="/setup.php#content-modules">Reset</a>';
+        }
+        $body .= '<p class="blueprint-filter-summary">' . htmlspecialchars($summary) . '</p>';
+        $body .= '</div>';
+        $body .= '</form>';
+
+        if (empty($moduleBlueprints)) {
+            $body .= '<p class="notice info blueprint-empty">No blueprints match the current filters. Adjust your search or reset the filters to browse the full library.</p>';
+        }
+
         foreach ($moduleBlueprints as $index => $blueprint) {
-            $label = trim((string) ($blueprint['title'] ?? 'Blueprint')); 
+            $label = trim((string) ($blueprint['title'] ?? 'Blueprint'));
             $format = trim((string) ($blueprint['format'] ?? ''));
             $description = trim((string) ($blueprint['description'] ?? ''));
             $fields = [];

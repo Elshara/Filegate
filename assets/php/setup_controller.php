@@ -223,6 +223,118 @@ function fg_public_setup_controller(): void
     }
 
     $contentBlueprints = fg_load_content_blueprints();
+    $contentBlueprintFilters = [
+        'query' => '',
+        'format' => '',
+        'formats' => [],
+        'total' => 0,
+        'matches' => 0,
+        'has_filters' => false,
+        'preserved' => [],
+    ];
+    if (isset($contentBlueprints['module_blueprints']) && is_array($contentBlueprints['module_blueprints'])) {
+        $moduleBlueprints = $contentBlueprints['module_blueprints'];
+        $contentBlueprintFilters['total'] = count($moduleBlueprints);
+
+        $formatOptions = [];
+        foreach ($moduleBlueprints as $moduleBlueprint) {
+            if (!is_array($moduleBlueprint)) {
+                continue;
+            }
+            $format = trim((string) ($moduleBlueprint['format'] ?? ''));
+            if ($format === '') {
+                continue;
+            }
+            $formatKey = strtolower($format);
+            if (!isset($formatOptions[$formatKey])) {
+                $formatOptions[$formatKey] = $format;
+            }
+        }
+        if (!empty($formatOptions)) {
+            natcasesort($formatOptions);
+            $contentBlueprintFilters['formats'] = array_values($formatOptions);
+        }
+
+        $queryRaw = $_GET['blueprint_query'] ?? '';
+        if (is_array($queryRaw)) {
+            $queryRaw = reset($queryRaw);
+        }
+        $query = trim((string) $queryRaw);
+
+        $formatFilterRaw = $_GET['blueprint_format'] ?? '';
+        if (is_array($formatFilterRaw)) {
+            $formatFilterRaw = reset($formatFilterRaw);
+        }
+        $formatFilter = trim((string) $formatFilterRaw);
+        if ($formatFilter !== '') {
+            $formatFilterKey = strtolower($formatFilter);
+            if (!isset($formatOptions[$formatFilterKey])) {
+                $formatFilter = '';
+            } else {
+                $formatFilter = $formatOptions[$formatFilterKey];
+            }
+        }
+        $contentBlueprintFilters['query'] = $query;
+        $contentBlueprintFilters['format'] = $formatFilter;
+        $contentBlueprintFilters['has_filters'] = ($query !== '') || ($formatFilter !== '');
+
+        $filteredBlueprints = [];
+        foreach ($moduleBlueprints as $moduleBlueprint) {
+            if (!is_array($moduleBlueprint)) {
+                continue;
+            }
+
+            $blueprintFormat = trim((string) ($moduleBlueprint['format'] ?? ''));
+            if ($formatFilter !== '' && strcasecmp($blueprintFormat, $formatFilter) !== 0) {
+                continue;
+            }
+
+            if ($query !== '') {
+                $haystackParts = [
+                    (string) ($moduleBlueprint['title'] ?? ''),
+                    $blueprintFormat,
+                    (string) ($moduleBlueprint['description'] ?? ''),
+                ];
+                foreach ($moduleBlueprint['fields'] ?? [] as $field) {
+                    if (!is_array($field)) {
+                        $haystackParts[] = (string) $field;
+                        continue;
+                    }
+                    $haystackParts[] = (string) ($field['title'] ?? '');
+                    $haystackParts[] = (string) ($field['description'] ?? '');
+                }
+                $haystack = implode(' ', array_filter(array_map(static function ($value) {
+                    return trim((string) $value);
+                }, $haystackParts), static function ($value) {
+                    return $value !== '';
+                }));
+
+                if ($haystack === '' || stripos($haystack, $query) === false) {
+                    continue;
+                }
+            }
+
+            $filteredBlueprints[] = $moduleBlueprint;
+        }
+
+        $contentBlueprintFilters['matches'] = count($filteredBlueprints);
+        $contentBlueprints['module_blueprints_filtered'] = $filteredBlueprints;
+
+        $preservedQuery = [];
+        foreach ($_GET as $key => $value) {
+            if (in_array($key, ['blueprint_query', 'blueprint_format'], true)) {
+                continue;
+            }
+            if (is_scalar($value)) {
+                $preservedQuery[$key] = (string) $value;
+            }
+        }
+        $contentBlueprintFilters['preserved'] = $preservedQuery;
+    } else {
+        $contentBlueprints['module_blueprints'] = [];
+        $contentBlueprints['module_blueprints_filtered'] = [];
+    }
+    $contentBlueprints['filters'] = $contentBlueprintFilters;
     $contentModuleUsage = fg_content_module_usage_summary([
         'statuses' => ['active', 'draft', 'archived'],
     ]);

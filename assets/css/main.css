@@ -3707,6 +3707,48 @@ button.tertiary:hover,
   gap: 1.5rem;
 }
 
+.blueprint-library-filters {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  padding: 1rem 1.25rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.blueprint-library-filters .field {
+  margin: 0;
+}
+
+.blueprint-filter-fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.blueprint-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.blueprint-filter-actions .button {
+  flex: 0 0 auto;
+}
+
+.blueprint-filter-summary {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(30, 41, 59, 0.68);
+  flex: 1 1 220px;
+}
+
+.blueprint-empty {
+  margin: 0;
+}
+
 .blueprint-card {
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 1rem;
